@@ -3,14 +3,25 @@ import { buildAuthorization, getGameList } from '@retroachievements/api';
 import { IDataBase, IGame } from 'src/models/retroachievements';
 import * as fs from 'fs';
 import { Cron } from '@nestjs/schedule';
+import { InjectModel } from '@nestjs/mongoose';
+import { Game, GameDocument } from '../game/game.schema';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class RetroachievementsService {
   private readonly apiKey = process.env.RETROACHIEVEMENTS_API_KEY;
   private readonly userName = 'alexgrist14';
-  private readonly platforms = [...Array(3).keys()].map((i) => i + 1);
+  private readonly platforms = [...Array(1).keys()].map((i) => i + 1);
 
-  constructor() {}
+  constructor(@InjectModel(Game.name) private gameModel: Model<GameDocument>) {}
+
+  async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void>{
+    const gameDocuments = games.map(game=>({
+      ...game,
+      platformId
+    }));
+    await this.gameModel.insertMany(gameDocuments);
+  }
 
   async getGamesByPlatform(@Param('id') id: string): Promise<string> {
     const gamesData = fs.readFileSync('games.json', 'utf-8');
@@ -61,6 +72,7 @@ export class RetroachievementsService {
       try {
         console.log(platformId);
         const games = await this.getGamesForPlatformWithDelay(platformId);
+        await this.saveGamesToDatabase(platformId,games);
         allGames[platformId] = games;
       } catch (error) {
         console.error(
@@ -71,7 +83,11 @@ export class RetroachievementsService {
     }
 
     await this.saveGamesToFile(allGames, 'games.json');
-
+    
     console.log('Games have been saved to games.json');
+  }
+
+  async findGamesByPlatform(platformId: number): Promise<Game[]> {
+    return this.gameModel.find();
   }
 }
