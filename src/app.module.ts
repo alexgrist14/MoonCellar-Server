@@ -8,7 +8,7 @@ import { RetroachievementsModule } from './module/retroachievements/retroachieve
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    MongooseModule.forRoot('mongodb://localhost:27017/',{dbName: 'games'}),
+    MongooseModule.forRoot('mongodb://admin:123@gigatualet.ru:27017/',{dbName: 'games'}),
     ConfigModule.forRoot(),
     RetroachievementsModule
   ],

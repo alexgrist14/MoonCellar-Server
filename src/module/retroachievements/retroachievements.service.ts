@@ -11,7 +11,7 @@ import { Model } from 'mongoose';
 export class RetroachievementsService {
   private readonly apiKey = process.env.RETROACHIEVEMENTS_API_KEY;
   private readonly userName = 'alexgrist14';
-  private readonly platforms = [...Array(1).keys()].map((i) => i + 1);
+  private readonly platforms = [...Array(78).keys()].map((i) => i + 1);
 
   constructor(@InjectModel(Game.name) private gameModel: Model<GameDocument>) {}
 
@@ -61,7 +61,7 @@ export class RetroachievementsService {
   }
 
   async onModuleInit() {
-    await this.handleCron();
+    //await this.handleCron();
   }
 
   @Cron('0 0 * * *')
@@ -82,7 +82,7 @@ export class RetroachievementsService {
       }
     }
 
-    await this.saveGamesToFile(allGames, 'games.json');
+    //await this.saveGamesToFile(allGames, 'games.json');
     
     console.log('Games have been saved to games.json');
   }

@@ -27,6 +27,7 @@
     "@nestjs/mongoose": "^10.0.6",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/schedule": "^4.0.2",
+    "@nestjs/swagger": "^7.3.1",
     "@retroachievements/api": "^1.5.3",
     "axios": "^1.7.2",
     "class-transformer": "^0.5.1",
