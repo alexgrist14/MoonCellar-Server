@@ -1,11 +1,12 @@
 import { Injectable, Param } from '@nestjs/common';
 import { buildAuthorization, getGameList } from '@retroachievements/api';
-import { IDataBase, IGame } from 'src/models/retroachievements';
 import * as fs from 'fs';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { Game, GameDocument } from '../game/game.schema';
 import { Model } from 'mongoose';
+import { IGame } from './interfaces/game.interface';
+import { IDataBase } from './interfaces/retroachievements.interface';
 
 @Injectable()
 export class RetroachievementsService {
@@ -15,10 +16,10 @@ export class RetroachievementsService {
 
   constructor(@InjectModel(Game.name) private gameModel: Model<GameDocument>) {}
 
-  async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void>{
-    const gameDocuments = games.map(game=>({
+  async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void> {
+    const gameDocuments = games.map((game) => ({
       ...game,
-      platformId
+      platformId,
     }));
     await this.gameModel.insertMany(gameDocuments);
   }
@@ -72,7 +73,7 @@ export class RetroachievementsService {
       try {
         console.log(platformId);
         const games = await this.getGamesForPlatformWithDelay(platformId);
-        await this.saveGamesToDatabase(platformId,games);
+        await this.saveGamesToDatabase(platformId, games);
         allGames[platformId] = games;
       } catch (error) {
         console.error(
@@ -83,7 +84,7 @@ export class RetroachievementsService {
     }
 
     //await this.saveGamesToFile(allGames, 'games.json');
-    
+
     console.log('Games have been saved to games.json');
   }
 

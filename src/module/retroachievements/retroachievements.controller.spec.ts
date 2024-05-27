@@ -11,7 +11,9 @@ describe('RetroachievementsController', () => {
       providers: [RetroachievementsService],
     }).compile();
 
-    controller = module.get<RetroachievementsController>(RetroachievementsController);
+    controller = module.get<RetroachievementsController>(
+      RetroachievementsController,
+    );
   });
 
   it('should be defined', () => {

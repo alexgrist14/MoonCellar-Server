@@ -1,7 +1,5 @@
-export interface IConsole{
-
+export interface IConsole {
 }
-
 export interface IGame {
     title: string;
     id: number;
@@ -14,8 +12,7 @@ export interface IGame {
     dateModified: string;
     forumTopicId: number;
     hashes: string[];
-  }
-
-  export interface IDataBase{
-    game: IGame[]
-  }
+}
+export interface IDataBase {
+    game: IGame[];
+}

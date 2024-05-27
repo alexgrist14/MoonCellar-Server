@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param, ParseIntPipe } from '@nestjs/common';
 import { RetroachievementsService } from './retroachievements.service';
 import { Game } from '../game/game.schema';
 
@@ -8,7 +8,7 @@ export class RetroachievementsController {
     private readonly retroachievementsService: RetroachievementsService,
   ) {}
   @Get('/:id')
-  getGamesByPlatform(@Param('id') id: string): Promise<Game[]> {
-    return this.retroachievementsService.findGamesByPlatform(+id);
+  getGamesByPlatform(@Param('id',ParseIntPipe) id: number): Promise<Game[]> {
+    return this.retroachievementsService.findGamesByPlatform(id);
   }
 }
