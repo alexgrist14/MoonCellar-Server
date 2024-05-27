@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RetroachievementsModule } from './module/retroachievements/retroach.module';
 import { UserModule } from './module/user/user.module';
 import { BookModule } from './module/book/book.module';
+import { AuthModule } from './module/auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BookModule } from './module/book/book.module';
     RetroachievementsModule,
     UserModule,
     BookModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
