@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RetroachievementsController = void 0;
 const common_1 = require("@nestjs/common");
-const retroachievements_service_1 = require("./retroachievements.service");
+const retroach_service_1 = require("./retroach.service");
 let RetroachievementsController = class RetroachievementsController {
     constructor(retroachievementsService) {
         this.retroachievementsService = retroachievementsService;
@@ -22,17 +22,26 @@ let RetroachievementsController = class RetroachievementsController {
     getGamesByPlatform(id) {
         return this.retroachievementsService.findGamesByPlatform(id);
     }
+    getAllGames() {
+        return this.retroachievementsService.findAll();
+    }
 };
 exports.RetroachievementsController = RetroachievementsController;
 __decorate([
     (0, common_1.Get)('/:id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], RetroachievementsController.prototype, "getGamesByPlatform", null);
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], RetroachievementsController.prototype, "getAllGames", null);
 exports.RetroachievementsController = RetroachievementsController = __decorate([
     (0, common_1.Controller)('retroachievements'),
-    __metadata("design:paramtypes", [retroachievements_service_1.RetroachievementsService])
+    __metadata("design:paramtypes", [retroach_service_1.RetroachievementsService])
 ], RetroachievementsController);
-//# sourceMappingURL=retroachievements.controller.js.map
+//# sourceMappingURL=retroach.controller.js.map

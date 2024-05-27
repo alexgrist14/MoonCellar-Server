@@ -23,22 +23,19 @@
 /// <reference types="mongoose/types/virtuals" />
 /// <reference types="mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferrawdoctype" />
-import { Game, GameDocument } from '../game/game.schema';
-import { Model } from 'mongoose';
-import { IGame } from './interfaces/game.interface';
-import { IDataBase } from './interfaces/retroachievements.interface';
+import { RAGame } from './retroach.schema';
+import mongoose from 'mongoose';
 export declare class RetroachievementsService {
     private gameModel;
     private readonly apiKey;
     private readonly userName;
     private readonly platforms;
-    constructor(gameModel: Model<GameDocument>);
-    saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void>;
-    getGamesByPlatform(id: string): Promise<string>;
-    getGamesForPlatform(platformId: number): Promise<IGame[]>;
-    getGamesForPlatformWithDelay(platformId: number, delay?: number): Promise<IGame[]>;
-    saveGamesToFile(games: IDataBase, filePath: string): Promise<void>;
-    onModuleInit(): Promise<void>;
-    handleCron(): Promise<void>;
-    findGamesByPlatform(platformId: number): Promise<Game[]>;
+    constructor(gameModel: mongoose.Model<RAGame>);
+    private saveGamesToDatabase;
+    private getGamesForPlatform;
+    private getGamesForPlatformWithDelay;
+    private onModuleInit;
+    private handleCron;
+    findGamesByPlatform(platformId: number): Promise<RAGame[]>;
+    findAll(): Promise<RAGame[]>;
 }

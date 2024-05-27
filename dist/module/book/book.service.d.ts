@@ -23,23 +23,15 @@
 /// <reference types="mongoose/types/virtuals" />
 /// <reference types="mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferrawdoctype" />
-import { Document } from 'mongoose';
-export type GameDocument = Game & Document;
-export declare class Game {
-    title: string;
-    id: number;
-    consoleId: number;
-    consoleName: string;
-    imageIcon: string;
-    numAchievements: number;
-    numLeaderboards: number;
-    points: number;
-    dateModified: string;
-    forumTopicId: number;
-    hashes: string[];
+import { Book } from './schemas/book.schema';
+import mongoose from 'mongoose';
+import { Query as ExpressQuery } from 'express-serve-static-core';
+export declare class BookService {
+    private bookModel;
+    constructor(bookModel: mongoose.Model<Book>);
+    findAll(query: ExpressQuery): Promise<Book[]>;
+    create(book: Book): Promise<Book>;
+    findById(id: string): Promise<Book>;
+    updateById(id: string, book: Book): Promise<Book>;
+    deleteById(id: string): Promise<Book>;
 }
-export declare const GameSchema: import("mongoose").Schema<Game, import("mongoose").Model<Game, any, any, any, Document<unknown, any, Game> & Game & {
-    _id: import("mongoose").Types.ObjectId;
-}, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, Game, Document<unknown, {}, import("mongoose").FlatRecord<Game>> & import("mongoose").FlatRecord<Game> & {
-    _id: import("mongoose").Types.ObjectId;
-}>;

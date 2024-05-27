@@ -3,8 +3,9 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { RetroachievementsModule } from './module/retroachievements/retroachievements.module';
+import { RetroachievementsModule } from './module/retroachievements/retroach.module';
 import { UserModule } from './module/user/user.module';
+import { BookModule } from './module/book/book.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from './module/user/user.module';
     }),
     RetroachievementsModule,
     UserModule,
+    BookModule,
   ],
 })
 export class AppModule {}

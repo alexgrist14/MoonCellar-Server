@@ -8,20 +8,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RetroachievementsModule = void 0;
 const common_1 = require("@nestjs/common");
-const retroachievements_service_1 = require("./retroachievements.service");
-const retroachievements_controller_1 = require("./retroachievements.controller");
+const retroach_service_1 = require("./retroach.service");
+const retroach_controller_1 = require("./retroach.controller");
 const mongoose_1 = require("@nestjs/mongoose");
-const game_schema_1 = require("../game/game.schema");
+const retroach_schema_1 = require("./retroach.schema");
 let RetroachievementsModule = class RetroachievementsModule {
 };
 exports.RetroachievementsModule = RetroachievementsModule;
 exports.RetroachievementsModule = RetroachievementsModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([{ name: game_schema_1.Game.name, schema: game_schema_1.GameSchema }]),
+            mongoose_1.MongooseModule.forFeature([{ name: retroach_schema_1.RAGame.name, schema: retroach_schema_1.RASchema }]),
         ],
-        controllers: [retroachievements_controller_1.RetroachievementsController],
-        providers: [retroachievements_service_1.RetroachievementsService],
+        controllers: [retroach_controller_1.RetroachievementsController],
+        providers: [retroach_service_1.RetroachievementsService],
     })
 ], RetroachievementsModule);
-//# sourceMappingURL=retroachievements.module.js.map
+//# sourceMappingURL=retroach.module.js.map

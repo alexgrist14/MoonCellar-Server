@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RetroachievementsController } from './retroachievements.controller';
-import { RetroachievementsService } from './retroachievements.service';
+import { RetroachievementsController } from './retroach.controller';
+import { RetroachievementsService } from './retroach.service';
 
 describe('RetroachievementsController', () => {
   let controller: RetroachievementsController;

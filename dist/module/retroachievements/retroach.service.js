@@ -15,10 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RetroachievementsService = void 0;
 const common_1 = require("@nestjs/common");
 const api_1 = require("@retroachievements/api");
-const fs = require("fs");
 const schedule_1 = require("@nestjs/schedule");
 const mongoose_1 = require("@nestjs/mongoose");
-const game_schema_1 = require("../game/game.schema");
+const retroach_schema_1 = require("./retroach.schema");
 const mongoose_2 = require("mongoose");
 let RetroachievementsService = class RetroachievementsService {
     constructor(gameModel) {
@@ -34,15 +33,6 @@ let RetroachievementsService = class RetroachievementsService {
         }));
         await this.gameModel.insertMany(gameDocuments);
     }
-    async getGamesByPlatform(id) {
-        const gamesData = fs.readFileSync('games.json', 'utf-8');
-        const games = JSON.parse(gamesData);
-        const platformGames = games[id];
-        if (!platformGames) {
-            return `No games found for platform with ID ${id}`;
-        }
-        return JSON.stringify(platformGames);
-    }
     async getGamesForPlatform(platformId) {
         const userName = this.userName;
         const webApiKey = this.apiKey;
@@ -56,9 +46,6 @@ let RetroachievementsService = class RetroachievementsService {
     async getGamesForPlatformWithDelay(platformId, delay = 400) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         return this.getGamesForPlatform(platformId);
-    }
-    async saveGamesToFile(games, filePath) {
-        fs.writeFileSync(filePath, JSON.stringify(games, null, 2));
     }
     async onModuleInit() {
     }
@@ -75,19 +62,16 @@ let RetroachievementsService = class RetroachievementsService {
                 console.error(`Failed to fetch games for platform ${platformId}:`, error);
             }
         }
-        console.log('Games have been saved to games.json');
     }
     async findGamesByPlatform(platformId) {
-        return this.gameModel.find();
+        console.log(platformId);
+        return this.gameModel.findOne({ consoleId: platformId });
+    }
+    async findAll() {
+        return await this.gameModel.find().limit(50);
     }
 };
 exports.RetroachievementsService = RetroachievementsService;
-__decorate([
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], RetroachievementsService.prototype, "getGamesByPlatform", null);
 __decorate([
     (0, schedule_1.Cron)('0 0 * * *'),
     __metadata("design:type", Function),
@@ -96,7 +80,7 @@ __decorate([
 ], RetroachievementsService.prototype, "handleCron", null);
 exports.RetroachievementsService = RetroachievementsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(game_schema_1.Game.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model])
+    __param(0, (0, mongoose_1.InjectModel)(retroach_schema_1.RAGame.name)),
+    __metadata("design:paramtypes", [mongoose_2.default.Model])
 ], RetroachievementsService);
-//# sourceMappingURL=retroachievements.service.js.map
+//# sourceMappingURL=retroach.service.js.map

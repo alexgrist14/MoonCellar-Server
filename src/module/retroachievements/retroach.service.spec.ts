@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RetroachievementsService } from './retroachievements.service';
+import { RetroachievementsService } from './retroach.service';
 
 describe('RetroachievementsService', () => {
   let service: RetroachievementsService;

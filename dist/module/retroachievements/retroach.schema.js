@@ -9,57 +9,57 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameSchema = exports.Game = void 0;
+exports.RASchema = exports.RAGame = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
-let Game = class Game {
+let RAGame = class RAGame {
 };
-exports.Game = Game;
+exports.RAGame = RAGame;
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
-], Game.prototype, "title", void 0);
+], RAGame.prototype, "title", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", Number)
-], Game.prototype, "id", void 0);
+], RAGame.prototype, "id", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", Number)
-], Game.prototype, "consoleId", void 0);
-__decorate([
-    (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", String)
-], Game.prototype, "consoleName", void 0);
+], RAGame.prototype, "consoleId", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
-], Game.prototype, "imageIcon", void 0);
+], RAGame.prototype, "consoleName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], RAGame.prototype, "imageIcon", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", Number)
-], Game.prototype, "numAchievements", void 0);
+], RAGame.prototype, "numAchievements", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Number)
-], Game.prototype, "numLeaderboards", void 0);
+], RAGame.prototype, "numLeaderboards", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Number)
-], Game.prototype, "points", void 0);
+], RAGame.prototype, "points", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
-], Game.prototype, "dateModified", void 0);
+], RAGame.prototype, "dateModified", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Number)
-], Game.prototype, "forumTopicId", void 0);
+], RAGame.prototype, "forumTopicId", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Array)
-], Game.prototype, "hashes", void 0);
-exports.Game = Game = __decorate([
+], RAGame.prototype, "hashes", void 0);
+exports.RAGame = RAGame = __decorate([
     (0, mongoose_1.Schema)()
-], Game);
-exports.GameSchema = mongoose_1.SchemaFactory.createForClass(Game);
-//# sourceMappingURL=game.schema.js.map
+], RAGame);
+exports.RASchema = mongoose_1.SchemaFactory.createForClass(RAGame);
+//# sourceMappingURL=retroach.schema.js.map

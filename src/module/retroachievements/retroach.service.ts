@@ -1,10 +1,9 @@
-import { Injectable, Param } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { buildAuthorization, getGameList } from '@retroachievements/api';
-import * as fs from 'fs';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
-import { Game, GameDocument } from '../game/game.schema';
-import { Model } from 'mongoose';
+import { RAGame } from './retroach.schema';
+import mongoose, { Model } from 'mongoose';
 import { IGame } from './interfaces/game.interface';
 import { IDataBase } from './interfaces/retroachievements.interface';
 
@@ -14,9 +13,9 @@ export class RetroachievementsService {
   private readonly userName = 'alexgrist14';
   private readonly platforms = [...Array(78).keys()].map((i) => i + 1);
 
-  constructor(@InjectModel(Game.name) private gameModel: Model<GameDocument>) {}
+  constructor(@InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>) {}
 
-  async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void> {
+  private async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void> {
     const gameDocuments = games.map((game) => ({
       ...game,
       platformId,
@@ -24,20 +23,7 @@ export class RetroachievementsService {
     await this.gameModel.insertMany(gameDocuments);
   }
 
-  async getGamesByPlatform(@Param('id') id: string): Promise<string> {
-    const gamesData = fs.readFileSync('games.json', 'utf-8');
-    const games = JSON.parse(gamesData);
-
-    const platformGames = games[id];
-
-    if (!platformGames) {
-      return `No games found for platform with ID ${id}`;
-    }
-
-    return JSON.stringify(platformGames);
-  }
-
-  async getGamesForPlatform(platformId: number): Promise<IGame[]> {
+  private async getGamesForPlatform(platformId: number): Promise<IGame[]> {
     const userName = this.userName;
     const webApiKey = this.apiKey;
     const authorization = buildAuthorization({ userName, webApiKey });
@@ -49,7 +35,7 @@ export class RetroachievementsService {
     return gameList;
   }
 
-  async getGamesForPlatformWithDelay(
+  private async getGamesForPlatformWithDelay(
     platformId: number,
     delay = 400,
   ): Promise<IGame[]> {
@@ -57,16 +43,12 @@ export class RetroachievementsService {
     return this.getGamesForPlatform(platformId);
   }
 
-  async saveGamesToFile(games: IDataBase, filePath: string): Promise<void> {
-    fs.writeFileSync(filePath, JSON.stringify(games, null, 2));
-  }
-
-  async onModuleInit() {
+  private async onModuleInit() {
     //await this.handleCron();
   }
 
   @Cron('0 0 * * *')
-  async handleCron() {
+  private async handleCron() {
     const allGames = {} as IDataBase;
 
     for (const platformId of this.platforms) {
@@ -82,13 +64,14 @@ export class RetroachievementsService {
         );
       }
     }
-
-    //await this.saveGamesToFile(allGames, 'games.json');
-
-    console.log('Games have been saved to games.json');
   }
 
-  async findGamesByPlatform(platformId: number): Promise<Game[]> {
-    return this.gameModel.find();
+  async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
+    console.log(platformId)
+    return this.gameModel.findOne({consoleId: platformId});
+  }
+
+  async findAll(): Promise<RAGame[]>{
+    return await this.gameModel.find().limit(50);
   }
 }

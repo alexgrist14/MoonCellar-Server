@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type GameDocument = Game & Document;
+export type GameDocument = RAGame & Document;
 
 @Schema()
-export class Game {
+export class RAGame {
   @Prop({ required: true })
   title: string;
   @Prop({ required: true })
@@ -29,4 +29,4 @@ export class Game {
   hashes: string[];
 }
 
-export const GameSchema = SchemaFactory.createForClass(Game);
+export const RASchema = SchemaFactory.createForClass(RAGame);

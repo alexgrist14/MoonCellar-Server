@@ -11,8 +11,9 @@ const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
 const mongoose_1 = require("@nestjs/mongoose");
 const config_1 = require("@nestjs/config");
-const retroachievements_module_1 = require("./module/retroachievements/retroachievements.module");
+const retroach_module_1 = require("./module/retroachievements/retroach.module");
 const user_module_1 = require("./module/user/user.module");
+const book_module_1 = require("./module/book/book.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,8 +25,9 @@ exports.AppModule = AppModule = __decorate([
             mongoose_1.MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING, {
                 dbName: 'games',
             }),
-            retroachievements_module_1.RetroachievementsModule,
+            retroach_module_1.RetroachievementsModule,
             user_module_1.UserModule,
+            book_module_1.BookModule,
         ],
     })
 ], AppModule);
