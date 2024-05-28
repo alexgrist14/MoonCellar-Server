@@ -1,5 +1,3 @@
-export interface IConsole {}
-
 export interface IGame {
   title: string;
   id: number;

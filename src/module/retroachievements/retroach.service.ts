@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { buildAuthorization, getGameList } from '@retroachievements/api';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
-import { RAGame } from './retroach.schema';
+import { RAGame } from './schemas/retroach.schema';
 import mongoose, { Model } from 'mongoose';
 import { IGame } from './interfaces/game.interface';
 import { IDataBase } from './interfaces/retroachievements.interface';

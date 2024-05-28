@@ -21,7 +21,6 @@ export class AuthService {
       password: hashedPassword
     })
 
-    //const token = this.jwtService.sign({id:user._id})
     const accessToken = this.jwtService.sign({id:user._id});
     const refreshToken = this.jwtService.sign({id:user._id},{expiresIn: "30d"});
 

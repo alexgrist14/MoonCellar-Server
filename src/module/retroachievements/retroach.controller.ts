@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { RetroachievementsService } from './retroach.service';
-import { RAGame } from './retroach.schema';
+import { RAGame } from './schemas/retroach.schema';
 
 @Controller('retroachievements')
 export class RetroachievementsController {
