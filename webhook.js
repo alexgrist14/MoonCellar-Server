@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 
 app.post('/webhook', (req, res) => {
     if (req.headers['x-github-event'] === 'push') {
-        const repoPath = '/path/to/your/repo';
+        const repoPath = 'https://github.com/alexgrist14/Game-Gauntlet-Server';
         const commands = `
             cd ${repoPath} &&
             git pull &&
