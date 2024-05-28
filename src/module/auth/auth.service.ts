@@ -11,7 +11,7 @@ import { LoginDto } from './dto/login.dto';
 export class AuthService {
   constructor(@InjectModel(User.name)private userModel: Model<User>, private jwtService: JwtService  ){}
 
-  async signUp(signUpDto: SignUpDto): Promise<{token: string}>{
+  async signUp(signUpDto: SignUpDto): Promise<{accessToken: string, refreshToken:string}>{
     const {name,email,password} = signUpDto;
     const hashedPassword = await bcrypt.hash(password,10)
 
@@ -21,12 +21,17 @@ export class AuthService {
       password: hashedPassword
     })
 
-    const token = this.jwtService.sign({id:user._id})
+    //const token = this.jwtService.sign({id:user._id})
+    const accessToken = this.jwtService.sign({id:user._id});
+    const refreshToken = this.jwtService.sign({id:user._id},{expiresIn: "30d"});
 
-    return {token}
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return {accessToken, refreshToken};
   }
 
-  async login(loginDto:LoginDto):Promise<{token:string}>{
+  async login(loginDto:LoginDto):Promise<{accessToken: string, refreshToken:string}>{
     const {email,password} = loginDto;
     const user = await this.userModel.findOne({email})
     if(!user){
@@ -38,9 +43,41 @@ export class AuthService {
       throw new UnauthorizedException('Password does not match')
     }
 
-    const token = this.jwtService.sign({id:user._id})
+    const accessToken = this.jwtService.sign({id:user._id});
+    const refreshToken = this.jwtService.sign({id:user._id},{expiresIn: "30d"});
 
-    return {token}
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return {accessToken, refreshToken};
+  }
+
+  private async validateTokens(){
+    
+  }
+
+  async refreshToken(userId: string, refreshToken:string):Promise<{accessToken: string, refreshToken:string}>{
+    const user = await this.userModel.findById(userId);
+
+    if(!user || user.refreshToken !== refreshToken){
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const newAccessToken = this.jwtService.sign({id:user._id});
+    const newRefreshToken = this.jwtService.sign({id:user._id},{expiresIn: "30d"});
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
+  async logout(userId: string):Promise<void>{
+    const user = await this.userModel.findById(userId);
+    if(user){
+      user.refreshToken = null;
+      await user.save();
+    }
   }
 
 }

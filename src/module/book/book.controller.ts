@@ -6,6 +6,8 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import {Query as ExpressQuery} from 'express-serve-static-core';
 import { AuthGuard } from '@nestjs/passport';
 
+
+
 @Controller('books')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
@@ -16,7 +18,7 @@ export class BookController {
   }
 
   @Post()
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard('jwt'))
   async createBook(@Body() book: CreateBookDto, @Req() req): Promise<Book>{
     return this.bookService.create(book,req.user);
   }
