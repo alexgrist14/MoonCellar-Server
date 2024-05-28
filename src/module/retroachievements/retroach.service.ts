@@ -13,9 +13,14 @@ export class RetroachievementsService {
   private readonly userName = 'alexgrist14';
   private readonly platforms = [...Array(78).keys()].map((i) => i + 1);
 
-  constructor(@InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>) {}
+  constructor(
+    @InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>,
+  ) {}
 
-  private async saveGamesToDatabase(platformId: number, games: IGame[]): Promise<void> {
+  private async saveGamesToDatabase(
+    platformId: number,
+    games: IGame[],
+  ): Promise<void> {
     const gameDocuments = games.map((game) => ({
       ...game,
       platformId,
@@ -67,11 +72,11 @@ export class RetroachievementsService {
   }
 
   async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
-    console.log(platformId)
-    return this.gameModel.findOne({consoleId: platformId});
+    console.log(platformId);
+    return this.gameModel.findOne({ consoleId: platformId });
   }
 
-  async findAll(): Promise<RAGame[]>{
+  async findAll(): Promise<RAGame[]> {
     return await this.gameModel.find().limit(50);
   }
 }

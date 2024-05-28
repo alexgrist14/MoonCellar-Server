@@ -27,6 +27,6 @@ export class UpdateBookDto extends PartialType(CreateBookDto) {
   @IsEnum(Category, { message: 'Please enter correct category' })
   readonly category: Category;
 
-  @IsEmpty({message: "You cannot pass user id"})
+  @IsEmpty({ message: 'You cannot pass user id' })
   readonly user: User;
 }

@@ -12,7 +12,7 @@ export class RetroachievementsController {
     return this.retroachievementsService.findGamesByPlatform(id);
   }
   @Get()
-  getAllGames():Promise<RAGame[]>{
+  getAllGames(): Promise<RAGame[]> {
     return this.retroachievementsService.findAll();
   }
 }

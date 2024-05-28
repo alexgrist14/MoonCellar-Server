@@ -23,8 +23,8 @@ export class Book {
   price: number;
   @Prop()
   category: Category;
-  @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'User'})
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   user: User;
 }
 
-export const BookSchema = SchemaFactory.createForClass(Book)
+export const BookSchema = SchemaFactory.createForClass(Book);
