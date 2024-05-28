@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, Req, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { RAGame } from '../retroachievements/schemas/retroach.schema';
+import { User } from './schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -33,4 +35,5 @@ export class AuthController {
   logout(@Body('userId') userId: string): Promise<void> {
     return this.authService.logout(userId);
   }
+
 }

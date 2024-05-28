@@ -1,11 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SignUpDto } from './dto/signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { RAGame } from '../retroachievements/schemas/retroach.schema';
 
 @Injectable()
 export class AuthService {
@@ -14,10 +15,30 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  private async generateTokensAndUpdateUser(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const accessToken = this.jwtService.sign({ id: user._id });
+    const refreshToken = this.jwtService.sign(
+      { id: user._id },
+      { expiresIn: '30d' },
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return { accessToken, refreshToken };
+  }
+
   async signUp(
     signUpDto: SignUpDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { name, email, password } = signUpDto;
+    const isEmailExsist = await this.userModel.findOne({email});
+
+    if(isEmailExsist)
+      throw new BadRequestException('Email already exsists');
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.userModel.create({
@@ -26,16 +47,7 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    const accessToken = this.jwtService.sign({ id: user._id });
-    const refreshToken = this.jwtService.sign(
-      { id: user._id },
-      { expiresIn: '30d' },
-    );
-
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    return { accessToken, refreshToken };
+    return this.generateTokensAndUpdateUser(user);
   }
 
   async login(
@@ -43,28 +55,19 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
-    if (!user) {
+
+    if (!user) 
       throw new UnauthorizedException('Email does not exsists');
-    }
+    
+
     const isPasswordMatched = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordMatched) {
+    if (!isPasswordMatched) 
       throw new UnauthorizedException('Password does not match');
-    }
+    
 
-    const accessToken = this.jwtService.sign({ id: user._id });
-    const refreshToken = this.jwtService.sign(
-      { id: user._id },
-      { expiresIn: '30d' },
-    );
-
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    return { accessToken, refreshToken };
+    return this.generateTokensAndUpdateUser(user);
   }
-
-  private async validateTokens() {}
 
   async refreshToken(
     userId: string,
@@ -95,4 +98,6 @@ export class AuthService {
       await user.save();
     }
   }
+
+
 }
