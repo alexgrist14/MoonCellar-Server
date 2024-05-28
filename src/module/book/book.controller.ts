@@ -19,7 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('books')
-@ApiTags('Тестовый шлак,  можешь даже не открывать(cрать вечно)')
+@ApiTags('Тестовый шлак, можешь даже не открывать(cрать вечно)')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
