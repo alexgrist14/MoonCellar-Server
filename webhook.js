@@ -8,13 +8,13 @@ app.use(bodyParser.json());
 
 app.post('/webhook', (req, res) => {
     if (req.headers['x-github-event'] === 'push') {
-        const repoPath = 'https://github.com/alexgrist14/Game-Gauntlet-Server';
+        const repoPath = '/root/Game-Gauntlet-Server';
         const commands = `
             cd ${repoPath} &&
             git pull &&
             npm install &&
             npm run build &&
-            pm2 restart my-nest-app
+            pm2 restart nest-server
         `;
 
         exec(commands, (err, stdout, stderr) => {
