@@ -1,10 +1,17 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
-import { RAGame } from '../retroachievements/schemas/retroach.schema';
-import { User } from './schemas/user.schema';
-import { ApiTags,ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -13,7 +20,10 @@ export class AuthController {
 
   @Post('/signup')
   @ApiOperation({ summary: 'Регистрация пользователя' })
-  @ApiResponse({ status: 201, description: 'Пользователь успешно зарегистрирован.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Пользователь успешно зарегистрирован.',
+  })
   signUp(
     @Body() signUpDto: SignUpDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
@@ -22,7 +32,10 @@ export class AuthController {
 
   @Get('/login')
   @ApiOperation({ summary: 'Авторизация пользователя' })
-  @ApiResponse({ status: 200, description: 'Пользователь успешно авторизован.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Пользователь успешно авторизован.',
+  })
   login(
     @Body() loginDto: LoginDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
@@ -45,5 +58,4 @@ export class AuthController {
   logout(@Body('userId') userId: string): Promise<void> {
     return this.authService.logout(userId);
   }
-
 }
