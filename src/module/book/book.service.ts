@@ -36,6 +36,7 @@ export class BookService {
     return books;
   }
 
+  
   async create(book: Book, user: User): Promise<Book> {
     const data = Object.assign(book, { user: user._id });
     const res = await this.bookModel.create(data);
