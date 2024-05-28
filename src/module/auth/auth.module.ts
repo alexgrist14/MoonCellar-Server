@@ -27,8 +27,8 @@ import { UserService } from '../user/user.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController,UserController],
-  providers: [AuthService,UserService, JwtStrategy],
+  controllers: [AuthController, UserController],
+  providers: [AuthService, UserService, JwtStrategy],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

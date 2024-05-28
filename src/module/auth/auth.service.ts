@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { SignUpDto } from './dto/signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
@@ -34,10 +39,9 @@ export class AuthService {
     signUpDto: SignUpDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { name, email, password } = signUpDto;
-    const isEmailExsist = await this.userModel.findOne({email});
+    const isEmailExsist = await this.userModel.findOne({ email });
 
-    if(isEmailExsist)
-      throw new BadRequestException('Email already exsists');
+    if (isEmailExsist) throw new BadRequestException('Email already exsists');
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -56,15 +60,12 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
 
-    if (!user) 
-      throw new UnauthorizedException('Email does not exsists');
-    
+    if (!user) throw new UnauthorizedException('Email does not exsists');
 
     const isPasswordMatched = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordMatched) 
+    if (!isPasswordMatched)
       throw new UnauthorizedException('Password does not match');
-    
 
     return this.generateTokensAndUpdateUser(user);
   }
@@ -98,6 +99,4 @@ export class AuthService {
       await user.save();
     }
   }
-
-
 }

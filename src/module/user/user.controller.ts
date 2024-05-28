@@ -1,4 +1,11 @@
-import { Controller, Param, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Param,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '../auth/schemas/user.schema';
 import {
@@ -27,7 +34,9 @@ export class UserController {
     @Req() req,
   ): Promise<User> {
     if (req.user._id !== userId) {
-      throw new UnauthorizedException('You can only add games to your own profile');
+      throw new UnauthorizedException(
+        'You can only add games to your own profile',
+      );
     }
     return this.usersService.addGame(userId, gameId);
   }

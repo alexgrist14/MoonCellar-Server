@@ -7,7 +7,8 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe());
-  const config = new DocumentBuilder().addBearerAuth()
+  const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('Games Api')
     .setDescription('Api for RA and IGDB')
     .setVersion('1.0')
