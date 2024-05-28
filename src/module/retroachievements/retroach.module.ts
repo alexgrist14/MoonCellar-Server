@@ -8,6 +8,7 @@ import { RAGame, RASchema } from './schemas/retroach.schema';
   imports: [
     MongooseModule.forFeature([{ name: RAGame.name, schema: RASchema }]),
   ],
+  
   controllers: [RetroachievementsController],
   providers: [RetroachievementsService],
 })
