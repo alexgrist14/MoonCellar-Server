@@ -4,12 +4,12 @@ import { RAGame } from './schemas/retroach.schema';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('retroarch')
-@Controller('retroachievements')
+@Controller('retrogames')
 export class RetroachievementsController {
   constructor(
     private readonly retroachievementsService: RetroachievementsService,
   ) {}
-  @Get('/:id')
+  @Get('/platform/:id')
   @ApiOperation({ summary: 'Получение всех игр по id консоли' })
   @ApiResponse({
     status: 200,
@@ -26,5 +26,15 @@ export class RetroachievementsController {
   })
   getAllGames(): Promise<RAGame[]> {
     return this.retroachievementsService.findAll();
+  }
+
+  @Get('/:id')
+  @ApiOperation({ summary: 'Получение игры по id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Игра успешно получена',
+  })
+  getById(@Param('id') id:string):Promise<RAGame>{
+    return this.retroachievementsService.findGameById(id);
   }
 }

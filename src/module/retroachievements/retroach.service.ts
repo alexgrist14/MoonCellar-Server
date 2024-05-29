@@ -79,4 +79,8 @@ export class RetroachievementsService {
   async findAll(): Promise<RAGame[]> {
     return await this.gameModel.find().limit(50);
   }
+
+  async findGameById(gameId: string):Promise<RAGame>{
+    return await this.gameModel.findById(gameId);
+  }
 }
