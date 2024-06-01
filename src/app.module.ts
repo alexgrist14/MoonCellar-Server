@@ -7,6 +7,7 @@ import { RetroachievementsModule } from './module/retroachievements/retroach.mod
 import { BookModule } from './module/book/book.module';
 import { AuthModule } from './module/auth/auth.module';
 import { UserModule } from './module/user/user.module';
+import { IgdbModule } from './module/igdb/igdb.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserModule } from './module/user/user.module';
     BookModule,
     AuthModule,
     UserModule,
+    IgdbModule,
   ],
 })
 export class AppModule {}
