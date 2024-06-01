@@ -39,4 +39,3 @@ export interface IGDBGame {
 export interface IGDBdb {
   game: IGDBGame[];
 }
-

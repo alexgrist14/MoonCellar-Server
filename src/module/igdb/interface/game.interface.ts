@@ -11,4 +11,3 @@ export interface IGDBGame extends Document {
   readonly themes: number[];
   readonly url: string;
 }
-

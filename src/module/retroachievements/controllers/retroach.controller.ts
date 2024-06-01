@@ -1,6 +1,13 @@
-import { BadRequestException, Body, Controller, Get, Param, Query } from '@nestjs/common';
-import { RetroachievementsService } from './retroach.service';
-import { RAGame } from './schemas/retroach.schema';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Query,
+} from '@nestjs/common';
+import { RetroachievementsService } from '../retroach.service';
+import { RAGame } from '../schemas/retroach.schema';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('retroarch')
@@ -41,17 +48,26 @@ export class RetroachievementsController {
   @Get()
   @ApiOperation({ summary: 'Получить случайные игры для заданных платформ' })
   @ApiResponse({ status: 200, description: 'Случайные игры успешно получены' })
-  @ApiResponse({ status: 400, description: 'Некорректные идентификаторы платформ' })
-  async getRandomGamesByPlatforms(@Query('platformIds') platformIds: string): Promise<{ [key: number]: RAGame[] }> {
+  @ApiResponse({
+    status: 400,
+    description: 'Некорректные идентификаторы платформ',
+  })
+  async getRandomGamesByPlatforms(
+    @Query('platformIds') platformIds: string,
+  ): Promise<{ [key: number]: RAGame[] }> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');
     }
 
-    const platformIdsArray = platformIds.split(',').map(id => parseInt(id, 10));
+    const platformIdsArray = platformIds
+      .split(',')
+      .map((id) => parseInt(id, 10));
     if (platformIdsArray.some(isNaN)) {
       throw new BadRequestException('Invalid platform IDs');
     }
 
-    return this.retroachievementsService.findRandomGamesByPlatforms(platformIdsArray);
+    return this.retroachievementsService.findRandomGamesByPlatforms(
+      platformIdsArray,
+    );
   }
 }

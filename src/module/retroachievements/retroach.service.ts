@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { buildAuthorization, getGameList } from '@retroachievements/api';
+import {
+  buildAuthorization,
+  getConsoleIds,
+  getGameList,
+} from '@retroachievements/api';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { RAGame } from './schemas/retroach.schema';
@@ -48,6 +52,15 @@ export class RetroachievementsService {
     return this.getGamesForPlatform(platformId);
   }
 
+  private async getConsoleIds() {
+    const authorization = buildAuthorization({
+      userName: this.userName,
+      webApiKey: this.apiKey,
+    });
+    const consoleIds = await getConsoleIds(authorization);
+    return consoleIds;
+  }
+
   private async onModuleInit() {
     //await this.handleCron();
   }
@@ -72,6 +85,10 @@ export class RetroachievementsService {
     }
   }
 
+  async findConsolesIds() {
+    return await this.getConsoleIds();
+  }
+
   async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
     return this.gameModel.find({ consoleId: platformId });
   }
@@ -84,7 +101,9 @@ export class RetroachievementsService {
     return await this.gameModel.findById(gameId);
   }
 
-  async findRandomGamesByPlatforms(platformIds: number[]): Promise<{ [key: number]: RAGame[] }> {
+  async findRandomGamesByPlatforms(
+    platformIds: number[],
+  ): Promise<{ [key: number]: RAGame[] }> {
     const results: { [key: number]: RAGame[] } = {};
 
     for (const platformId of platformIds) {

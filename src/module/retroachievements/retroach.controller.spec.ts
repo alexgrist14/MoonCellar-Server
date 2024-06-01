@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RetroachievementsController } from './retroach.controller';
+import { RetroachievementsController } from './controllers/retroach.controller';
 import { RetroachievementsService } from './retroach.service';
 
 describe('RetroachievementsController', () => {
