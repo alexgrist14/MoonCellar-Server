@@ -54,6 +54,7 @@ export class RetroachievementsService {
 
   @Cron('0 0 * * *')
   private async handleCron() {
+    await this.gameModel.deleteMany({});
     const allGames = {} as IDataBase;
 
     for (const platformId of this.platforms) {
@@ -72,7 +73,6 @@ export class RetroachievementsService {
   }
 
   async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
-    console.log(platformId);
     return this.gameModel.find({ consoleId: platformId });
   }
 
@@ -89,7 +89,6 @@ export class RetroachievementsService {
 
     for (const platformId of platformIds) {
       const games = await this.findGamesByPlatform(platformId);
-      console.log(games)
       const randomGames = this.getRandomSubset(games, 16);
       results[platformId] = randomGames;
     }
