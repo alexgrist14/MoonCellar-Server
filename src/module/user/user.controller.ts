@@ -32,7 +32,7 @@ import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 @Controller('user')
 export class UserController {
   constructor(private readonly usersService: UserService) {}
-  @Post(':id/games/:gameId')
+  @Patch(':id/games/:gameId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Добавить игру в категорию' })
