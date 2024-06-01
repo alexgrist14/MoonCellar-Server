@@ -34,7 +34,7 @@ export class RetroachievementsController {
     status: 200,
     description: 'Игра успешно получена',
   })
-  getById(@Param('id') id:string):Promise<RAGame>{
+  getById(@Param('id') id: string): Promise<RAGame> {
     return this.retroachievementsService.findGameById(id);
   }
 }

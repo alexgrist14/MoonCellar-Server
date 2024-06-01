@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Res, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -15,10 +16,19 @@ export class AuthController {
     status: 201,
     description: 'Пользователь успешно зарегистрирован.',
   })
-  signUp(
+  async signUp(
     @Body() signUpDto: SignUpDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.signUp(signUpDto);
+    @Res() res: Response,
+  ): Promise<Response> {
+    const { accessToken, refreshToken } =
+      await this.authService.signUp(signUpDto);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ accessToken });
   }
 
   @Get('/login')
@@ -27,10 +37,19 @@ export class AuthController {
     status: 200,
     description: 'Пользователь успешно авторизован.',
   })
-  login(
+  async login(
     @Body() loginDto: LoginDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.login(loginDto);
+    @Res() res: Response,
+  ): Promise<Response> {
+    const { accessToken, refreshToken } =
+      await this.authService.login(loginDto);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(HttpStatus.OK).json({ accessToken });
   }
 
   @Post('/refresh-token')
@@ -46,7 +65,18 @@ export class AuthController {
   @Post('/logout')
   @ApiOperation({ summary: 'Выход пользователя' })
   @ApiResponse({ status: 200, description: 'Пользователь успешно вышел.' })
-  logout(@Body('userId') userId: string): Promise<void> {
-    return this.authService.logout(userId);
+  async logout(
+    @Body('userId') userId: string,
+    @Res() res: Response,
+  ): Promise<Response> {
+    await this.authService.logout(userId);
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+    });
+
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Successfully logged out' });
   }
 }

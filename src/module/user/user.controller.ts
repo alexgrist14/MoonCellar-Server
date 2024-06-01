@@ -1,7 +1,12 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -30,22 +35,71 @@ export class UserController {
   @Post(':id/games/:gameId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Добавление игры пользователю' })
+  @ApiOperation({ summary: 'Добавить игру в категорию' })
   @ApiResponse({
-    status: 201,
-    description: 'Игра успешно добавлена пользователю.',
+    status: 200,
+    description: 'Игра успешно добавлена в категорию.',
   })
-  async addGame(
+  @ApiResponse({
+    status: 400,
+    description: 'Некорректная категория или игра уже в категории.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Пользователь или игра не найдены.',
+  })
+  @HttpCode(HttpStatus.OK)
+  async addGameToCaregory(
     @Param('id') userId: string,
     @Param('gameId') gameId: string,
-    @Req() req,
-  ): Promise<User> {
-    if (req.user._id !== userId) {
-      throw new UnauthorizedException(
-        'You can only add games to your own profile',
-      );
+    @Query('category') category: string,
+  ): Promise<{ message: string }> {
+    try {
+      await this.usersService.addGameToCategory(userId, gameId, category);
+      return { message: `Game successfully added to ${category}` };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+
+      throw new BadRequestException('Failed to add game to category');
     }
-    return this.usersService.addGame(userId, gameId);
+  }
+
+  @Delete(':id/games/:gameId')
+  @ApiOperation({ summary: 'Удалить игру из категории' })
+  @ApiResponse({
+    status: 200,
+    description: 'Игра успешно удалена из категории.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Некорректная категория или игра отсутствует в категории.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Пользователь или игра не найдены.',
+  })
+  @HttpCode(HttpStatus.OK)
+  async removeGameFromCategory(
+    @Param('id') userId: string,
+    @Param('gameId') gameId: string,
+    @Query('category') category: string,
+  ): Promise<{ message: string }> {
+    try {
+      await this.usersService.removeGameFromCategory(userId, gameId, category);
+      return { message: `Game successfully removed from ${category}` };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+
+      throw new BadRequestException('Failed to remove game from category');
+    }
   }
 
   @Get(':id')
@@ -78,8 +132,8 @@ export class UserController {
     @Body() updateEmailDto: UpdateEmailDto,
     @Req() req,
   ): Promise<User> {
-    console.log(req.user._id)
-    console.log(userId)
+    console.log(req.user._id);
+    console.log(userId);
 
     return this.usersService.updateEmail(userId, updateEmailDto);
   }

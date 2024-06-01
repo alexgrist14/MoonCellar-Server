@@ -1,9 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document, Types } from 'mongoose';
-import {
-  RAGame,
-  RASchema,
-} from 'src/module/retroachievements/schemas/retroach.schema';
+import { Document, Types } from 'mongoose';
 
 @Schema({
   timestamps: true,
@@ -17,8 +13,27 @@ export class User extends Document {
   password: string;
   @Prop({ type: String })
   refreshToken?: string;
-  @Prop({ type: [Types.ObjectId], ref: 'RAgame', default: [] })
-  games: Types.ObjectId[];
+  @Prop({
+    type: {
+      completed: [{ type: String, ref: 'RAGame' }],
+      wishlist: [{ type: String, ref: 'RAGame' }],
+      playing: [{ type: String, ref: 'RAGame' }],
+      dropped: [{ type: String, ref: 'RAGame' }],
+    },
+    ref: 'RAgame',
+    default: {
+      completed: [],
+      wishlist: [],
+      playing: [],
+      dropped: [],
+    },
+  })
+  games: {
+    completed: string[];
+    wishlist: string[];
+    playing: string[];
+    dropped: string[];
+  };
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

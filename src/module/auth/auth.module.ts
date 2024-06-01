@@ -9,10 +9,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UserController } from '../user/user.controller';
 import { UserService } from '../user/user.service';
+import { RAGame, RASchema } from '../retroachievements/schemas/retroach.schema';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: RAGame.name, schema: RASchema }]),
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

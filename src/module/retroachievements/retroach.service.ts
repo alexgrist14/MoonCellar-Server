@@ -80,7 +80,7 @@ export class RetroachievementsService {
     return await this.gameModel.find().limit(50);
   }
 
-  async findGameById(gameId: string):Promise<RAGame>{
+  async findGameById(gameId: string): Promise<RAGame> {
     return await this.gameModel.findById(gameId);
   }
 }
