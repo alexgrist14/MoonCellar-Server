@@ -73,7 +73,7 @@ export class RetroachievementsService {
 
   async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
     console.log(platformId);
-    return this.gameModel.findOne({ consoleId: platformId });
+    return this.gameModel.find({ consoleId: platformId });
   }
 
   async findAll(): Promise<RAGame[]> {
@@ -82,5 +82,27 @@ export class RetroachievementsService {
 
   async findGameById(gameId: string): Promise<RAGame> {
     return await this.gameModel.findById(gameId);
+  }
+
+  async findRandomGamesByPlatforms(platformIds: number[]): Promise<{ [key: number]: RAGame[] }> {
+    const results: { [key: number]: RAGame[] } = {};
+
+    for (const platformId of platformIds) {
+      const games = await this.findGamesByPlatform(platformId);
+      console.log(games)
+      const randomGames = this.getRandomSubset(games, 16);
+      results[platformId] = randomGames;
+    }
+
+    return results;
+  }
+
+  private getRandomSubset<T>(array: T[], size: number): T[] {
+    const shuffled = Array.from(array);
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, size);
   }
 }
