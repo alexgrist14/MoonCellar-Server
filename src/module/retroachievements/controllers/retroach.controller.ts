@@ -60,7 +60,7 @@ export class RetroachievementsController {
   })
   async getRandomGamesByPlatforms(
     @Query('platformIds') platformIds: string,
-    @Body() onlyWithAchievements: boolean,
+    @Query('onlyWithAchievements') onlyWithAchievements: boolean,
   ): Promise<{ [key: number]: RAGame[] }> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');
