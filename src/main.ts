@@ -10,7 +10,11 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://gigatualet.ru',
+      'https://gamedisu.ru',
+    ],
   });
   app.useGlobalPipes(new ValidationPipe());
   const config = new DocumentBuilder()
