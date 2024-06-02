@@ -25,12 +25,12 @@ export class RetroachievementsController {
   getGamesByPlatform(
     @Param('id') id: number,
     @Query('onlyWithAchievements') onlyWithAchievements: boolean,
-    @Query('withoutSubsets') withoutSubsets: boolean
+    @Query('withoutSubsets') withoutSubsets: boolean,
   ): Promise<RAGame[]> {
     return this.retroachievementsService.findGamesByPlatform(
       id,
       onlyWithAchievements,
-      withoutSubsets
+      withoutSubsets,
     );
   }
   // @Get()
@@ -63,7 +63,7 @@ export class RetroachievementsController {
   async getRandomGamesByPlatforms(
     @Query('platformIds') platformIds: string,
     @Query('onlyWithAchievements') onlyWithAchievements: boolean,
-    @Query('withoutSubsets') withoutSubsets: boolean
+    @Query('withoutSubsets') withoutSubsets: boolean,
   ): Promise<{ [key: number]: RAGame[] }> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');
@@ -79,7 +79,7 @@ export class RetroachievementsController {
     return this.retroachievementsService.findRandomGamesByPlatforms(
       platformIdsArray,
       onlyWithAchievements,
-      withoutSubsets
+      withoutSubsets,
     );
   }
 }

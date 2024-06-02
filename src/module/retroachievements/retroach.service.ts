@@ -92,16 +92,18 @@ export class RetroachievementsService {
   async findGamesByPlatform(
     platformId: number,
     onlyWithAchievements,
-    withoutSubsets
+    withoutSubsets,
   ): Promise<RAGame[]> {
     let games = await this.gameModel.find({ consoleId: platformId });
-    
+
     if (onlyWithAchievements === 'true') {
-      games = games.filter(game => game.numAchievements > 0);
+      games = games.filter((game) => game.numAchievements > 0);
     }
-  
+
     if (withoutSubsets === 'true') {
-      games = games.filter(game => !game.title.includes('~') && !game.title.includes('Subset'));
+      games = games.filter(
+        (game) => !game.title.includes('~') && !game.title.includes('Subset'),
+      );
     }
 
     return games;
@@ -118,7 +120,7 @@ export class RetroachievementsService {
   async findRandomGamesByPlatforms(
     platformIds: number[],
     onlyWithAchievements: boolean,
-    withoutSubsets: boolean
+    withoutSubsets: boolean,
   ): Promise<{ [key: number]: RAGame[] }> {
     const results: { [key: number]: RAGame[] } = {};
 
@@ -126,7 +128,7 @@ export class RetroachievementsService {
       const games = await this.findGamesByPlatform(
         platformId,
         onlyWithAchievements,
-        withoutSubsets
+        withoutSubsets,
       );
       const randomGames = this.getRandomSubset(games, 16);
       results[platformId] = randomGames;
