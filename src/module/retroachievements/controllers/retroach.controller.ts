@@ -22,8 +22,14 @@ export class RetroachievementsController {
     status: 200,
     description: 'Игры успешно получены',
   })
-  getGamesByPlatform(@Param('id') id: number): Promise<RAGame[]> {
-    return this.retroachievementsService.findGamesByPlatform(id);
+  getGamesByPlatform(
+    @Param('id') id: number,
+    @Body() onlyWithAchievements: boolean,
+  ): Promise<RAGame[]> {
+    return this.retroachievementsService.findGamesByPlatform(
+      id,
+      onlyWithAchievements,
+    );
   }
   // @Get()
   // @ApiOperation({ summary: 'Получение всех игр' })
@@ -54,6 +60,7 @@ export class RetroachievementsController {
   })
   async getRandomGamesByPlatforms(
     @Query('platformIds') platformIds: string,
+    @Body() onlyWithAchievements: boolean,
   ): Promise<{ [key: number]: RAGame[] }> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');
@@ -68,6 +75,7 @@ export class RetroachievementsController {
 
     return this.retroachievementsService.findRandomGamesByPlatforms(
       platformIdsArray,
+      onlyWithAchievements,
     );
   }
 }

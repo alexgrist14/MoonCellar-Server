@@ -89,8 +89,15 @@ export class RetroachievementsService {
     return await this.getConsoleIds();
   }
 
-  async findGamesByPlatform(platformId: number): Promise<RAGame[]> {
-    return this.gameModel.find({ consoleId: platformId });
+  async findGamesByPlatform(
+    platformId: number,
+    onlyWithAchievements,
+  ): Promise<RAGame[]> {
+    const games = await this.gameModel.find({ consoleId: platformId });
+    if (onlyWithAchievements)
+      return games.filter((game) => game.numAchievements > 0);
+
+    return games;
   }
 
   async findAll(): Promise<RAGame[]> {
@@ -103,11 +110,15 @@ export class RetroachievementsService {
 
   async findRandomGamesByPlatforms(
     platformIds: number[],
+    onlyWithAchievements: boolean = false,
   ): Promise<{ [key: number]: RAGame[] }> {
     const results: { [key: number]: RAGame[] } = {};
 
     for (const platformId of platformIds) {
-      const games = await this.findGamesByPlatform(platformId);
+      const games = await this.findGamesByPlatform(
+        platformId,
+        onlyWithAchievements,
+      );
       const randomGames = this.getRandomSubset(games, 16);
       results[platformId] = randomGames;
     }
