@@ -13,7 +13,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'https://gigatualet.ru',
-      'https://gamedisu.ru',
+      'https://gemdisu.ru',
     ],
   });
   app.useGlobalPipes(new ValidationPipe());
