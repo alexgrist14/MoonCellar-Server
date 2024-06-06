@@ -1,17 +1,15 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignUpDto } from './dto/signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { RAGame } from '../retroachievements/schemas/retroach.schema';
 
 @Injectable()
 export class AuthService {
@@ -39,9 +37,9 @@ export class AuthService {
     signUpDto: SignUpDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { name, email, password } = signUpDto;
-    const isEmailExsist = await this.userModel.findOne({ email });
+    const isEmailExist = await this.userModel.findOne({ email });
 
-    if (isEmailExsist) throw new BadRequestException('Email already exsists');
+    if (isEmailExist) throw new BadRequestException('Email already exsists');
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -57,6 +55,7 @@ export class AuthService {
   async login(
     loginDto: LoginDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    console.log(loginDto);
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
 

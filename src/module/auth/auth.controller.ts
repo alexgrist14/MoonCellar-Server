@@ -20,7 +20,8 @@ export class AuthController {
     @Body() signUpDto: SignUpDto,
     @Res() res: Response,
   ): Promise<Response> {
-    const { accessToken, refreshToken } =
+    try{
+      const { accessToken, refreshToken } =
       await this.authService.signUp(signUpDto);
 
     res.cookie('refreshToken', refreshToken, {
@@ -28,10 +29,14 @@ export class AuthController {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ accessToken });
+    return res.status(HttpStatus.OK).json({accessToken});
+    }catch(err){
+      console.log(err);
+      return err;
+    }
   }
 
-  @Get('/login')
+  @Post('/login')
   @ApiOperation({ summary: 'Авторизация пользователя' })
   @ApiResponse({
     status: 200,
@@ -41,6 +46,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res() res: Response,
   ): Promise<Response> {
+    console.log(loginDto);
     const { accessToken, refreshToken } =
       await this.authService.login(loginDto);
 
@@ -49,7 +55,7 @@ export class AuthController {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(HttpStatus.OK).json({ accessToken });
+    return res.status(HttpStatus.OK).json({accessToken});
   }
 
   @Post('/refresh-token')
