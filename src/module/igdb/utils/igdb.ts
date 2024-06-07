@@ -1,14 +1,14 @@
 import axios from 'axios';
-import { Model } from 'mongoose';
-import { IGDBGameDocument } from '../schemas/igdb-games.schema';
+import { IGDBAuth } from '../interface/auth.interface';
+import { ParserType } from '../interface/common.interface';
 
 export const igdbAuth = () =>
-  axios.post(
+  axios.post<IGDBAuth>(
     `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
   );
 
-export const igdbAgent = (url: string, token: string, params?: any) => {
-  return axios.request({
+export const igdbAgent = <T>(url: string, token: string, params?: any) => {
+  return axios.request<T>({
     url: 'https://gigatualet.ru:4000',
     method: 'post',
     withCredentials: false,
@@ -33,7 +33,7 @@ const getLink = (type: string) => {
     case 'modes':
       return 'https://api.igdb.com/v4/game_modes';
     case 'platforms':
-      return 'https://api.igdb.com/v4/paltforms';
+      return 'https://api.igdb.com/v4/platforms';
     case 'families':
       return 'https://api.igdb.com/v4/platform_families';
   }
@@ -56,32 +56,28 @@ const getFields = (type: string) => {
   }
 };
 
-const getModel = (type: string) => {
-  switch (type) {
-    case 'games':
-      return Model<IGDBGameDocument>;
-  }
-};
-
-let run = 0;
-
 const parser = async ({
   token,
   callback,
   type,
-  model,
+  parsingCallback,
 }: {
   token: string;
-  callback: (games: any) => void;
-  type: string;
-  model: Model<IGDBGameDocument>;
+  callback: (items: unknown) => Promise<unknown>;
+  type: ParserType;
+  parsingCallback?: (items: unknown) => unknown;
 }) => {
   const url = getLink(type);
   const limit = 500;
   const fields = getFields(type);
 
-  const { data } = await igdbAgent(url + '/count', token);
+  const { data } = await igdbAgent<{ count: number }>(url + '/count', token);
   const total = data.count;
+
+  let run = 0;
+  const items = [];
+
+  console.log(`Start parsing ${total} items with type: ${type}`);
 
   const fetch = async () => {
     return igdbAgent(url, token, {
@@ -91,43 +87,44 @@ const parser = async ({
     });
   };
 
-  const hui = async () => {
+  const hui = async (): Promise<unknown> => {
     try {
       const response = await fetch();
 
       if (response.status !== 200) {
-        hui();
+        return hui();
       } else {
-        console.log(
-          `offset: ${run * limit} | length: ${(await model.countDocuments({})) + response.data.length}`,
-        );
-        callback(response.data);
-
         run++;
 
-        if (run <= total / limit) {
-          hui();
+        if (run <= Math.ceil(total / limit)) {
+          !!parsingCallback
+            ? items.push(...((await parsingCallback(response.data)) as []))
+            : items.push(...(response.data as []));
+          console.log(run, items.length);
+          return hui();
+        } else {
+          return callback(items);
         }
       }
     } catch (e) {
       console.log(e);
-      hui();
+      return hui();
     }
   };
 
-  hui();
+  return hui();
 };
 
 export const igdbParser = (
   token: string,
-  action: 'games' | 'genres' | 'covers' | 'modes' | 'platforms' | 'families',
-  callback: (games: any[]) => void,
-  model: Model<IGDBGameDocument>,
+  action: ParserType,
+  callback: (games: unknown) => Promise<unknown>,
+  parsingCallback?: (items: unknown) => unknown,
 ) => {
-  parser({
+  return parser({
     token,
     callback,
     type: action,
-    model,
+    parsingCallback,
   });
 };

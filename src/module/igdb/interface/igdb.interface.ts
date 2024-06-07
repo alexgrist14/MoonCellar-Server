@@ -4,6 +4,12 @@ export interface IGDBCover {
   url: string;
 }
 
+export interface IGDBMode {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface IGDBGenre {
   id: number;
   name: string;
@@ -16,6 +22,9 @@ export interface IGDBPlatform {
   created_at: number;
   name: string;
   slug: string;
+  platform_family: number;
+  platform_logo: number;
+  generation: number;
 }
 
 export interface IGDBFamily {
@@ -34,8 +43,10 @@ export interface IGDBGame {
   tags: number[];
   themes: number[];
   url: string;
-}
-
-export interface IGDBdb {
-  game: IGDBGame[];
+  cover: string;
+  screenshots: number[];
+  total_rating: number;
+  artworks: number[];
+  franchise: number;
+  franchises: number[];
 }
