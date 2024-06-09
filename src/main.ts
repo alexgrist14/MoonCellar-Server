@@ -10,11 +10,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: [
-      'http://localhost:3000',
-      'https://gigatualet.ru',
-      'https://gemdisu.ru',
-    ],
+    origin: ['http://localhost:3000', 'https://mooncellar.space'],
   });
   app.useGlobalPipes(new ValidationPipe());
   const config = new DocumentBuilder()

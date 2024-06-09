@@ -10,9 +10,6 @@ export class IgdbController {
   @Get('/games')
   @ApiOperation({ summary: 'Get games' })
   @ApiResponse({ status: 200, description: 'Get over here!' })
-  @ApiQuery({ name: 'genres', required: false, isArray: true })
-  @ApiQuery({ name: 'platforms', required: false, isArray: true })
-  @ApiQuery({ name: 'game_modes', required: false, isArray: true })
   @ApiQuery({ name: 'isRandom', required: false })
   @ApiQuery({
     name: 'page',
@@ -22,25 +19,28 @@ export class IgdbController {
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'rating', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'mode', required: false, enum: ['any', 'all'] })
+  @ApiQuery({ name: 'selected', required: false })
+  @ApiQuery({ name: 'excluded', required: false })
   getGames(
     @Query('take') take: number,
     @Query('page') page: number,
     @Query('isRandom') isRandom: boolean,
-    @Query('genres') genres: string[],
-    @Query('platforms') platforms: string[],
-    @Query('game_modes') modes: string[],
+    @Query('selected') selected: string,
+    @Query('excluded') excluded: string,
     @Query('rating') rating: number,
     @Query('search') search: string,
+    @Query('mode') mode: 'any' | 'all',
   ) {
     return this.service.getGames({
       take,
       page,
       isRandom,
-      genres,
-      platforms,
-      modes,
+      selected: selected?.includes('{') ? JSON.parse(selected) : undefined,
+      excluded: excluded?.includes('{') ? JSON.parse(excluded) : undefined,
       rating,
       search,
+      mode,
     });
   }
 
