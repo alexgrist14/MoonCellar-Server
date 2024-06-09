@@ -164,11 +164,11 @@ export class IGDBService {
           }),
           ...(!!excluded?.genres?.length && {
             genres: {
-              $nin: Array.isArray(selected?.genres)
-                ? selected?.genres.map(
+              $nin: Array.isArray(excluded?.genres)
+                ? excluded?.genres.map(
                     (genre) => new mongoose.Types.ObjectId(genre),
                   )
-                : [new mongoose.Types.ObjectId(selected?.genres)],
+                : [new mongoose.Types.ObjectId(excluded?.genres)],
             },
           }),
           ...(!!selected?.platforms?.length && {
@@ -191,11 +191,11 @@ export class IGDBService {
           }),
           ...(!!excluded?.platforms?.length && {
             platforms: {
-              $nin: Array.isArray(selected?.platforms)
-                ? selected?.platforms.map(
+              $nin: Array.isArray(excluded?.platforms)
+                ? excluded?.platforms.map(
                     (platform) => new mongoose.Types.ObjectId(platform),
                   )
-                : [new mongoose.Types.ObjectId(selected?.platforms)],
+                : [new mongoose.Types.ObjectId(excluded?.platforms)],
             },
           }),
           ...(!!selected?.modes?.length && {
@@ -217,12 +217,12 @@ export class IGDBService {
                   },
           }),
           ...(!!excluded?.modes?.length && {
-            modes: {
-              $nin: Array.isArray(selected?.modes)
-                ? selected?.modes.map(
+            game_modes: {
+              $nin: Array.isArray(excluded?.modes)
+                ? excluded?.modes.map(
                     (mode) => new mongoose.Types.ObjectId(mode),
                   )
-                : [new mongoose.Types.ObjectId(selected?.modes)],
+                : [new mongoose.Types.ObjectId(excluded?.modes)],
             },
           }),
         },
