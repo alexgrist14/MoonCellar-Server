@@ -1,16 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RetroachievementsService } from '../retroach.service';
+import { ConsoleService } from '../services/console.service';
 
 @ApiTags('RAconsoles')
 @Controller('ra-consoles')
 export class RAConsolesController {
-  constructor(
-    private readonly retroachievementsService: RetroachievementsService,
-  ) {}
+  constructor(private readonly consoleService: ConsoleService) {}
 
   @Get()
-  async getConsoleIds() {
-    return this.retroachievementsService.findConsolesIds();
+  async getAllConsoles() {
+    return this.consoleService.findAll();
   }
 }

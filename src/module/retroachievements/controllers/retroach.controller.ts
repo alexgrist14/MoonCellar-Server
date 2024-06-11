@@ -6,7 +6,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { RetroachievementsService } from '../retroach.service';
+import { RetroachievementsService } from '../services/retroach.service';
 import { RAGame } from '../schemas/retroach.schema';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -61,25 +61,18 @@ export class RetroachievementsController {
     description: 'Некорректные идентификаторы платформ',
   })
   async getRandomGamesByPlatforms(
-    @Query('platformIds') platformIds: string,
-    @Query('onlyWithAchievements') onlyWithAchievements: boolean,
-    @Query('withoutSubsets') withoutSubsets: boolean,
-  ): Promise<{ [key: number]: RAGame[] }> {
+    @Query('platformIds') platformIds: string[],
+    @Query('onlyWithAchievements') isOnlyWithAchievements: boolean,
+    @Query('withoutSubsets') isWithoutSubsets: boolean,
+  ): Promise<RAGame[]> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');
     }
 
-    const platformIdsArray = platformIds
-      .split(',')
-      .map((id) => parseInt(id, 10));
-    if (platformIdsArray.some(isNaN)) {
-      throw new BadRequestException('Invalid platform IDs');
-    }
-
     return this.retroachievementsService.findRandomGamesByPlatforms(
-      platformIdsArray,
-      onlyWithAchievements,
-      withoutSubsets,
+      platformIds,
+      String(isOnlyWithAchievements),
+      String(isWithoutSubsets),
     );
   }
 }

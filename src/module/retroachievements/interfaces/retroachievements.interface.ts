@@ -1,4 +1,4 @@
-export interface IGame {
+export interface IRAGame {
   title: string;
   id: number;
   consoleId: number;
@@ -13,5 +13,5 @@ export interface IGame {
 }
 
 export interface IDataBase {
-  game: IGame[];
+  game: IRAGame[];
 }

@@ -20,17 +20,17 @@ export class AuthController {
     @Body() signUpDto: SignUpDto,
     @Res() res: Response,
   ): Promise<Response> {
-    try{
+    try {
       const { accessToken, refreshToken } =
-      await this.authService.signUp(signUpDto);
+        await this.authService.signUp(signUpDto);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
 
-    return res.status(HttpStatus.OK).json({accessToken});
-    }catch(err){
+      return res.status(HttpStatus.OK).json({ accessToken });
+    } catch (err) {
       console.log(err);
       return err;
     }
@@ -55,7 +55,7 @@ export class AuthController {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(HttpStatus.OK).json({accessToken});
+    return res.status(HttpStatus.OK).json({ accessToken });
   }
 
   @Post('/refresh-token')
