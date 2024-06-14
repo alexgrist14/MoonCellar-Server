@@ -11,10 +11,10 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/signup')
-  @ApiOperation({ summary: 'Регистрация пользователя' })
+  @ApiOperation({ summary: 'User registration' })
   @ApiResponse({
     status: 201,
-    description: 'Пользователь успешно зарегистрирован.',
+    description: 'Registration successful',
   })
   async signUp(
     @Body() signUpDto: SignUpDto,
@@ -37,10 +37,10 @@ export class AuthController {
   }
 
   @Post('/login')
-  @ApiOperation({ summary: 'Авторизация пользователя' })
+  @ApiOperation({ summary: 'User auth' })
   @ApiResponse({
     status: 200,
-    description: 'Пользователь успешно авторизован.',
+    description: 'Auth successful',
   })
   async login(
     @Body() loginDto: LoginDto,
@@ -59,8 +59,8 @@ export class AuthController {
   }
 
   @Post('/refresh-token')
-  @ApiOperation({ summary: 'Обновление токенов' })
-  @ApiResponse({ status: 200, description: 'Токены успешно обновлены.' })
+  @ApiOperation({ summary: 'Refresh token' })
+  @ApiResponse({ status: 200, description: 'Refresh successful' })
   refreshToken(
     @Body('userId') userId: string,
     @Body('refreshToken') refreshToken: string,
@@ -69,8 +69,8 @@ export class AuthController {
   }
 
   @Post('/logout')
-  @ApiOperation({ summary: 'Выход пользователя' })
-  @ApiResponse({ status: 200, description: 'Пользователь успешно вышел.' })
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
     @Body('userId') userId: string,
     @Res() res: Response,

@@ -10,7 +10,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: ['http://localhost:3000', 'https://mooncellar.space'],
+    origin: [process.env.LOCAL_CONNECTION, 'https://mooncellar.space'],
   });
   app.useGlobalPipes(new ValidationPipe());
   const config = new DocumentBuilder()

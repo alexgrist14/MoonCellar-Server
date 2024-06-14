@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
   Param,
@@ -17,20 +16,20 @@ export class RetroachievementsController {
     private readonly retroachievementsService: RetroachievementsService,
   ) {}
   @Get('/platform/:id')
-  @ApiOperation({ summary: 'Получение всех игр по id консоли' })
+  @ApiOperation({ summary: 'Get all games by console ID' })
   @ApiResponse({
     status: 200,
-    description: 'Игры успешно получены',
+    description: 'Games received successfully',
   })
   getGamesByPlatform(
-    @Param('id') id: number,
-    @Query('onlyWithAchievements') onlyWithAchievements: boolean,
-    @Query('withoutSubsets') withoutSubsets: boolean,
+    @Param('id') id: string,
+    @Query('onlyWithAchievements') onlyWithAchievements?: boolean,
+    @Query('withoutSubsets') withoutSubsets?: boolean,
   ): Promise<RAGame[]> {
     return this.retroachievementsService.findGamesByPlatform(
       id,
-      onlyWithAchievements,
-      withoutSubsets,
+      String(onlyWithAchievements),
+      String(withoutSubsets),
     );
   }
   // @Get()
@@ -44,26 +43,29 @@ export class RetroachievementsController {
   // }
 
   @Get('/:id')
-  @ApiOperation({ summary: 'Получение игры по id' })
+  @ApiOperation({ summary: 'Get game by ID' })
   @ApiResponse({
     status: 200,
-    description: 'Игра успешно получена',
+    description: 'Game received successfully',
   })
   getById(@Param('id') id: string): Promise<RAGame> {
     return this.retroachievementsService.findGameById(id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Получить случайные игры для заданных платформ' })
-  @ApiResponse({ status: 200, description: 'Случайные игры успешно получены' })
+  @ApiOperation({ summary: 'Get random games for given platforms' })
+  @ApiResponse({
+    status: 200,
+    description: 'Random games received successfully',
+  })
   @ApiResponse({
     status: 400,
-    description: 'Некорректные идентификаторы платформ',
+    description: 'Incorrect platform identifiers',
   })
   async getRandomGamesByPlatforms(
     @Query('platformIds') platformIds: string[],
-    @Query('onlyWithAchievements') isOnlyWithAchievements: boolean,
-    @Query('withoutSubsets') isWithoutSubsets: boolean,
+    @Query('onlyWithAchievements') isOnlyWithAchievements?: boolean,
+    @Query('withoutSubsets') isWithoutSubsets?: boolean,
   ): Promise<RAGame[]> {
     if (!platformIds) {
       throw new BadRequestException('Platform IDs are required');

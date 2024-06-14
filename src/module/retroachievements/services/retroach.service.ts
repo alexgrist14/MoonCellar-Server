@@ -6,6 +6,7 @@ import { RAGame } from '../schemas/retroach.schema';
 import mongoose from 'mongoose';
 import { IDataBase } from '../interfaces/retroachievements.interface';
 import { RAConsole } from '../schemas/console.schema';
+import { ConsoleService } from './console.service';
 
 @Injectable()
 export class RetroachievementsService {
@@ -13,6 +14,7 @@ export class RetroachievementsService {
     @InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>,
     @InjectModel(RAConsole.name)
     private consoleModel: mongoose.Model<RAConsole>,
+    private readonly consoleService: ConsoleService,
   ) {}
   private readonly platforms = [...Array(78).keys()].map((i) => i + 1);
   private readonly userName = 'alexgrist14';
@@ -44,15 +46,11 @@ export class RetroachievementsService {
     });
 
     const updatedGameList = gameList.map((game) => ({
-      title: game.title,
-      id: game.id,
+      ...game,
       consoleId: platform._id,
-      consoleName: game.consoleName,
-      imageIcon: game.imageIcon,
-      numAchievements: game.numAchievements,
     }));
 
-    return updatedGameList as unknown as RAGame[];
+    return updatedGameList as RAGame[];
   }
 
   private async getGamesForPlatformWithDelay(
@@ -63,12 +61,14 @@ export class RetroachievementsService {
     return this.getGamesForPlatform(platformId);
   }
 
-  private async onModuleInit() {
-    //await this.handleCron();
+  //@Cron('0 0 * * *')
+  async parseConsolesAndGames() {
+    await this.consoleService
+      .parseConsoles(await this.consoleService.getConsoles())
+      .then(async () => await this.parseGames());
   }
 
-  @Cron('0 0 * * *')
-  private async handleCron() {
+  private async parseGames() {
     await this.gameModel.deleteMany({});
     const allGames = {} as IDataBase;
 
@@ -87,32 +87,55 @@ export class RetroachievementsService {
     }
   }
 
-  async findGamesByPlatform(
-    platformId: number,
-    isOnlyWithAchievements,
-    isWithoutSubsets,
-  ): Promise<RAGame[]> {
-    let games = await this.gameModel.find({ consoleId: platformId });
-
-    if (isOnlyWithAchievements === 'true') {
-      games = games.filter((game) => game.numAchievements > 0);
-    }
-
-    if (isWithoutSubsets === 'true') {
-      games = games.filter(
-        (game) => !game.title.includes('~') && !game.title.includes('Subset'),
-      );
-    }
-
-    return games;
-  }
-
   async findAll(): Promise<RAGame[]> {
     return await this.gameModel.find().limit(50);
   }
 
   async findGameById(gameId: string): Promise<RAGame> {
     return await this.gameModel.findById(gameId);
+  }
+
+  async findGamesByPlatform(
+    platformId: string,
+    isOnlyWithAchievements: string,
+    isWithoutSubsets: string,
+  ): Promise<RAGame[]> {
+    const games = await this.gameModel.aggregate([
+      this.aggregateGames(platformId, isOnlyWithAchievements, isWithoutSubsets),
+    ]);
+
+    return games;
+  }
+
+  private aggregateGames(
+    platformIds: string | string[],
+    isOnlyWithAchievements: string,
+    isWithoutSubsets: string,
+  ) {
+    const pipeline = {
+      $match: {
+        numAchievements:
+          isOnlyWithAchievements === 'true'
+            ? {
+                $gt: 0,
+              }
+            : { $gte: 0 },
+        ...(isWithoutSubsets === 'true' && {
+          title: {
+            $not: {
+              $regex: /(Subset|~)/,
+            },
+          },
+        }),
+        consoleId: {
+          $in: Array.isArray(platformIds)
+            ? platformIds.map((el) => new mongoose.Types.ObjectId(el))
+            : [new mongoose.Types.ObjectId(platformIds)],
+        },
+      },
+    };
+
+    return pipeline;
   }
 
   async findRandomGamesByPlatforms(
@@ -122,28 +145,11 @@ export class RetroachievementsService {
   ): Promise<RAGame[]> {
     console.log(Array.isArray(platformIds));
     const games = await this.gameModel.aggregate([
-      {
-        $match: {
-          numAchievements:
-            isOnlyWithAchievements === 'true'
-              ? {
-                  $gt: 0,
-                }
-              : { $gte: 0 },
-          ...(isWithoutSubsets === 'true' && {
-            title: {
-              $not: {
-                $regex: /(Subset|~)/,
-              },
-            },
-          }),
-          consoleId: {
-            $in: Array.isArray(platformIds)
-              ? platformIds.map((el) => new mongoose.Types.ObjectId(el))
-              : [new mongoose.Types.ObjectId(platformIds)],
-          },
-        },
-      },
+      this.aggregateGames(
+        platformIds,
+        isOnlyWithAchievements,
+        isWithoutSubsets,
+      ),
       {
         $sample: {
           size: 16,

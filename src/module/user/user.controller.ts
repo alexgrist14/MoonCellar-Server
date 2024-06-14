@@ -9,7 +9,6 @@ import {
   NotFoundException,
   Param,
   Patch,
-  Post,
   Query,
   Req,
   UnauthorizedException,
@@ -35,18 +34,18 @@ export class UserController {
   @Patch(':id/games/:gameId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Добавить игру в категорию' })
+  @ApiOperation({ summary: 'Add game to category' })
   @ApiResponse({
     status: 200,
-    description: 'Игра успешно добавлена в категорию.',
+    description: 'Game added successfully',
   })
   @ApiResponse({
     status: 400,
-    description: 'Некорректная категория или игра уже в категории.',
+    description: 'Incorrect category or game already in category',
   })
   @ApiResponse({
     status: 404,
-    description: 'Пользователь или игра не найдены.',
+    description: 'User or game not found',
   })
   @HttpCode(HttpStatus.OK)
   async addGameToCaregory(
@@ -69,18 +68,18 @@ export class UserController {
   }
 
   @Delete(':id/games/:gameId')
-  @ApiOperation({ summary: 'Удалить игру из категории' })
+  @ApiOperation({ summary: 'Remove game from category' })
   @ApiResponse({
     status: 200,
-    description: 'Игра успешно удалена из категории.',
+    description: 'Removed successfully',
   })
   @ApiResponse({
     status: 400,
-    description: 'Некорректная категория или игра отсутствует в категории.',
+    description: 'Incorrect category or game is not in category',
   })
   @ApiResponse({
     status: 404,
-    description: 'Пользователь или игра не найдены.',
+    description: 'User or game not found',
   })
   @HttpCode(HttpStatus.OK)
   async removeGameFromCategory(
@@ -103,20 +102,20 @@ export class UserController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Получение юзера по id' })
+  @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({
     status: 200,
-    description: 'Юзер успешно получен',
+    description: 'Success',
   })
   async findById(@Param('id') userId: string): Promise<User> {
     return this.usersService.findById(userId);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Получение всех юзеров' })
+  @ApiOperation({ summary: 'Get all Users' })
   @ApiResponse({
     status: 200,
-    description: 'Юзеры успешно получены',
+    description: 'Success',
   })
   async getAllBooks(@Query() query: ExpressQuery): Promise<User[]> {
     return this.usersService.findAll(query);
@@ -125,8 +124,8 @@ export class UserController {
   @Patch(':id/email')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Обновление email пользователя' })
-  @ApiResponse({ status: 200, description: 'Email обновлён успешно' })
+  @ApiOperation({ summary: 'Update user email' })
+  @ApiResponse({ status: 200, description: 'success' })
   async updateEmail(
     @Param('id') userId: string,
     @Body() updateEmailDto: UpdateEmailDto,
@@ -141,8 +140,8 @@ export class UserController {
   @Patch(':id/password')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Обновление пароля пользователя' })
-  @ApiResponse({ status: 200, description: 'Пароль успешно обновлён' })
+  @ApiOperation({ summary: 'Update user password' })
+  @ApiResponse({ status: 200, description: 'Success' })
   async updatePassword(
     @Param('id') userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,

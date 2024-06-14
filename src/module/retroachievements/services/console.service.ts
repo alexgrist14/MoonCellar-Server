@@ -13,7 +13,7 @@ export class ConsoleService {
   private readonly userName = 'alexgrist14';
   private readonly apiKey = process.env.RETROACHIEVEMENTS_API_KEY;
 
-  private async getConsoles() {
+  async getConsoles() {
     const authorization = buildAuthorization({
       userName: this.userName,
       webApiKey: this.apiKey,
@@ -22,13 +22,13 @@ export class ConsoleService {
     return consoleIds;
   }
 
-  private async saveConsolesToDB(consoles: RAConsole[]): Promise<void> {
+  async parseConsoles(consoles: RAConsole[]): Promise<void> {
     await this.consoleModel.deleteMany({});
     await this.consoleModel.insertMany(consoles);
   }
 
   private async onModuleInit() {
-    await this.saveConsolesToDB(await this.getConsoles());
+    //await this.saveConsolesToDB(await this.getConsoles());
   }
 
   async findAll() {
