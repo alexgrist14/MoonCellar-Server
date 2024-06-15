@@ -21,6 +21,8 @@ import {
 import { User } from '../auth/schemas/user.schema';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -58,7 +60,7 @@ export class UserController {
     description: 'User or game not found',
   })
   @HttpCode(HttpStatus.OK)
-  async addGameToCaregory(
+  async addGameToCategory(
     @Param('id') userId: string,
     @Param('gameId') gameId: string,
     @Query('category') category: string,
@@ -167,6 +169,18 @@ export class UserController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Add user profile picture' })
   @ApiResponse({ status: 201, description: 'picture name' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async uploadProfilePicture(
     @Param('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
