@@ -4,13 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from '../auth/schemas/user.schema';
 import mongoose, { Model } from 'mongoose';
 import { Query as ExpressQuery } from 'express-serve-static-core';
-import { UpdateEmailDto } from '../auth/dto/update-email.dto';
-import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 import * as bcrypt from 'bcryptjs';
-import { RAGame } from '../retroachievements/schemas/retroach.schema';
+import { User } from 'src/module/auth/schemas/user.schema';
+import { RAGame } from 'src/module/retroachievements/schemas/retroach.schema';
+import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
+import { UpdateEmailDto } from 'src/module/auth/dto/update-email.dto';
 
 @Injectable()
 export class UserService {
@@ -120,5 +120,21 @@ export class UserService {
     user.password = hashedPassword;
     await user.save();
     return user;
+  }
+
+  async updateProfilePicture(userId: string, fileName: string): Promise<User> {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    user.profilePicture = fileName;
+    return user.save();
+  }
+
+  async getProfilePicture(userId: string): Promise<string> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user || !user.profilePicture)
+      throw new NotFoundException('Profile picture not found');
+
+    return user.profilePicture;
   }
 }

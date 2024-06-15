@@ -8,8 +8,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UserController } from '../user/user.controller';
-import { UserService } from '../user/user.service';
 import { RAGame, RASchema } from '../retroachievements/schemas/retroach.schema';
+import { UserService } from '../user/services/user.service';
+import { FileUploadService } from '../user/services/file-upload.service';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { RAGame, RASchema } from '../retroachievements/schemas/retroach.schema';
     }),
   ],
   controllers: [AuthController, UserController],
-  providers: [AuthService, UserService, JwtStrategy],
+  providers: [AuthService, UserService, JwtStrategy, FileUploadService],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

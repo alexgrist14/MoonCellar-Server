@@ -9,12 +9,15 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { UserService } from './user.service';
 import { User } from '../auth/schemas/user.schema';
 import {
   ApiBearerAuth,
@@ -26,11 +29,18 @@ import { AuthGuard } from '@nestjs/passport';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { UpdateEmailDto } from '../auth/dto/update-email.dto';
 import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
+import { UserService } from './services/user.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadService } from './services/file-upload.service';
+import { Response } from 'express';
 
 @ApiTags('user')
 @Controller('user')
 export class UserController {
-  constructor(private readonly usersService: UserService) {}
+  constructor(
+    private readonly usersService: UserService,
+    private readonly fileUploadService: FileUploadService,
+  ) {}
   @Patch(':id/games/:gameId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
@@ -151,5 +161,33 @@ export class UserController {
       throw new UnauthorizedException('You can only update your own password');
     }
     return this.usersService.updatePassword(userId, updatePasswordDto);
+  }
+
+  @Post(':id/profile-picture')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Add user profile picture' })
+  @ApiResponse({ status: 201, description: 'picture name' })
+  async uploadProfilePicture(
+    @Param('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const fileName = await this.fileUploadService.uploadFile(file);
+    await this.usersService.updateProfilePicture(userId, fileName);
+
+    return { profilePicture: fileName };
+  }
+
+  @Get(':id/profile-picture')
+  @ApiOperation({ summary: 'Get user profile picture' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getProfilePicture(@Param('id') userId: string, @Res() res: Response) {
+    const fileName = await this.usersService.getProfilePicture(userId);
+    const filePath = this.fileUploadService.getFilePath(fileName);
+
+    if (!filePath) {
+      throw new NotFoundException('Profile picture not found');
+    }
+
+    res.sendFile(filePath);
   }
 }
