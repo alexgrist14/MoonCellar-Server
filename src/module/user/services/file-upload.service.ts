@@ -9,10 +9,10 @@ export class FileUploadService {
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
     const fileName = `${uuidv4()}-${file.originalname}`;
-    const filepPath = join(this.uploadPath, fileName);
+    const filePath = join(this.uploadPath, fileName);
 
     await fs.mkdir(this.uploadPath, { recursive: true });
-    await fs.writeFile(filepPath, file.buffer);
+    await fs.writeFile(filePath, file.buffer);
 
     return fileName;
   }
