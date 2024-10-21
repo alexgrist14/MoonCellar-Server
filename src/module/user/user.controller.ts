@@ -129,9 +129,6 @@ export class UserController {
     status: 200,
     description: 'Success',
   })
-  async getAllBooks(@Query() query: ExpressQuery): Promise<User[]> {
-    return this.usersService.findAll(query);
-  }
 
   @Patch(':id/email')
   @UseGuards(AuthGuard('jwt'))

@@ -23,7 +23,7 @@ export class UserService {
     if (!user) throw new NotFoundException('User not found');
 
     if (!['completed', 'wishlist', 'playing', 'dropped'].includes(category))
-      throw new BadRequestException('Invalid caregory');
+      throw new BadRequestException('Invalid category');
   }
 
   async addGameToCategory(
