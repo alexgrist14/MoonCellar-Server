@@ -77,6 +77,12 @@ export class UserService {
     return await this.userModel.findById(userId);
   }
 
+  async findByName(userName: string): Promise<User> {
+    return await this.userModel
+      .findOne({ name: userName })
+      .select(['-password','-games','-createdAt','-updatedAt','-refreshToken','-__v']);
+  }
+
   async findAll(query: ExpressQuery): Promise<User[]> {
     const resPerPage = 2;
     const currentPage = +query.page || 1;

@@ -24,11 +24,11 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { Query as ExpressQuery } from 'express-serve-static-core';
 import { UpdateEmailDto } from '../auth/dto/update-email.dto';
 import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 import { UserService } from './services/user.service';
@@ -111,6 +111,17 @@ export class UserController {
 
       throw new BadRequestException('Failed to remove game from category');
     }
+  }
+
+  @Get('name')
+  @ApiOperation({summary: 'Get user by name'})
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  @ApiQuery({name: 'query'})
+  findByName(@Query('query') query: string): Promise<User>{
+    return this.usersService.findByName(query);
   }
 
   @Get(':id')

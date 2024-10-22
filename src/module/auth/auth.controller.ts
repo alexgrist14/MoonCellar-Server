@@ -1,14 +1,26 @@
-import { Controller, Post, Body, Res, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  HttpStatus,
+  BadGatewayException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
+import { UserService } from '../user/services/user.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly usersService: UserService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('/signup')
   @ApiOperation({ summary: 'User registration' })
@@ -21,7 +33,7 @@ export class AuthController {
     @Res() res: Response,
   ): Promise<Response> {
     try {
-      const { accessToken, refreshToken } =
+      const { refreshToken } =
         await this.authService.signUp(signUpDto);
 
       res.cookie('refreshToken', refreshToken, {
@@ -29,10 +41,12 @@ export class AuthController {
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
-      return res.status(HttpStatus.OK).json({ accessToken });
+      const user = await this.usersService.findByName(signUpDto.name);
+
+      return res.status(HttpStatus.OK).json({user});
     } catch (err) {
       console.log(err);
-      return err;
+      throw new UnprocessableEntityException(`${err.message}`);
     }
   }
 
