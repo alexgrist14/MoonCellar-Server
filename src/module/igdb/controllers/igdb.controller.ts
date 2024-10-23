@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IGDBService } from '../igdb.service';
 
@@ -63,5 +63,14 @@ export class IgdbController {
   @ApiResponse({ status: 200, description: 'Get over here!' })
   modes() {
     return this.service.getGameModes();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get game by id' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  getGameById(
+    @Param('id') id: string,
+  ) {
+    return this.service.getGameById(id);
   }
 }

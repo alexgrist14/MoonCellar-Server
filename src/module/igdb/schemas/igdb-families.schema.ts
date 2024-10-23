@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { IGDBFamilyINT } from '../interface/scheme.interface';
 
-export type IGDBFamiliesDocument = HydratedDocument<IGDBFamilyINT>;
+export type IGDBFamiliesDocument = HydratedDocument<IGDBFamilies>;
 
 @Schema()
 export class IGDBFamilies {
