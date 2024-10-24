@@ -1,18 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type IGDBGenresDocument = HydratedDocument<IGDBGenres>;
+export type IGDBKeywordsDocument = HydratedDocument<IGDBKeywords>;
 
 @Schema()
-export class IGDBGenres {
+export class IGDBKeywords {
   @Prop()
   id: number;
   @Prop()
   name: string;
   @Prop()
   slug: string;
-  @Prop()
-  url: string;
 }
 
-export const IGDBGenresSchema = SchemaFactory.createForClass(IGDBGenres);
+export const IGDBKeywordsSchema = SchemaFactory.createForClass(IGDBKeywords);

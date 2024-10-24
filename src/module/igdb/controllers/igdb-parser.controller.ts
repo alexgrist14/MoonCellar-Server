@@ -1,4 +1,4 @@
-import { Controller, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IGDBService } from '../igdb.service';
 import { ParserType } from '../interface/common.interface';
@@ -8,6 +8,13 @@ import { parserTypes } from '../constants/common';
 @Controller('igdb-parser')
 export class IgdbParserController {
   constructor(private readonly service: IGDBService) {}
+
+  @Get('/token')
+  @ApiOperation({ summary: 'Get IGDB token' })
+  @ApiResponse({ status: 200, description: 'Successfully started' })
+  getToken() {
+    return this.service.getToken();
+  }
 
   @Post('/')
   @ApiOperation({ summary: 'Parse all IGDB databases' })

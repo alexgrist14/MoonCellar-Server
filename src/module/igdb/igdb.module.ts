@@ -15,6 +15,23 @@ import { IGDBGames, IGDBGamesSchema } from './schemas/igdb-games.schema';
 import { IGDBService } from './igdb.service';
 import { IGDBModes, IGDBModesSchema } from './schemas/igdb-modes.schema';
 import { IgdbParserController } from './controllers/igdb-parser.controller';
+import {
+  IGDBKeywords,
+  IGDBKeywordsSchema,
+} from './schemas/igdb-keywords.schema';
+import {
+  IGDBScreenshots,
+  IGDBScreenshotsSchema,
+} from './schemas/igdb-screenshots.schema';
+import {
+  IGDBArtworks,
+  IGDBArtworksSchema,
+} from './schemas/igdb-artworks.schema';
+import { IGDBThemes, IGDBThemesSchema } from './schemas/igdb-themes.schema';
+import {
+  IGDBPlatformLogos,
+  IGDBPlatformLogosSchema,
+} from './schemas/igdb-platform-logos.schema';
 
 @Module({
   controllers: [IgdbController, IgdbParserController],
@@ -27,6 +44,11 @@ import { IgdbParserController } from './controllers/igdb-parser.controller';
       { name: IGDBFamilies.name, schema: IGDBFamiliesSchema },
       { name: IGDBPlatforms.name, schema: IGDBPlatformsSchema },
       { name: IGDBModes.name, schema: IGDBModesSchema },
+      { name: IGDBKeywords.name, schema: IGDBKeywordsSchema },
+      { name: IGDBThemes.name, schema: IGDBThemesSchema },
+      { name: IGDBScreenshots.name, schema: IGDBScreenshotsSchema },
+      { name: IGDBArtworks.name, schema: IGDBArtworksSchema },
+      { name: IGDBPlatformLogos.name, schema: IGDBPlatformLogosSchema },
     ]),
   ],
 })

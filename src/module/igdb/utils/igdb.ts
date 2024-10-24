@@ -9,7 +9,7 @@ export const igdbAuth = () =>
 
 export const igdbAgent = <T>(url: string, token: string, params?: any) => {
   return axios.request<T>({
-    url: 'https://gigatualet.ru:4000',
+    url: 'https://mooncellar.space:4000',
     method: 'post',
     withCredentials: false,
     params,
@@ -22,7 +22,7 @@ export const igdbAgent = <T>(url: string, token: string, params?: any) => {
   });
 };
 
-const getLink = (type: string) => {
+const getLink = (type: ParserType) => {
   switch (type) {
     case 'games':
       return 'https://api.igdb.com/v4/games';
@@ -36,23 +36,43 @@ const getLink = (type: string) => {
       return 'https://api.igdb.com/v4/platforms';
     case 'families':
       return 'https://api.igdb.com/v4/platform_families';
+    case 'keywords':
+      return 'https://api.igdb.com/v4/keywords';
+    case 'themes':
+      return 'https://api.igdb.com/v4/themes';
+    case 'screenshots':
+      return 'https://api.igdb.com/v4/screenshots';
+    case 'artworks':
+      return 'https://api.igdb.com/v4/artworks';
+    case 'platform_logos':
+      return 'https://api.igdb.com/v4/platform_logos';
   }
 };
 
-const getFields = (type: string) => {
+const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, franchise, franchises, game_modes, genres, platforms, tags, themes, url';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes';
     case 'covers':
       return 'url, game';
     case 'genres':
-      return 'name, slug, url';
+      return 'name, slug';
     case 'modes':
       return 'name, slug';
     case 'platforms':
       return 'name, slug, platform_family, platform_logo, created_at, generation';
     case 'families':
       return 'name, slug';
+    case 'keywords':
+      return 'name, slug';
+    case 'themes':
+      return 'name, slug';
+    case 'screenshots':
+      return 'url, width, height';
+    case 'artworks':
+      return 'url, width, height';
+    case 'platform_logos':
+      return 'url, width, height';
   }
 };
 

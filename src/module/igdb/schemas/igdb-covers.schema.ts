@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { IGDBCoverINT } from '../interface/scheme.interface';
 
-export type IGDBCoverDocument = HydratedDocument<IGDBCoverINT>;
+export type IGDBCoverDocument = HydratedDocument<IGDBCovers>;
 
 @Schema()
 export class IGDBCovers {

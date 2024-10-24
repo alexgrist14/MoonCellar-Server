@@ -4,8 +4,12 @@ export const parserTypes: ParserType[] = [
   'games',
   'genres',
   'covers',
-  'covers',
   'modes',
   'platforms',
   'families',
+  'screenshots',
+  'keywords',
+  'themes',
+  'artworks',
+  'platform_logos',
 ];

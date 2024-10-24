@@ -4,10 +4,16 @@ export type ParserType =
   | 'covers'
   | 'modes'
   | 'platforms'
-  | 'families';
+  | 'families'
+  | 'screenshots'
+  | 'keywords'
+  | 'themes'
+  | 'artworks'
+  | 'platform_logos';
 
 export interface IGDBFilters {
   genres?: string[] | string;
   platforms?: string[] | string;
   modes?: string[] | string;
+  keywords?: string[] | string;
 }

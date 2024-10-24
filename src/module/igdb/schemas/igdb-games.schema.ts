@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
-import { IGDBGameINT } from '../interface/scheme.interface';
 
-export type IGDBGamesDocument = HydratedDocument<IGDBGameINT>;
+export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 
 @Schema()
 export class IGDBGames {
@@ -18,24 +17,20 @@ export class IGDBGames {
   platforms: mongoose.Schema.Types.ObjectId[];
   @Prop()
   slug: string;
-  @Prop()
-  tags: number[];
-  @Prop()
-  themes: number[];
+  @Prop({ ref: 'IGDBKeywords' })
+  keywords: mongoose.Schema.Types.ObjectId[];
+  @Prop({ ref: 'IGDBThemes' })
+  themes: mongoose.Schema.Types.ObjectId[];
   @Prop()
   url: string;
   @Prop({ ref: 'IGDBCovers' })
   cover: mongoose.Schema.Types.ObjectId;
-  @Prop()
-  screenshots: number[];
+  @Prop({ ref: 'IGDBScreenshots' })
+  screenshots: mongoose.Schema.Types.ObjectId[];
   @Prop()
   total_rating: number;
-  @Prop()
-  artworks: number[];
-  @Prop()
-  franchise: number;
-  @Prop()
-  franchises: number[];
+  @Prop({ ref: 'IGDBArtworks' })
+  artworks: mongoose.Schema.Types.ObjectId[];
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);
