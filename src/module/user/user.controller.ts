@@ -80,6 +80,7 @@ export class UserController {
   }
 
   @Delete(':id/games/:gameId')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove game from category' })
   @ApiResponse({
     status: 200,
@@ -119,9 +120,20 @@ export class UserController {
     status: 200,
     description: 'Success',
   })
-  @ApiQuery({name: 'query'})
-  findByName(@Query('query') query: string): Promise<User>{
-    return this.usersService.findByName(query);
+  @ApiQuery({name: 'name'})
+  findByName(@Query('name') query: string): Promise<User>{
+    return this.usersService.findByString(query,"name");
+  }
+
+  @Get('email')
+  @ApiOperation({summary: 'Get user by email'})
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  @ApiQuery({name: 'email'})
+  findByEmail(@Query('email') query: string): Promise<User>{
+    return this.usersService.findByString(query,"email");
   }
 
   @Get(':id')
@@ -151,9 +163,9 @@ export class UserController {
     @Body() updateEmailDto: UpdateEmailDto,
     @Req() req,
   ): Promise<User> {
-    console.log(req.user._id);
-    console.log(userId);
-
+    if (req.user._id.toString() !== userId) {
+      throw new UnauthorizedException('You can only update your own email');
+    }
     return this.usersService.updateEmail(userId, updateEmailDto);
   }
 
@@ -167,13 +179,15 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
     @Req() req,
   ): Promise<User> {
-    if (req.user._id !== userId) {
+    console.log(req.user)
+    if (req.user._id.toString() !== userId) {
       throw new UnauthorizedException('You can only update your own password');
     }
     return this.usersService.updatePassword(userId, updatePasswordDto);
   }
 
   @Post(':id/profile-picture')
+  //@UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Add user profile picture' })
   @ApiResponse({ status: 201, description: 'picture name' })
@@ -202,14 +216,14 @@ export class UserController {
   @Get(':id/profile-picture')
   @ApiOperation({ summary: 'Get user profile picture' })
   @ApiResponse({ status: 200, description: 'Success' })
-  async getProfilePicture(@Param('id') userId: string, @Res() res: Response) {
+  async getProfilePicture(@Param('id') userId: string) {
     const fileName = await this.usersService.getProfilePicture(userId);
-    const filePath = this.fileUploadService.getFilePath(fileName);
+    //const filePath = this.fileUploadService.getFilePath(fileName);
 
-    if (!filePath) {
+    if (!fileName) {
       throw new NotFoundException('Profile picture not found');
     }
 
-    res.sendFile(filePath);
+    return {fileName};
   }
 }
