@@ -32,7 +32,7 @@ export class IgdbController {
     @Query('search') search: string,
     @Query('mode') mode: 'any' | 'all',
   ) {
-    return this.service.getGames({
+    const games = this.service.getGames({
       take,
       page,
       isRandom,
@@ -42,6 +42,8 @@ export class IgdbController {
       search,
       mode,
     });
+
+    return games;
   }
 
   @Get('/genres')
@@ -68,9 +70,7 @@ export class IgdbController {
   @Get(':id')
   @ApiOperation({ summary: 'Get game by id' })
   @ApiResponse({ status: 200, description: 'Get over here!' })
-  getGameById(
-    @Param('id') id: string,
-  ) {
+  getGameById(@Param('id') id: string) {
     return this.service.getGameById(id);
   }
 }

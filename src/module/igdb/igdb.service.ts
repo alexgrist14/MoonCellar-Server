@@ -305,142 +305,166 @@ export class IGDBService {
     search?: string;
     mode?: 'any' | 'all';
   }) {
-    const games = await this.IGDBGamesModel.aggregate([
-      {
-        $match: {
-          $and: [
-            ...(!!search ? [{ name: { $regex: search, $options: 'i' } }] : []),
-            ...(rating !== undefined
-              ? [{ total_rating: { $gte: +rating } }]
-              : []),
-            { genres: { $exists: true } },
-            { keywords: { $exists: true } },
-            { platforms: { $exists: true } },
-            { game_modes: { $exists: true } },
-            ...(!!selected?.genres?.length
-              ? [
-                  {
-                    genres:
-                      mode === 'any'
-                        ? {
-                            $in: Array.isArray(selected?.genres)
-                              ? selected?.genres.map(
-                                  (genre) => new mongoose.Types.ObjectId(genre),
-                                )
-                              : [new mongoose.Types.ObjectId(selected?.genres)],
-                          }
-                        : {
-                            $all: Array.isArray(selected?.genres)
-                              ? selected?.genres.map(
-                                  (genre) => new mongoose.Types.ObjectId(genre),
-                                )
-                              : [new mongoose.Types.ObjectId(selected?.genres)],
-                          },
+    const filters = {
+      $match: {
+        $and: [
+          ...(!!search ? [{ name: { $regex: search, $options: 'i' } }] : []),
+          ...(rating !== undefined
+            ? [{ total_rating: { $gte: +rating } }]
+            : []),
+          { genres: { $exists: true } },
+          { keywords: { $exists: true } },
+          { platforms: { $exists: true } },
+          { game_modes: { $exists: true } },
+          ...(!!selected?.genres?.length
+            ? [
+                {
+                  genres:
+                    mode === 'any'
+                      ? {
+                          $in: Array.isArray(selected?.genres)
+                            ? selected?.genres.map(
+                                (genre) => new mongoose.Types.ObjectId(genre),
+                              )
+                            : [new mongoose.Types.ObjectId(selected?.genres)],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.genres)
+                            ? selected?.genres.map(
+                                (genre) => new mongoose.Types.ObjectId(genre),
+                              )
+                            : [new mongoose.Types.ObjectId(selected?.genres)],
+                        },
+                },
+              ]
+            : []),
+          ...(!!excluded?.genres?.length
+            ? [
+                {
+                  genres: {
+                    $nin: Array.isArray(excluded?.genres)
+                      ? excluded?.genres.map(
+                          (genre) => new mongoose.Types.ObjectId(genre),
+                        )
+                      : [new mongoose.Types.ObjectId(excluded?.genres)],
                   },
-                ]
-              : []),
-            ...(!!excluded?.genres?.length
-              ? [
-                  {
-                    genres: {
-                      $nin: Array.isArray(excluded?.genres)
-                        ? excluded?.genres.map(
-                            (genre) => new mongoose.Types.ObjectId(genre),
-                          )
-                        : [new mongoose.Types.ObjectId(excluded?.genres)],
-                    },
+                },
+              ]
+            : []),
+          ...(!!selected?.platforms?.length
+            ? [
+                {
+                  platforms:
+                    mode === 'any'
+                      ? {
+                          $in: Array.isArray(selected?.platforms)
+                            ? selected?.platforms.map(
+                                (item) => new mongoose.Types.ObjectId(item),
+                              )
+                            : [
+                                new mongoose.Types.ObjectId(
+                                  selected?.platforms,
+                                ),
+                              ],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.platforms)
+                            ? selected?.platforms.map(
+                                (item) => new mongoose.Types.ObjectId(item),
+                              )
+                            : [
+                                new mongoose.Types.ObjectId(
+                                  selected?.platforms,
+                                ),
+                              ],
+                        },
+                },
+              ]
+            : []),
+          ...(!!excluded?.platforms?.length
+            ? [
+                {
+                  platforms: {
+                    $nin: Array.isArray(excluded?.platforms)
+                      ? excluded?.platforms.map(
+                          (platform) => new mongoose.Types.ObjectId(platform),
+                        )
+                      : [new mongoose.Types.ObjectId(excluded?.platforms)],
                   },
-                ]
-              : []),
-            ...(!!selected?.platforms?.length
-              ? [
-                  {
-                    platforms:
-                      mode === 'any'
-                        ? {
-                            $in: Array.isArray(selected?.platforms)
-                              ? selected?.platforms.map(
-                                  (item) => new mongoose.Types.ObjectId(item),
-                                )
-                              : [
-                                  new mongoose.Types.ObjectId(
-                                    selected?.platforms,
-                                  ),
-                                ],
-                          }
-                        : {
-                            $all: Array.isArray(selected?.platforms)
-                              ? selected?.platforms.map(
-                                  (item) => new mongoose.Types.ObjectId(item),
-                                )
-                              : [
-                                  new mongoose.Types.ObjectId(
-                                    selected?.platforms,
-                                  ),
-                                ],
-                          },
+                },
+              ]
+            : []),
+          ...(!!selected?.modes?.length
+            ? [
+                {
+                  game_modes:
+                    mode === 'any'
+                      ? {
+                          $in: Array.isArray(selected?.modes)
+                            ? selected?.modes.map(
+                                (item) => new mongoose.Types.ObjectId(item),
+                              )
+                            : [new mongoose.Types.ObjectId(selected?.modes)],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.modes)
+                            ? selected?.modes.map(
+                                (item) => new mongoose.Types.ObjectId(item),
+                              )
+                            : [new mongoose.Types.ObjectId(selected?.modes)],
+                        },
+                },
+              ]
+            : []),
+          ...(!!excluded?.modes?.length
+            ? [
+                {
+                  game_modes: {
+                    $nin: Array.isArray(excluded?.modes)
+                      ? excluded?.modes.map(
+                          (mode) => new mongoose.Types.ObjectId(mode),
+                        )
+                      : [new mongoose.Types.ObjectId(excluded?.modes)],
                   },
-                ]
-              : []),
-            ...(!!excluded?.platforms?.length
-              ? [
-                  {
-                    platforms: {
-                      $nin: Array.isArray(excluded?.platforms)
-                        ? excluded?.platforms.map(
-                            (platform) => new mongoose.Types.ObjectId(platform),
-                          )
-                        : [new mongoose.Types.ObjectId(excluded?.platforms)],
-                    },
-                  },
-                ]
-              : []),
-            ...(!!selected?.modes?.length
-              ? [
-                  {
-                    game_modes:
-                      mode === 'any'
-                        ? {
-                            $in: Array.isArray(selected?.modes)
-                              ? selected?.modes.map(
-                                  (item) => new mongoose.Types.ObjectId(item),
-                                )
-                              : [new mongoose.Types.ObjectId(selected?.modes)],
-                          }
-                        : {
-                            $all: Array.isArray(selected?.modes)
-                              ? selected?.modes.map(
-                                  (item) => new mongoose.Types.ObjectId(item),
-                                )
-                              : [new mongoose.Types.ObjectId(selected?.modes)],
-                          },
-                  },
-                ]
-              : []),
-            ...(!!excluded?.modes?.length
-              ? [
-                  {
-                    game_modes: {
-                      $nin: Array.isArray(excluded?.modes)
-                        ? excluded?.modes.map(
-                            (mode) => new mongoose.Types.ObjectId(mode),
-                          )
-                        : [new mongoose.Types.ObjectId(excluded?.modes)],
-                    },
-                  },
-                ]
-              : []),
-          ],
-        },
+                },
+              ]
+            : []),
+        ],
       },
-      ...(isRandom === 'false' ? [{ $skip: (+page - 1) * +take }] : []),
+    };
+
+    const pagination = [
+      ...(isRandom === 'true' ? [] : [{ $skip: (+page - 1) * +take }]),
       ...(isRandom === 'true'
         ? [{ $sample: { size: +take } }]
         : [{ $limit: +take }]),
-      ...lookupAll,
+    ];
+
+    const games = await this.IGDBGamesModel.aggregate([
+      { $sort: { total_rating: -1 } },
+      filters,
+      {
+        $facet: {
+          results: [...pagination, ...lookupAll],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+      {
+        $addFields: {
+          total: {
+            $ifNull: [{ $arrayElemAt: ['$totalCount.count', 0] }, 0],
+          },
+        },
+      },
+      {
+        $project: {
+          results: 1,
+          total: 1,
+        },
+      },
     ]);
 
-    return isRandom === 'true' ? shuffle(games) : games;
+    return games.pop();
   }
 
   async getGenres() {
