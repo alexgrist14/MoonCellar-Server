@@ -91,7 +91,9 @@ const parser = async ({
   const limit = 500;
   const fields = getFields(type);
 
-  const { data } = await igdbAgent<{ count: number }>(url + '/count', token);
+  const { data } = await igdbAgent<{ count: number }>(url + '/count', token, {
+    where: 'parent_game = null',
+  });
   const total = data.count;
 
   let run = 0;
@@ -102,6 +104,7 @@ const parser = async ({
   const fetch = async () => {
     return igdbAgent(url, token, {
       fields,
+      where: 'parent_game = null',
       limit,
       offset: run * limit,
     });
