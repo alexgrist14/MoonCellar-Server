@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
@@ -74,13 +75,27 @@ export class UserService {
   }
 
   async findById(userId: string): Promise<User> {
-    return await this.userModel.findById(userId);
+    return await this.userModel.findById(userId)
+    .select([
+      '-password',
+      '-__v',
+    ]);
   }
 
-  async findByName(userName: string): Promise<User> {
+  async findByString(
+    searchString: string,
+    searchType: 'name' | 'email',
+  ): Promise<User> {
     return await this.userModel
-      .findOne({ name: userName })
-      .select(['-password','-games','-createdAt','-updatedAt','-refreshToken','-__v']);
+      .findOne({ [searchType]: searchString })
+      .select([
+        '-password',
+        '-games',
+        '-createdAt',
+        '-updatedAt',
+        '-refreshToken',
+        '-__v',
+      ]);
   }
 
   async findAll(query: ExpressQuery): Promise<User[]> {
@@ -121,6 +136,13 @@ export class UserService {
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
     if (!user) throw new BadRequestException('User not found');
+
+    const isPasswordMatched = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordMatched)
+      throw new UnauthorizedException('Password does not match');
 
     const hashedPassword = await bcrypt.hash(updatePasswordDto.newPassword, 10);
     user.password = hashedPassword;

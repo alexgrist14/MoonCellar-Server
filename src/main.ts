@@ -5,16 +5,18 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { join } from 'path';
+import { json } from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.useStaticAssets(join(__dirname, '..', 'uploads'));
+  app.useStaticAssets(join(__dirname,'uploads/photos'));
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
     origin: [process.env.LOCAL_CONNECTION, 'https://mooncellar.space'],
   });
   app.useGlobalPipes(new ValidationPipe());
+  app.use(json({ limit: '2mb' }));
   const config = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('Games Api')

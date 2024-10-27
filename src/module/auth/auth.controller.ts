@@ -4,7 +4,7 @@ import {
   Body,
   Res,
   HttpStatus,
-  BadGatewayException,
+  Headers,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -31,19 +31,20 @@ export class AuthController {
   async signUp(
     @Body() signUpDto: SignUpDto,
     @Res() res: Response,
+    @Headers() headers: any,
   ): Promise<Response> {
     try {
-      const { refreshToken } =
+      const { accessToken, refreshToken } =
         await this.authService.signUp(signUpDto);
+      const userId = (await this.usersService.findByString(signUpDto.name,"name")).id;
 
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
-
-      const user = await this.usersService.findByName(signUpDto.name);
-
-      return res.status(HttpStatus.OK).json({user});
+      this.authService.setCookies(
+        res,
+        accessToken,
+        refreshToken,
+        headers?.origin,
+      );
+      return res.status(HttpStatus.OK).json({ userId });
     } catch (err) {
       console.log(err);
       throw new UnprocessableEntityException(`${err.message}`);
@@ -59,27 +60,44 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res() res: Response,
+    @Headers() headers: any,
   ): Promise<Response> {
-    console.log(loginDto);
     const { accessToken, refreshToken } =
       await this.authService.login(loginDto);
+    const userId = (
+      await this.usersService.findByString(loginDto.email, 'email')
+    ).id;
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    this.authService.setCookies(
+      res,
+      accessToken,
+      refreshToken,
+      headers?.origin,
+    );
 
-    return res.status(HttpStatus.OK).json({ accessToken });
+    return res.status(HttpStatus.OK).json({ userId });
   }
 
   @Post('/refresh-token')
   @ApiOperation({ summary: 'Refresh token' })
   @ApiResponse({ status: 200, description: 'Refresh successful' })
-  refreshToken(
+  async refreshToken(
     @Body('userId') userId: string,
-    @Body('refreshToken') refreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.refreshToken(userId, refreshToken);
+    @Body('refreshToken') oldRefreshToken: string,
+    @Res() res: Response,
+    @Headers() headers: any,
+  ): Promise<Response> {
+    const { accessToken, refreshToken } = await this.authService.refreshToken(
+      userId,
+      oldRefreshToken,
+    );
+    this.authService.setCookies(
+      res,
+      accessToken,
+      refreshToken,
+      headers?.origin,
+    );
+    return res.status(HttpStatus.OK);
   }
 
   @Post('/logout')
@@ -91,7 +109,7 @@ export class AuthController {
   ): Promise<Response> {
     await this.authService.logout(userId);
 
-    res.clearCookie('refreshToken', {
+    res.clearCookie('refresh_token', {
       httpOnly: true,
     });
 

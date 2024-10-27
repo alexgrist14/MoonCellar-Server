@@ -10,18 +10,24 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { UserService } from '../user/services/user.service';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
+    private userServise: UserService,
   ) {}
 
   private async generateTokensAndUpdateUser(
     user: User,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const accessToken = this.jwtService.sign({ id: user._id });
+    const accessToken = this.jwtService.sign(
+      { id: user._id },
+      { expiresIn: '24h' },
+    );
     const refreshToken = this.jwtService.sign(
       { id: user._id },
       { expiresIn: '30d' },
@@ -55,7 +61,6 @@ export class AuthService {
   async login(
     loginDto: LoginDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    console.log(loginDto);
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
 
@@ -79,7 +84,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const newAccessToken = this.jwtService.sign({ id: user._id });
+    const newAccessToken = this.jwtService.sign(
+      { id: user._id },
+      { expiresIn: '24h' },
+    );
     const newRefreshToken = this.jwtService.sign(
       { id: user._id },
       { expiresIn: '30d' },
@@ -89,6 +97,24 @@ export class AuthService {
     await user.save();
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
+  setCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+    origin?: string,
+  ): void {
+    res.cookie('access_token', accessToken, {
+      httpOnly: !origin?.includes('localhost'),
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: !origin?.includes('localhost'),
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
   }
 
   async logout(userId: string): Promise<void> {
