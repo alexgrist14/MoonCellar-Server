@@ -100,6 +100,13 @@ const lookupAll = [
       as: 'themes',
     },
   },
+  {
+    $addFields: {
+      cover: {
+        $ifNull: [{ $arrayElemAt: ['$cover', 0] }, null],
+      },
+    },
+  },
 ];
 
 @Injectable()
@@ -278,7 +285,6 @@ export class IGDBService {
 
   async getGameById(id: string) {
     const game = this.IGDBGamesModel.aggregate([
-      { $limit: 1 },
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
       ...lookupAll,
     ]);

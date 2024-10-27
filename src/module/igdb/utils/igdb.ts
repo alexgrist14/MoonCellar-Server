@@ -52,9 +52,9 @@ const getLink = (type: ParserType) => {
 const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary';
     case 'covers':
-      return 'url, game';
+      return 'url, game, width, height';
     case 'genres':
       return 'name, slug';
     case 'modes':
@@ -91,9 +91,7 @@ const parser = async ({
   const limit = 500;
   const fields = getFields(type);
 
-  const { data } = await igdbAgent<{ count: number }>(url + '/count', token, {
-    where: 'parent_game = null',
-  });
+  const { data } = await igdbAgent<{ count: number }>(url + '/count', token);
   const total = data.count;
 
   let run = 0;
@@ -104,7 +102,6 @@ const parser = async ({
   const fetch = async () => {
     return igdbAgent(url, token, {
       fields,
-      where: 'parent_game = null',
       limit,
       offset: run * limit,
     });

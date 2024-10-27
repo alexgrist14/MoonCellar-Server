@@ -21,16 +21,22 @@ export class IGDBGames {
   keywords: mongoose.Schema.Types.ObjectId[];
   @Prop({ ref: 'IGDBThemes' })
   themes: mongoose.Schema.Types.ObjectId[];
-  @Prop()
-  url: string;
   @Prop({ ref: 'IGDBCovers' })
   cover: mongoose.Schema.Types.ObjectId;
   @Prop({ ref: 'IGDBScreenshots' })
   screenshots: mongoose.Schema.Types.ObjectId[];
   @Prop()
   total_rating: number;
+  @Prop()
+  aggregated_rating: number;
+  @Prop()
+  category: number;
   @Prop({ ref: 'IGDBArtworks' })
   artworks: mongoose.Schema.Types.ObjectId[];
+  @Prop()
+  storyline: string;
+  @Prop()
+  summary: string;
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);

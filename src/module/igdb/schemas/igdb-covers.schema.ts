@@ -11,6 +11,10 @@ export class IGDBCovers {
   game: string;
   @Prop()
   url: string;
+  @Prop()
+  width: number;
+  @Prop()
+  height: number;
 }
 
 export const IGDBCoversSchema = SchemaFactory.createForClass(IGDBCovers);
