@@ -8,6 +8,7 @@ import { AuthModule } from './module/auth/auth.module';
 import { UserModule } from './module/user/user.module';
 import { IgdbModule } from './module/igdb/igdb.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { rootDir } from './shared/constants';
 
 @Module({
   imports: [
@@ -21,9 +22,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     UserModule,
     IgdbModule,
     ServeStaticModule.forRoot({
-      rootPath:'uploads/photos',
-      serveRoot: '/photos'
-    })
+      rootPath: `${rootDir}/uploads/photos`,
+      serveRoot: '/photos',
+    }),
   ],
 })
 export class AppModule {}

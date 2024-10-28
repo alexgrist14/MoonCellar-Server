@@ -5,10 +5,11 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { json } from 'body-parser';
+import { rootDir } from './shared/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.useStaticAssets('uploads/photos');
+  app.useStaticAssets(`${rootDir}/uploads/photos`);
   app.use(cookieParser());
   app.enableCors({
     credentials: true,

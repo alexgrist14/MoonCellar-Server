@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
+import { rootDir } from 'src/shared/constants';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadPath = 'uploads/photos';
+  private readonly uploadPath = `${rootDir}/uploads/photos`;
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
     const fileName = `${uuidv4()}-${file.originalname}`;
