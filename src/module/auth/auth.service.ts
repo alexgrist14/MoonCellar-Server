@@ -117,6 +117,15 @@ export class AuthService {
     });
   }
 
+  clearCookies(res: Response, origin?: string): void {
+    res.clearCookie('access_token', {
+      httpOnly: !origin?.includes('localhost'),
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: !origin?.includes('localhost'),
+    });
+  }
+
   async logout(userId: string): Promise<void> {
     const user = await this.userModel.findById(userId);
     if (user) {

@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Headers,
   UnprocessableEntityException,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
@@ -36,7 +37,9 @@ export class AuthController {
     try {
       const { accessToken, refreshToken } =
         await this.authService.signUp(signUpDto);
-      const userId = (await this.usersService.findByString(signUpDto.name,"name")).id;
+      const userId = (
+        await this.usersService.findByString(signUpDto.name, 'name')
+      ).id;
 
       this.authService.setCookies(
         res,
@@ -100,18 +103,17 @@ export class AuthController {
     return res.status(HttpStatus.OK);
   }
 
-  @Post('/logout')
+  @Post(':id/logout')
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
-    @Body('userId') userId: string,
+    @Param('id') userId: string,
     @Res() res: Response,
+    @Headers() headers: any,
   ): Promise<Response> {
     await this.authService.logout(userId);
 
-    res.clearCookie('refresh_token', {
-      httpOnly: true,
-    });
+    this.authService.clearCookies(res, headers?.origin);
 
     return res
       .status(HttpStatus.OK)
