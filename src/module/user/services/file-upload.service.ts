@@ -5,7 +5,7 @@ import { promises as fs } from 'fs';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadPath = join(__dirname,'../../../../../uploads');
+  private readonly uploadPath = 'uploads/photos';
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
     const fileName = `${uuidv4()}-${file.originalname}`;
