@@ -67,10 +67,17 @@ export class IgdbController {
     return this.service.getGameModes();
   }
 
-  @Get(':id')
+  @Get('/by-id/:id')
   @ApiOperation({ summary: 'Get game by id' })
   @ApiResponse({ status: 200, description: 'Get over here!' })
   getGameById(@Param('id') id: string) {
     return this.service.getGameById(id);
+  }
+
+  @Get('/by-slug/:slug')
+  @ApiOperation({ summary: 'Get game by id' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  getGameBySlug(@Param('slug') slug: string) {
+    return this.service.getGameBySlug(slug);
   }
 }

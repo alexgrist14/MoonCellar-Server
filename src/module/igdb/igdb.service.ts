@@ -317,6 +317,15 @@ export class IGDBService {
     return (await game).pop();
   }
 
+  async getGameBySlug(slug: string) {
+    const game = this.IGDBGamesModel.aggregate([
+      { $match: { slug: slug } },
+      ...lookupAll,
+    ]);
+
+    return (await game).pop();
+  }
+
   async getGames({
     take = 50,
     isRandom = false,
