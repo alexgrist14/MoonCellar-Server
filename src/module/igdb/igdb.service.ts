@@ -521,15 +521,15 @@ export class IGDBService {
   }
 
   async getGenres() {
-    return this.IGDBGenresModel.find();
+    return this.IGDBGenresModel.find().sort({ name: 1 });
   }
 
   async getPlatforms() {
-    return this.IGDBPlatformsModel.find();
+    return this.IGDBPlatformsModel.find().sort({ name: 1 });
   }
 
   async getGameModes() {
-    return this.IGDBModesModel.find();
+    return this.IGDBModesModel.find().sort({ name: 1 });
   }
 
   private async gamesParser({
