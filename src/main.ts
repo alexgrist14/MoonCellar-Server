@@ -4,12 +4,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
-import { join } from 'path';
 import { json } from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.useStaticAssets(join(__dirname,'uploads/photos'));
+  app.useStaticAssets('uploads/photos');
   app.use(cookieParser());
   app.enableCors({
     credentials: true,

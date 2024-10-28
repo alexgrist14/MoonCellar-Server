@@ -8,7 +8,6 @@ import { AuthModule } from './module/auth/auth.module';
 import { UserModule } from './module/user/user.module';
 import { IgdbModule } from './module/igdb/igdb.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 
 @Module({
   imports: [
@@ -22,7 +21,7 @@ import { join } from 'path';
     UserModule,
     IgdbModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname,'uploads/photos'),
+      rootPath:'uploads/photos',
       serveRoot: '/photos'
     })
   ],
