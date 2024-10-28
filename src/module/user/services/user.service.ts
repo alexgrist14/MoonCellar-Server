@@ -5,19 +5,22 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import { Model } from 'mongoose';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import * as bcrypt from 'bcryptjs';
 import { User } from 'src/module/auth/schemas/user.schema';
-import { RAGame } from 'src/module/retroachievements/schemas/retroach.schema';
 import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
 import { UpdateEmailDto } from 'src/module/auth/dto/update-email.dto';
+import {
+  IGDBGames,
+  IGDBGamesDocument,
+} from 'src/shared/schemas/igdb-games.schema';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>,
+    @InjectModel(IGDBGames.name) private gameModel: Model<IGDBGamesDocument>,
   ) {}
 
   private userAndCategoryCheck(user: User, category: string) {
@@ -45,7 +48,7 @@ export class UserService {
 
     for (const cat of ['completed', 'wishlist', 'playing', 'dropped']) {
       if (cat !== category && user.games[cat].includes(gameId)) {
-        user.games[cat] = user.games[cat].filter((id) => id !== gameId);
+        user.games[cat] = user.games[cat].filter((id: string) => id !== gameId);
       }
     }
 
@@ -69,17 +72,17 @@ export class UserService {
     if (!user.games[category].includes(gameId))
       throw new NotFoundException(`Game not found in ${category} category`);
 
-    user.games[category] = user.games[category].filter((id) => id !== gameId);
+    user.games[category] = user.games[category].filter(
+      (id: string) => id !== gameId,
+    );
+
     await user.save();
+
     return user;
   }
 
   async findById(userId: string): Promise<User> {
-    return await this.userModel.findById(userId)
-    .select([
-      '-password',
-      '-__v',
-    ]);
+    return await this.userModel.findById(userId).select(['-password', '-__v']);
   }
 
   async findByString(

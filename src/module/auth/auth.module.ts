@@ -8,14 +8,19 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UserController } from '../user/user.controller';
-import { RAGame, RASchema } from '../retroachievements/schemas/retroach.schema';
 import { UserService } from '../user/services/user.service';
 import { FileUploadService } from '../user/services/file-upload.service';
+import {
+  IGDBGames,
+  IGDBGamesSchema,
+} from 'src/shared/schemas/igdb-games.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: RAGame.name, schema: RASchema }]),
-    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: 'User', schema: UserSchema },
+      { name: IGDBGames.name, schema: IGDBGamesSchema },
+    ]),
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

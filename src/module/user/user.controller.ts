@@ -34,7 +34,6 @@ import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 import { UserService } from './services/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './services/file-upload.service';
-import { Response } from 'express';
 
 @ApiTags('user')
 @Controller('user')

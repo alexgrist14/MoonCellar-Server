@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId } from 'mongoose';
+import { Model } from 'mongoose';
 import { igdbAuth, igdbParser } from './utils/igdb';
 import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
 import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
@@ -12,10 +12,8 @@ import {
   IGDBPlatforms,
   IGDBPlatformsDocument,
 } from './schemas/igdb-platforms.schema';
-import { IGDBGames, IGDBGamesDocument } from './schemas/igdb-games.schema';
 import { IGDBModes, IGDBModesDocument } from './schemas/igdb-modes.schema';
 import { IGDBFilters, ParserType } from './interface/common.interface';
-import { shuffle } from 'src/shared/shuffle';
 import mongoose from 'mongoose';
 import {
   IGDBKeywords,
@@ -34,6 +32,10 @@ import {
   IGDBPlatformLogos,
   IGDBPlatformLogosDocument,
 } from './schemas/igdb-platform-logos.schema';
+import {
+  IGDBGames,
+  IGDBGamesDocument,
+} from 'src/shared/schemas/igdb-games.schema';
 
 const lookupAll = [
   {

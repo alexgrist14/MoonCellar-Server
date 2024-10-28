@@ -19,12 +19,13 @@ async function bootstrap() {
   app.use(json({ limit: '2mb' }));
   const config = new DocumentBuilder()
     .addBearerAuth()
-    .setTitle('Games Api')
-    .setDescription('Api for RA and IGDB')
+    .setTitle('MoonCellar API')
+    .setDescription('Api for MoonCellar server')
     .setVersion('1.0')
-    .addTag('games')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('api', app, document);
   await app.listen(3228);
 }

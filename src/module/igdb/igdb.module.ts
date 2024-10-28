@@ -11,7 +11,6 @@ import {
   IGDBPlatforms,
   IGDBPlatformsSchema,
 } from './schemas/igdb-platforms.schema';
-import { IGDBGames, IGDBGamesSchema } from './schemas/igdb-games.schema';
 import { IGDBService } from './igdb.service';
 import { IGDBModes, IGDBModesSchema } from './schemas/igdb-modes.schema';
 import { IgdbParserController } from './controllers/igdb-parser.controller';
@@ -32,6 +31,10 @@ import {
   IGDBPlatformLogos,
   IGDBPlatformLogosSchema,
 } from './schemas/igdb-platform-logos.schema';
+import {
+  IGDBGames,
+  IGDBGamesSchema,
+} from 'src/shared/schemas/igdb-games.schema';
 
 @Module({
   controllers: [IgdbController, IgdbParserController],

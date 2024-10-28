@@ -10,7 +10,6 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { UserService } from '../user/services/user.service';
 import { Response } from 'express';
 
 @Injectable()
@@ -18,7 +17,7 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
-    private userServise: UserService,
+    // private userService: UserService,
   ) {}
 
   private async generateTokensAndUpdateUser(
@@ -45,7 +44,7 @@ export class AuthService {
     const { name, email, password } = signUpDto;
     const isEmailExist = await this.userModel.findOne({ email });
 
-    if (isEmailExist) throw new BadRequestException('Email already exsists');
+    if (isEmailExist) throw new BadRequestException('Email already exists');
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -64,7 +63,7 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
 
-    if (!user) throw new UnauthorizedException('Email does not exsists');
+    if (!user) throw new UnauthorizedException('Email does not exists');
 
     const isPasswordMatched = await bcrypt.compare(password, user.password);
 
