@@ -52,7 +52,7 @@ const getLink = (type: ParserType) => {
 const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date';
     case 'covers':
       return 'url, game, width, height';
     case 'genres':
@@ -138,7 +138,7 @@ const parser = async ({
 export const igdbParser = (
   token: string,
   action: ParserType,
-  callback: (games: unknown) => Promise<unknown>,
+  callback: (items: unknown) => Promise<unknown>,
   parsingCallback?: (items: unknown) => unknown,
 ) => {
   return parser({

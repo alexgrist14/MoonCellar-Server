@@ -14,20 +14,20 @@ export const parserTypes: ParserType[] = [
   'platform_logos',
 ];
 
-export const categories = [
-  'main_game',
-  'dlc_addon',
-  'expansion',
-  'bundle',
-  'standalone_expansion',
-  'mod',
-  'episode',
-  'season',
-  'remake',
-  'remaster',
-  'expanded_game',
-  'port',
-  'fork',
-  'pack',
-  'update',
-];
+export const categories = {
+  main_game: 0,
+  dlc_addon: 1,
+  expansion: 2,
+  bundle: 3,
+  standalone_expansion: 4,
+  mod: 5,
+  episode: 6,
+  season: 7,
+  remake: 8,
+  remaster: 9,
+  expanded_game: 10,
+  port: 11,
+  fork: 12,
+  pack: 13,
+  update: 14,
+};

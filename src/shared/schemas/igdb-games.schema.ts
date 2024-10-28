@@ -37,6 +37,8 @@ export class IGDBGames {
   storyline: string;
   @Prop()
   summary: string;
+  @Prop()
+  first_release_date: number;
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);

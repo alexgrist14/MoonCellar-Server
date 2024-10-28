@@ -12,7 +12,6 @@ import {
   Post,
   Query,
   Req,
-  Res,
   UnauthorizedException,
   UploadedFile,
   UseGuards,

@@ -9,6 +9,7 @@ import { rootDir } from './shared/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.useStaticAssets(`${rootDir}/uploads/photos`);
   app.use(cookieParser());
   app.enableCors({
@@ -17,6 +18,7 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
   app.use(json({ limit: '2mb' }));
+
   const config = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('MoonCellar API')

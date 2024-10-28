@@ -36,6 +36,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
+import { categories } from './constants/common';
 
 const lookupAll = [
   {
@@ -143,6 +144,15 @@ export class IGDBService {
     console.log('');
   }
 
+  private async updateOrInsertValues<T>(model: Model<T>, items: unknown) {
+    (items as (T & { id: number })[]).forEach(async (item) => {
+      await model.findOneAndUpdate({ id: item.id }, item, {
+        new: true,
+        upsert: true,
+      });
+    });
+  }
+
   private async platformParser(
     families?: IGDBFamiliesDocument[],
     logos?: IGDBPlatformLogosDocument[],
@@ -160,9 +170,10 @@ export class IGDBService {
     return igdbParser(
       access_token,
       'platforms',
-      (platforms: IGDBPlatformsDocument[]) => {
-        return this.IGDBPlatformsModel.insertMany(
-          platforms.map((platform) => ({
+      async (items: IGDBPlatformsDocument[]) => {
+        this.updateOrInsertValues<IGDBPlatformsDocument>(
+          this.IGDBPlatformsModel,
+          items.map((platform) => ({
             ...platform,
             platform_logo:
               tempLogos.find((logo) => logo.id === platform.platform_logo)
@@ -183,9 +194,11 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'families', async (families) => {
-      await this.IGDBFamiliesModel.deleteMany({});
-      return this.IGDBFamiliesModel.insertMany(families);
+    return igdbParser(access_token, 'families', async (items) => {
+      this.updateOrInsertValues<IGDBFamiliesDocument>(
+        this.IGDBFamiliesModel,
+        items,
+      );
     });
   }
 
@@ -195,82 +208,93 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'modes', async (modes) => {
-      await this.IGDBModesModel.deleteMany({});
-      return this.IGDBModesModel.insertMany(modes);
+    return igdbParser(access_token, 'modes', async (items) => {
+      this.updateOrInsertValues<IGDBModesDocument>(this.IGDBModesModel, items);
     });
   }
 
   private async genresParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(access_token, 'genres', async (genres) => {
-      await this.IGDBGenresModel.deleteMany({});
-      return this.IGDBGenresModel.insertMany(genres);
+
+    return igdbParser(access_token, 'genres', async (items) => {
+      this.updateOrInsertValues<IGDBGenresDocument>(
+        this.IGDBGenresModel,
+        items,
+      );
     });
   }
 
   private async keywordsParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(access_token, 'keywords', async (keywords) => {
-      await this.IGDBKeywordsModel.deleteMany({});
-      return this.IGDBKeywordsModel.insertMany(keywords);
+
+    return igdbParser(access_token, 'keywords', async (items) => {
+      this.updateOrInsertValues<IGDBKeywordsDocument>(
+        this.IGDBKeywordsModel,
+        items,
+      );
     });
   }
 
   private async themesParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(access_token, 'themes', async (themes) => {
-      await this.IGDBThemesModel.deleteMany({});
-      return this.IGDBThemesModel.insertMany(themes);
+
+    return igdbParser(access_token, 'themes', async (items) => {
+      this.updateOrInsertValues<IGDBThemesDocument>(
+        this.IGDBThemesModel,
+        items,
+      );
     });
   }
 
   private async screenshotsParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(
-      access_token,
-      'screenshots',
-      async (screenshots: IGDBScreenshots) => {
-        await this.IGDBScreenshotsModel.deleteMany({});
-        return this.IGDBScreenshotsModel.insertMany(screenshots);
-      },
-    );
+
+    return igdbParser(access_token, 'screenshots', async (items) => {
+      this.updateOrInsertValues<IGDBScreenshotsDocument>(
+        this.IGDBScreenshotsModel,
+        items,
+      );
+    });
   }
 
   private async artworksParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(
-      access_token,
-      'artworks',
-      async (artworks: IGDBArtworks) => {
-        await this.IGDBArtworksModel.deleteMany({});
-        return this.IGDBArtworksModel.insertMany(artworks);
-      },
-    );
+
+    return igdbParser(access_token, 'artworks', async (items) => {
+      this.updateOrInsertValues<IGDBArtworksDocument>(
+        this.IGDBArtworksModel,
+        items,
+      );
+    });
   }
 
   private async platformLogosParser() {
     const { data: authData } = await igdbAuth();
     const { access_token } = authData;
+
     if (!access_token) return;
-    return igdbParser(
-      access_token,
-      'platform_logos',
-      async (logos: IGDBPlatformLogos) => {
-        await this.IGDBPlatformLogosModel.deleteMany({});
-        return this.IGDBPlatformLogosModel.insertMany(logos);
-      },
-    );
+
+    return igdbParser(access_token, 'platform_logos', async (items) => {
+      this.updateOrInsertValues<IGDBPlatformLogosDocument>(
+        this.IGDBPlatformLogosModel,
+        items,
+      );
+    });
   }
 
   private async coversParser() {
@@ -279,9 +303,8 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'covers', async (covers) => {
-      await this.IGDBCoversModel.deleteMany({});
-      return this.IGDBCoversModel.insertMany(covers);
+    return igdbParser(access_token, 'covers', async (items) => {
+      this.updateOrInsertValues<IGDBCoverDocument>(this.IGDBCoversModel, items);
     });
   }
 
@@ -316,6 +339,19 @@ export class IGDBService {
     const filters = {
       $match: {
         $and: [
+          {
+            category: {
+              $in: [
+                categories.main_game,
+                categories.expansion,
+                categories.standalone_expansion,
+                categories.remake,
+                categories.remaster,
+                categories.expanded_game,
+                categories.port,
+              ],
+            },
+          },
           ...(!!search ? [{ name: { $regex: search, $options: 'i' } }] : []),
           ...(rating !== undefined
             ? [{ total_rating: { $gte: +rating } }]
@@ -514,9 +550,11 @@ export class IGDBService {
     return igdbParser(
       access_token,
       'games',
-      async (games: IGDBGamesDocument[]) => {
-        await this.IGDBGamesModel.deleteMany({});
-        return this.IGDBGamesModel.insertMany(games);
+      async (items) => {
+        this.updateOrInsertValues<IGDBGamesDocument>(
+          this.IGDBGamesModel,
+          items,
+        );
       },
       async (games: IGDBGamesDocument[]) => {
         const tempCovers =
