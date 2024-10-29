@@ -104,12 +104,12 @@ export class AuthService {
     refreshToken: string,
     origin?: string,
   ): void {
-    res.cookie('access_token', accessToken, {
+    res.cookie('accessMoonToken', accessToken, {
       httpOnly: !origin?.includes('localhost'),
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       maxAge: 24 * 60 * 60 * 1000,
     });
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('refreshMoonToken', refreshToken, {
       httpOnly: !origin?.includes('localhost'),
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -117,10 +117,10 @@ export class AuthService {
   }
 
   clearCookies(res: Response, origin?: string): void {
-    res.clearCookie('access_token', {
+    res.clearCookie('accessMoonToken', {
       httpOnly: !origin?.includes('localhost'),
     });
-    res.clearCookie('refresh_token', {
+    res.clearCookie('refreshMoonToken', {
       httpOnly: !origin?.includes('localhost'),
     });
   }

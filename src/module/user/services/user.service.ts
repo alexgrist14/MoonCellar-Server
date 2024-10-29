@@ -162,7 +162,7 @@ export class UserService {
   }
 
   async getProfilePicture(userId: string): Promise<string> {
-    const user = await this.userModel.findById(userId).exec();
+    const user = await this.userModel.findById(userId);
     if (!user || !user.profilePicture)
       throw new NotFoundException('Profile picture not found');
 
