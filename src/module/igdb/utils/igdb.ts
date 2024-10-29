@@ -83,7 +83,7 @@ const parser = async ({
   parsingCallback,
 }: {
   token: string;
-  callback: (items: unknown) => Promise<unknown>;
+  callback?: (items: unknown) => Promise<unknown>;
   type: ParserType;
   parsingCallback?: (items: unknown) => unknown;
 }) => {
@@ -117,13 +117,23 @@ const parser = async ({
         run++;
 
         if (run <= Math.ceil(total / limit)) {
-          !!parsingCallback
-            ? items.push(...((await parsingCallback(response.data)) as []))
-            : items.push(...(response.data as []));
+          if (!!parsingCallback) {
+            if (!callback) {
+              items.push(...(response.data as []));
+              await parsingCallback(response.data);
+            } else {
+              items.push(...((await parsingCallback(response.data)) as []));
+            }
+          } else {
+            items.push(...(response.data as []));
+          }
+
           console.log(run, items.length);
+
           return hui();
         } else {
-          return callback(items);
+          !!callback && callback(items);
+          return;
         }
       }
     } catch (e) {
@@ -135,12 +145,17 @@ const parser = async ({
   return hui();
 };
 
-export const igdbParser = (
-  token: string,
-  action: ParserType,
-  callback: (items: unknown) => Promise<unknown>,
-  parsingCallback?: (items: unknown) => unknown,
-) => {
+export const igdbParser = ({
+  action,
+  token,
+  callback,
+  parsingCallback,
+}: {
+  token: string;
+  action: ParserType;
+  callback?: (items: unknown) => Promise<unknown>;
+  parsingCallback?: (items: unknown) => unknown;
+}) => {
   return parser({
     token,
     callback,

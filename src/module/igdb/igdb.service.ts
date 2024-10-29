@@ -37,6 +37,7 @@ import {
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
 import { categories } from './constants/common';
+import { getCount, updateOrInsertValues } from 'src/shared/db';
 
 const lookupAll = [
   {
@@ -139,20 +140,6 @@ export class IGDBService {
     private IGDBPlatformLogosModel: Model<IGDBPlatformLogosDocument>,
   ) {}
 
-  private async getCount<T>(model: Model<T>) {
-    console.log(`${model.modelName}: ${await model.countDocuments({})}`);
-    console.log('');
-  }
-
-  private async updateOrInsertValues<T>(model: Model<T>, items: unknown) {
-    (items as (T & { id: number })[]).forEach(async (item) => {
-      await model.findOneAndUpdate({ id: item.id }, item, {
-        new: true,
-        upsert: true,
-      });
-    });
-  }
-
   private async platformParser(
     families?: IGDBFamiliesDocument[],
     logos?: IGDBPlatformLogosDocument[],
@@ -167,11 +154,11 @@ export class IGDBService {
     const tempFamilies = families || (await this.IGDBFamiliesModel.find());
     const tempLogos = logos || (await this.IGDBPlatformLogosModel.find());
 
-    return igdbParser(
-      access_token,
-      'platforms',
-      async (items: IGDBPlatformsDocument[]) => {
-        this.updateOrInsertValues<IGDBPlatformsDocument>(
+    return igdbParser({
+      token: access_token,
+      action: 'platforms',
+      parsingCallback: async (items: IGDBPlatformsDocument[]) => {
+        await updateOrInsertValues<IGDBPlatformsDocument>(
           this.IGDBPlatformsModel,
           items.map((platform) => ({
             ...platform,
@@ -185,7 +172,7 @@ export class IGDBService {
           })),
         );
       },
-    );
+    });
   }
 
   private async familiesParser() {
@@ -194,11 +181,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'families', async (items) => {
-      this.updateOrInsertValues<IGDBFamiliesDocument>(
-        this.IGDBFamiliesModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'families',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBFamiliesDocument>(
+          this.IGDBFamiliesModel,
+          items,
+        );
+        getCount(this.IGDBFamiliesModel);
+      },
     });
   }
 
@@ -208,8 +200,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'modes', async (items) => {
-      this.updateOrInsertValues<IGDBModesDocument>(this.IGDBModesModel, items);
+    return igdbParser({
+      token: access_token,
+      action: 'modes',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBModesDocument>(
+          this.IGDBModesModel,
+          items,
+        );
+        getCount(this.IGDBModesModel);
+      },
     });
   }
 
@@ -219,11 +219,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'genres', async (items) => {
-      this.updateOrInsertValues<IGDBGenresDocument>(
-        this.IGDBGenresModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'genres',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBGenresDocument>(
+          this.IGDBGenresModel,
+          items,
+        );
+        getCount(this.IGDBGenresModel);
+      },
     });
   }
 
@@ -233,11 +238,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'keywords', async (items) => {
-      this.updateOrInsertValues<IGDBKeywordsDocument>(
-        this.IGDBKeywordsModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'keywords',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBKeywordsDocument>(
+          this.IGDBKeywordsModel,
+          items,
+        );
+        getCount(this.IGDBKeywordsModel);
+      },
     });
   }
 
@@ -247,11 +257,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'themes', async (items) => {
-      this.updateOrInsertValues<IGDBThemesDocument>(
-        this.IGDBThemesModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'themes',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBThemesDocument>(
+          this.IGDBThemesModel,
+          items,
+        );
+        getCount(this.IGDBThemesModel);
+      },
     });
   }
 
@@ -261,11 +276,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'screenshots', async (items) => {
-      this.updateOrInsertValues<IGDBScreenshotsDocument>(
-        this.IGDBScreenshotsModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'screenshots',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBScreenshotsDocument>(
+          this.IGDBScreenshotsModel,
+          items,
+        );
+        getCount(this.IGDBScreenshotsModel);
+      },
     });
   }
 
@@ -275,11 +295,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'artworks', async (items) => {
-      this.updateOrInsertValues<IGDBArtworksDocument>(
-        this.IGDBArtworksModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'artworks',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBArtworksDocument>(
+          this.IGDBArtworksModel,
+          items,
+        );
+        getCount(this.IGDBArtworksModel);
+      },
     });
   }
 
@@ -289,11 +314,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'platform_logos', async (items) => {
-      this.updateOrInsertValues<IGDBPlatformLogosDocument>(
-        this.IGDBPlatformLogosModel,
-        items,
-      );
+    return igdbParser({
+      token: access_token,
+      action: 'platform_logos',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBPlatformLogosDocument>(
+          this.IGDBPlatformLogosModel,
+          items,
+        );
+        getCount(this.IGDBPlatformLogosModel);
+      },
     });
   }
 
@@ -303,8 +333,16 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(access_token, 'covers', async (items) => {
-      this.updateOrInsertValues<IGDBCoverDocument>(this.IGDBCoversModel, items);
+    return igdbParser({
+      token: access_token,
+      action: 'covers',
+      parsingCallback: async (items) => {
+        await updateOrInsertValues<IGDBCoverDocument>(
+          this.IGDBCoversModel,
+          items,
+        );
+        getCount(this.IGDBCoversModel);
+      },
     });
   }
 
@@ -556,16 +594,10 @@ export class IGDBService {
 
     if (!access_token) return;
 
-    return igdbParser(
-      access_token,
-      'games',
-      async (items) => {
-        this.updateOrInsertValues<IGDBGamesDocument>(
-          this.IGDBGamesModel,
-          items,
-        );
-      },
-      async (games: IGDBGamesDocument[]) => {
+    return igdbParser({
+      token: access_token,
+      action: 'games',
+      parsingCallback: async (games: IGDBGamesDocument[]) => {
         const tempCovers =
           covers ||
           (await this.IGDBCoversModel.find({
@@ -614,7 +646,7 @@ export class IGDBService {
             id: { $in: games.map((game) => game.artworks).flat() },
           }));
 
-        return games.map((game) => ({
+        const finalGames = games.map((game) => ({
           ...game,
           platforms:
             game.platforms?.reduce((result, id) => {
@@ -668,33 +700,40 @@ export class IGDBService {
           cover:
             tempCovers?.find((cover) => cover.id === game.cover)?._id || null,
         }));
+
+        await updateOrInsertValues<IGDBGamesDocument>(
+          this.IGDBGamesModel,
+          finalGames,
+        );
+
+        getCount(this.IGDBGamesModel);
       },
-    );
+    });
   }
 
   async parseAll() {
     this.themesParser().then(() => {
-      this.getCount(this.IGDBThemesModel);
+      getCount(this.IGDBThemesModel);
       this.keywordsParser().then(() => {
-        this.getCount(this.IGDBKeywordsModel);
+        getCount(this.IGDBKeywordsModel);
         this.modesParser().then((modes: IGDBModesDocument[]) => {
-          this.getCount(this.IGDBModesModel);
+          getCount(this.IGDBModesModel);
           this.platformLogosParser().then(
             (logos: IGDBPlatformLogosDocument[]) => {
-              this.getCount(this.IGDBFamiliesModel);
+              getCount(this.IGDBFamiliesModel);
               this.familiesParser().then((families: IGDBFamiliesDocument[]) => {
-                this.getCount(this.IGDBFamiliesModel);
+                getCount(this.IGDBFamiliesModel);
                 this.platformParser(families, logos).then(
                   (platforms: IGDBPlatformsDocument[]) => {
-                    this.getCount(this.IGDBPlatformsModel);
+                    getCount(this.IGDBPlatformsModel);
                     this.genresParser().then((genres: IGDBGenresDocument[]) => {
-                      this.getCount(this.IGDBGenresModel);
+                      getCount(this.IGDBGenresModel);
                       this.screenshotsParser().then(
                         (screenshots: IGDBScreenshotsDocument[]) => {
-                          this.getCount(this.IGDBScreenshotsModel);
+                          getCount(this.IGDBScreenshotsModel);
                           this.artworksParser().then(
                             (artworks: IGDBArtworksDocument[]) => {
-                              this.getCount(this.IGDBScreenshotsModel);
+                              getCount(this.IGDBScreenshotsModel);
                               this.coversParser().then(
                                 (covers: IGDBCoverDocument[]) => {
                                   this.gamesParser({
@@ -705,7 +744,7 @@ export class IGDBService {
                                     screenshots,
                                     artworks,
                                   }).then(() => {
-                                    this.getCount(this.IGDBGamesModel);
+                                    getCount(this.IGDBGamesModel);
                                   });
                                 },
                               );
@@ -727,45 +766,37 @@ export class IGDBService {
   async parseSelected(type: ParserType) {
     switch (type) {
       case 'games':
-        this.gamesParser({}).then(() => this.getCount(this.IGDBGamesModel));
+        this.gamesParser({});
         break;
       case 'covers':
-        this.coversParser().then(() => this.getCount(this.IGDBCoversModel));
+        this.coversParser();
         break;
       case 'genres':
-        this.genresParser().then(() => this.getCount(this.IGDBGenresModel));
+        this.genresParser();
         break;
       case 'modes':
-        this.modesParser().then(() => this.getCount(this.IGDBModesModel));
+        this.modesParser();
         break;
       case 'families':
-        this.familiesParser().then(() => this.getCount(this.IGDBFamiliesModel));
+        this.familiesParser();
         break;
       case 'platforms':
-        this.platformParser().then(() =>
-          this.getCount(this.IGDBPlatformsModel),
-        );
+        this.platformParser();
         break;
       case 'keywords':
-        this.keywordsParser().then(() => this.getCount(this.IGDBKeywordsModel));
+        this.keywordsParser();
         break;
       case 'themes':
-        this.themesParser().then(() => this.getCount(this.IGDBThemesModel));
+        this.themesParser();
         break;
       case 'screenshots':
-        this.screenshotsParser().then(() =>
-          this.getCount(this.IGDBScreenshotsModel),
-        );
+        this.screenshotsParser();
         break;
       case 'artworks':
-        this.artworksParser().then(() =>
-          this.getCount(this.IGDBScreenshotsModel),
-        );
+        this.artworksParser();
         break;
       case 'platform_logos':
-        this.platformLogosParser().then(() =>
-          this.getCount(this.IGDBPlatformLogosModel),
-        );
+        this.platformLogosParser();
         break;
     }
   }
