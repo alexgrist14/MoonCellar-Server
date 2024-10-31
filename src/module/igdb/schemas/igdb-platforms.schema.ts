@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type IGDBPlatformsDocument = HydratedDocument<IGDBPlatforms>;
 
@@ -13,10 +13,10 @@ export class IGDBPlatforms {
   name: string;
   @Prop()
   slug: string;
-  @Prop({ ref: 'IGDBFamilies' })
-  platform_family: mongoose.Schema.Types.ObjectId;
-  @Prop({ ref: 'IGDBPlatformLogos' })
-  platform_logo: mongoose.Schema.Types.ObjectId;
+  @Prop()
+  platform_family: number;
+  @Prop()
+  platform_logo: number;
   @Prop()
   generation: number;
 }

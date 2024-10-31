@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
 import { igdbAuth, igdbParser } from './utils/igdb';
 import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
 import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
@@ -37,14 +37,14 @@ import {
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
 import { categories } from './constants/common';
-import { getCount, updateOrInsertValues } from 'src/shared/db';
+import { updateOrInsertValues } from 'src/shared/db';
 
 const lookupAll = [
   {
     $lookup: {
       from: 'igdbgenres',
       localField: 'genres',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'genres',
     },
   },
@@ -52,7 +52,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbplatforms',
       localField: 'platforms',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'platforms',
     },
   },
@@ -60,7 +60,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbmodes',
       localField: 'game_modes',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'game_modes',
     },
   },
@@ -68,7 +68,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbcovers',
       localField: 'cover',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'cover',
     },
   },
@@ -76,7 +76,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbscreenshots',
       localField: 'screenshots',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'screenshots',
     },
   },
@@ -84,7 +84,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbartworks',
       localField: 'artworks',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'artworks',
     },
   },
@@ -92,7 +92,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbkeywords',
       localField: 'keywords',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'keywords',
     },
   },
@@ -100,7 +100,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbthemes',
       localField: 'themes',
-      foreignField: '_id',
+      foreignField: 'id',
       as: 'themes',
     },
   },
@@ -140,208 +140,17 @@ export class IGDBService {
     private IGDBPlatformLogosModel: Model<IGDBPlatformLogosDocument>,
   ) {}
 
-  private async platformParser(
-    families?: IGDBFamiliesDocument[],
-    logos?: IGDBPlatformLogosDocument[],
-  ) {
+  private async parser<T>(type: ParserType, model: Model<T>) {
     const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
+    const { access_token: token } = authData;
 
-    if (!access_token) return;
+    if (!token) return;
 
-    await this.IGDBPlatformsModel.deleteMany({});
-
-    const tempFamilies = families || (await this.IGDBFamiliesModel.find());
-    const tempLogos = logos || (await this.IGDBPlatformLogosModel.find());
-
-    return igdbParser({
-      token: access_token,
-      action: 'platforms',
-      parsingCallback: async (items: IGDBPlatformsDocument[]) => {
-        await updateOrInsertValues<IGDBPlatformsDocument>(
-          this.IGDBPlatformsModel,
-          items.map((platform) => ({
-            ...platform,
-            platform_logo:
-              tempLogos.find((logo) => logo.id === platform.platform_logo)
-                ?._id || null,
-            platform_family:
-              tempFamilies.find(
-                (family) => family.id === platform.platform_family,
-              )?._id || null,
-          })),
-        );
-      },
-    });
-  }
-
-  private async familiesParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'families',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBFamiliesDocument>(
-          this.IGDBFamiliesModel,
-          items,
-        );
-        getCount(this.IGDBFamiliesModel);
-      },
-    });
-  }
-
-  private async modesParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'modes',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBModesDocument>(
-          this.IGDBModesModel,
-          items,
-        );
-        getCount(this.IGDBModesModel);
-      },
-    });
-  }
-
-  private async genresParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'genres',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBGenresDocument>(
-          this.IGDBGenresModel,
-          items,
-        );
-        getCount(this.IGDBGenresModel);
-      },
-    });
-  }
-
-  private async keywordsParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'keywords',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBKeywordsDocument>(
-          this.IGDBKeywordsModel,
-          items,
-        );
-        getCount(this.IGDBKeywordsModel);
-      },
-    });
-  }
-
-  private async themesParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'themes',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBThemesDocument>(
-          this.IGDBThemesModel,
-          items,
-        );
-        getCount(this.IGDBThemesModel);
-      },
-    });
-  }
-
-  private async screenshotsParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'screenshots',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBScreenshotsDocument>(
-          this.IGDBScreenshotsModel,
-          items,
-        );
-        getCount(this.IGDBScreenshotsModel);
-      },
-    });
-  }
-
-  private async artworksParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'artworks',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBArtworksDocument>(
-          this.IGDBArtworksModel,
-          items,
-        );
-        getCount(this.IGDBArtworksModel);
-      },
-    });
-  }
-
-  private async platformLogosParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'platform_logos',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBPlatformLogosDocument>(
-          this.IGDBPlatformLogosModel,
-          items,
-        );
-        getCount(this.IGDBPlatformLogosModel);
-      },
-    });
-  }
-
-  private async coversParser() {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'covers',
-      parsingCallback: async (items) => {
-        await updateOrInsertValues<IGDBCoverDocument>(
-          this.IGDBCoversModel,
-          items,
-        );
-        getCount(this.IGDBCoversModel);
+    return igdbParser<T>({
+      token,
+      action: type,
+      parsingCallback: async (items: T[]) => {
+        return await updateOrInsertValues<T>(model, items);
       },
     });
   }
@@ -570,234 +379,69 @@ export class IGDBService {
     return this.IGDBModesModel.find().sort({ name: 1 });
   }
 
-  private async gamesParser({
-    covers,
-    genres,
-    modes,
-    platforms,
-    keywords,
-    themes,
-    screenshots,
-    artworks,
-  }: {
-    genres?: IGDBGenresDocument[];
-    modes?: IGDBModesDocument[];
-    covers?: IGDBCoverDocument[];
-    platforms?: IGDBPlatformsDocument[];
-    keywords?: IGDBKeywordsDocument[];
-    themes?: IGDBThemesDocument[];
-    screenshots?: IGDBScreenshotsDocument[];
-    artworks?: IGDBArtworksDocument[];
-  }) {
-    const { data: authData } = await igdbAuth();
-    const { access_token } = authData;
-
-    if (!access_token) return;
-
-    return igdbParser({
-      token: access_token,
-      action: 'games',
-      parsingCallback: async (games: IGDBGamesDocument[]) => {
-        const tempCovers =
-          covers ||
-          (await this.IGDBCoversModel.find({
-            game: { $in: games.map((game) => game.id.toString()) },
-          }));
-
-        const tempPlatforms =
-          platforms ||
-          (await this.IGDBPlatformsModel.find({
-            id: { $in: games.map((game) => game.platforms).flat() },
-          }));
-
-        const tempGenres =
-          genres ||
-          (await this.IGDBGenresModel.find({
-            id: { $in: games.map((game) => game.genres).flat() },
-          }));
-
-        const tempModes =
-          modes ||
-          (await this.IGDBModesModel.find({
-            id: { $in: games.map((game) => game.game_modes).flat() },
-          }));
-
-        const tempKeywords =
-          keywords ||
-          (await this.IGDBKeywordsModel.find({
-            id: { $in: games.map((game) => game.keywords).flat() },
-          }));
-
-        const tempThemes =
-          themes ||
-          (await this.IGDBThemesModel.find({
-            id: { $in: games.map((game) => game.themes).flat() },
-          }));
-
-        const tempScreenshots =
-          screenshots ||
-          (await this.IGDBScreenshotsModel.find({
-            id: { $in: games.map((game) => game.screenshots).flat() },
-          }));
-
-        const tempArtworks =
-          artworks ||
-          (await this.IGDBArtworksModel.find({
-            id: { $in: games.map((game) => game.artworks).flat() },
-          }));
-
-        const finalGames = games.map((game) => ({
-          ...game,
-          platforms:
-            game.platforms?.reduce((result, id) => {
-              const selectedId =
-                tempPlatforms.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          genres:
-            game.genres?.reduce((result, id) => {
-              const selectedId =
-                tempGenres.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          keywords:
-            game.keywords?.reduce((result, id) => {
-              const selectedId =
-                tempKeywords.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          themes:
-            game.themes?.reduce((result, id) => {
-              const selectedId =
-                tempThemes.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          screenshots:
-            game.screenshots?.reduce((result, id) => {
-              const selectedId =
-                tempScreenshots.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          artworks:
-            game.artworks?.reduce((result, id) => {
-              const selectedId =
-                tempArtworks.find((item) => item.id === id)?._id || null;
-              selectedId !== null && result.push(selectedId);
-              return result;
-            }, []) || null,
-          game_modes:
-            game.game_modes?.reduce((result, id) => {
-              const mode =
-                tempModes.find((mode) => mode.id === id)?._id || null;
-              mode !== null && result.push(mode);
-              return result;
-            }, []) || null,
-          cover:
-            tempCovers?.find((cover) => cover.id === game.cover)?._id || null,
-        }));
-
-        await updateOrInsertValues<IGDBGamesDocument>(
-          this.IGDBGamesModel,
-          finalGames,
-        );
-
-        getCount(this.IGDBGamesModel);
-      },
-    });
-  }
-
   async parseAll() {
-    this.themesParser().then(() => {
-      getCount(this.IGDBThemesModel);
-      this.keywordsParser().then(() => {
-        getCount(this.IGDBKeywordsModel);
-        this.modesParser().then((modes: IGDBModesDocument[]) => {
-          getCount(this.IGDBModesModel);
-          this.platformLogosParser().then(
-            (logos: IGDBPlatformLogosDocument[]) => {
-              getCount(this.IGDBFamiliesModel);
-              this.familiesParser().then((families: IGDBFamiliesDocument[]) => {
-                getCount(this.IGDBFamiliesModel);
-                this.platformParser(families, logos).then(
-                  (platforms: IGDBPlatformsDocument[]) => {
-                    getCount(this.IGDBPlatformsModel);
-                    this.genresParser().then((genres: IGDBGenresDocument[]) => {
-                      getCount(this.IGDBGenresModel);
-                      this.screenshotsParser().then(
-                        (screenshots: IGDBScreenshotsDocument[]) => {
-                          getCount(this.IGDBScreenshotsModel);
-                          this.artworksParser().then(
-                            (artworks: IGDBArtworksDocument[]) => {
-                              getCount(this.IGDBScreenshotsModel);
-                              this.coversParser().then(
-                                (covers: IGDBCoverDocument[]) => {
-                                  this.gamesParser({
-                                    covers,
-                                    genres,
-                                    modes,
-                                    platforms,
-                                    screenshots,
-                                    artworks,
-                                  }).then(() => {
-                                    getCount(this.IGDBGamesModel);
-                                  });
-                                },
-                              );
-                            },
-                          );
-                        },
-                      );
-                    });
-                  },
-                );
-              });
-            },
-          );
-        });
-      });
-    });
+    await this.parser<IGDBThemesDocument>('themes', this.IGDBThemesModel);
+    await this.parser<IGDBKeywordsDocument>('keywords', this.IGDBKeywordsModel);
+    await this.parser<IGDBModesDocument>('modes', this.IGDBModesModel);
+    await this.parser<IGDBPlatformLogosDocument>(
+      'platform_logos',
+      this.IGDBPlatformLogosModel,
+    );
+    await this.parser<IGDBFamiliesDocument>('families', this.IGDBFamiliesModel);
+    await this.parser<IGDBPlatformsDocument>(
+      'platforms',
+      this.IGDBPlatformsModel,
+    );
+    await this.parser<IGDBGenresDocument>('genres', this.IGDBGenresModel);
+    await this.parser<IGDBScreenshotsDocument>(
+      'screenshots',
+      this.IGDBScreenshotsModel,
+    );
+    await this.parser<IGDBArtworksDocument>('artworks', this.IGDBArtworksModel);
+    await this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
+
+    this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
   }
 
   async parseSelected(type: ParserType) {
     switch (type) {
       case 'games':
-        this.gamesParser({});
-        break;
+        return this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
       case 'covers':
-        this.coversParser();
-        break;
+        return this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
       case 'genres':
-        this.genresParser();
-        break;
+        return this.parser<IGDBGenresDocument>('genres', this.IGDBGenresModel);
       case 'modes':
-        this.modesParser();
-        break;
+        return this.parser<IGDBModesDocument>('modes', this.IGDBModesModel);
       case 'families':
-        this.familiesParser();
-        break;
+        return this.parser<IGDBFamiliesDocument>(type, this.IGDBFamiliesModel);
       case 'platforms':
-        this.platformParser();
-        break;
+        return this.parser<IGDBPlatformsDocument>(
+          'platforms',
+          this.IGDBPlatformsModel,
+        );
       case 'keywords':
-        this.keywordsParser();
-        break;
+        return this.parser<IGDBKeywordsDocument>(
+          'keywords',
+          this.IGDBKeywordsModel,
+        );
       case 'themes':
-        this.themesParser();
-        break;
+        return this.parser<IGDBThemesDocument>('themes', this.IGDBThemesModel);
       case 'screenshots':
-        this.screenshotsParser();
-        break;
+        return this.parser<IGDBScreenshotsDocument>(
+          'screenshots',
+          this.IGDBScreenshotsModel,
+        );
       case 'artworks':
-        this.artworksParser();
-        break;
+        return this.parser<IGDBArtworksDocument>(
+          'artworks',
+          this.IGDBArtworksModel,
+        );
       case 'platform_logos':
-        this.platformLogosParser();
-        break;
+        return this.parser<IGDBPlatformLogosDocument>(
+          'platform_logos',
+          this.IGDBPlatformLogosModel,
+        );
     }
   }
 

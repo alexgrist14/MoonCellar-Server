@@ -9,7 +9,7 @@ export const updateOrInsertValues = <T>(model: Model<T>, items: unknown) => {
   const queries = [];
 
   (items as (T & { id: number })[]).forEach((item) => {
-    queries.push(
+    !!item && queries.push(
       model.findOneAndUpdate({ id: item.id }, item, {
         new: true,
         upsert: true,

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 
@@ -7,32 +7,32 @@ export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 export class IGDBGames {
   @Prop()
   id: number;
-  @Prop({ ref: 'IGDBModes' })
-  game_modes: mongoose.Schema.Types.ObjectId[];
-  @Prop({ ref: 'IGDBGenres' })
-  genres: mongoose.Schema.Types.ObjectId[];
+  @Prop()
+  game_modes: number[];
+  @Prop()
+  genres: number[];
   @Prop()
   name: string;
-  @Prop({ ref: 'IGDBPlatforms' })
-  platforms: mongoose.Schema.Types.ObjectId[];
+  @Prop()
+  platforms: number[];
   @Prop()
   slug: string;
-  @Prop({ ref: 'IGDBKeywords' })
-  keywords: mongoose.Schema.Types.ObjectId[];
-  @Prop({ ref: 'IGDBThemes' })
-  themes: mongoose.Schema.Types.ObjectId[];
-  @Prop({ ref: 'IGDBCovers' })
-  cover: mongoose.Schema.Types.ObjectId;
-  @Prop({ ref: 'IGDBScreenshots' })
-  screenshots: mongoose.Schema.Types.ObjectId[];
+  @Prop()
+  keywords: number[];
+  @Prop()
+  themes: number[];
+  @Prop()
+  cover: number[];
+  @Prop()
+  screenshots: number[];
   @Prop()
   total_rating: number;
   @Prop()
   aggregated_rating: number;
   @Prop()
   category: number;
-  @Prop({ ref: 'IGDBArtworks' })
-  artworks: mongoose.Schema.Types.ObjectId[];
+  @Prop()
+  artworks: number[];
   @Prop()
   storyline: string;
   @Prop()
