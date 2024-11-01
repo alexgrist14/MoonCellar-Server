@@ -6,7 +6,7 @@ export type IGDBThemesDocument = HydratedDocument<IGDBThemes>;
 @Schema()
 export class IGDBThemes {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

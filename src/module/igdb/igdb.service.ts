@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId } from 'mongoose';
+import { Model } from 'mongoose';
 import { igdbAuth, igdbParser } from './utils/igdb';
 import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
 import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
@@ -44,7 +44,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbgenres',
       localField: 'genres',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'genres',
     },
   },
@@ -52,7 +52,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbplatforms',
       localField: 'platforms',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'platforms',
     },
   },
@@ -60,7 +60,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbmodes',
       localField: 'game_modes',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'game_modes',
     },
   },
@@ -68,7 +68,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbcovers',
       localField: 'cover',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'cover',
     },
   },
@@ -76,7 +76,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbscreenshots',
       localField: 'screenshots',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'screenshots',
     },
   },
@@ -84,7 +84,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbartworks',
       localField: 'artworks',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'artworks',
     },
   },
@@ -92,7 +92,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbkeywords',
       localField: 'keywords',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'keywords',
     },
   },
@@ -100,7 +100,7 @@ const lookupAll = [
     $lookup: {
       from: 'igdbthemes',
       localField: 'themes',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'themes',
     },
   },
@@ -150,7 +150,7 @@ export class IGDBService {
       token,
       action: type,
       parsingCallback: async (items: T[]) => {
-        return await updateOrInsertValues<T>(model, items);
+        return updateOrInsertValues<T>(model, items);
       },
     });
   }

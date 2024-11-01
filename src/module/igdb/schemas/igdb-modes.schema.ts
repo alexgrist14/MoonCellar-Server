@@ -6,7 +6,7 @@ export type IGDBModesDocument = HydratedDocument<IGDBModes>;
 @Schema()
 export class IGDBModes {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

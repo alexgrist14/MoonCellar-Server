@@ -6,7 +6,7 @@ export type IGDBFamiliesDocument = HydratedDocument<IGDBFamilies>;
 @Schema()
 export class IGDBFamilies {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

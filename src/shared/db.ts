@@ -6,16 +6,13 @@ export const getCount = async <T>(model: Model<T>) => {
 };
 
 export const updateOrInsertValues = <T>(model: Model<T>, items: unknown) => {
-  const queries = [];
-
-  (items as (T & { id: number })[]).forEach((item) => {
-    !!item && queries.push(
-      model.findOneAndUpdate({ id: item.id }, item, {
-        new: true,
+  return model.bulkWrite(
+    (items as (T & { id: number })[]).map((item) => ({
+      updateOne: {
+        filter: { _id: item.id },
+        update: { $set: { ...item, id: undefined, _id: item.id } },
         upsert: true,
-      }),
-    );
-  });
-
-  return Promise.all(queries);
+      },
+    })),
+  );
 };

@@ -6,7 +6,7 @@ export type IGDBGenresDocument = HydratedDocument<IGDBGenres>;
 @Schema()
 export class IGDBGenres {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

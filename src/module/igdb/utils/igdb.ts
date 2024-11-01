@@ -52,7 +52,7 @@ const getLink = (type: ParserType) => {
 const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date, involved_companies, websites';
     case 'covers':
       return 'url, game, width, height';
     case 'genres':
@@ -78,14 +78,12 @@ const getFields = (type: ParserType) => {
 
 const parser = async <T>({
   token,
-  callback,
   type,
   parsingCallback,
 }: {
   token: string;
-  callback?: (items: unknown) => Promise<T[]>;
   type: ParserType;
-  parsingCallback?: (items: unknown) => Promise<T[]>;
+  parsingCallback?: (items: unknown) => Promise<unknown>;
 }): Promise<T[]> => {
   const url = getLink(type);
   const limit = 500;
@@ -118,12 +116,8 @@ const parser = async <T>({
 
         if (run <= Math.ceil(total / limit)) {
           if (!!parsingCallback) {
-            if (!callback) {
-              items.push(...response.data);
-              await parsingCallback(response.data);
-            } else {
-              items.push(...(await parsingCallback(response.data)));
-            }
+            items.push(...response.data);
+            await parsingCallback(response.data);
           } else {
             items.push(...response.data);
           }
@@ -132,7 +126,6 @@ const parser = async <T>({
 
           return hui();
         } else {
-          !!callback && callback(items);
           return;
         }
       }
@@ -148,17 +141,14 @@ const parser = async <T>({
 export const igdbParser = <T>({
   action,
   token,
-  callback,
   parsingCallback,
 }: {
   token: string;
   action: ParserType;
-  callback?: (items: unknown) => Promise<T[]>;
-  parsingCallback?: (items: unknown) => Promise<T[]>;
+  parsingCallback?: (items: unknown) => Promise<unknown>;
 }): Promise<T[]> => {
   return parser<T>({
     token,
-    callback,
     type: action,
     parsingCallback,
   });

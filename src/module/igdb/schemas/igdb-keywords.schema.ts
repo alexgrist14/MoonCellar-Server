@@ -6,7 +6,7 @@ export type IGDBKeywordsDocument = HydratedDocument<IGDBKeywords>;
 @Schema()
 export class IGDBKeywords {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

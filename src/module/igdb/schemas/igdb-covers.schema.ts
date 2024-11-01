@@ -6,7 +6,7 @@ export type IGDBCoverDocument = HydratedDocument<IGDBCovers>;
 @Schema()
 export class IGDBCovers {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   game: string;
   @Prop()

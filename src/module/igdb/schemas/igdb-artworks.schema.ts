@@ -6,7 +6,7 @@ export type IGDBArtworksDocument = HydratedDocument<IGDBArtworks>;
 @Schema()
 export class IGDBArtworks {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   url: string;
   @Prop()

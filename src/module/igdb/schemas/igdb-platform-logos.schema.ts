@@ -6,7 +6,7 @@ export type IGDBPlatformLogosDocument = HydratedDocument<IGDBPlatformLogos>;
 @Schema()
 export class IGDBPlatformLogos {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   url: string;
   @Prop()
