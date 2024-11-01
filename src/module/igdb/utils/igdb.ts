@@ -46,6 +46,12 @@ const getLink = (type: ParserType) => {
       return 'https://api.igdb.com/v4/artworks';
     case 'platform_logos':
       return 'https://api.igdb.com/v4/platform_logos';
+    case 'websites':
+      return 'https://api.igdb.com/v4/websites';
+    case 'involved_companies':
+      return 'https://api.igdb.com/v4/involved_companies';
+    case 'companies':
+      return 'https://api.igdb.com/v4/companies';
   }
 };
 
@@ -73,6 +79,12 @@ const getFields = (type: ParserType) => {
       return 'url, width, height';
     case 'platform_logos':
       return 'url, width, height';
+    case 'websites':
+      return 'category, url';
+    case 'involved_companies':
+      return 'company, developer, publisher, supporting, porting';
+    case 'companies':
+      return 'name, slug, description, start_date, published, developed, logo, url, country';
   }
 };
 

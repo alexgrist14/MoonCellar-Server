@@ -3,11 +3,13 @@ import { HydratedDocument } from 'mongoose';
 import { IGDBArtworks } from 'src/module/igdb/schemas/igdb-artworks.schema';
 import { IGDBCovers } from 'src/module/igdb/schemas/igdb-covers.schema';
 import { IGDBGenres } from 'src/module/igdb/schemas/igdb-genres.schema';
+import { IGDBInvolvedCompanies } from 'src/module/igdb/schemas/igdb-involved-companies.schema';
 import { IGDBKeywords } from 'src/module/igdb/schemas/igdb-keywords.schema';
 import { IGDBModes } from 'src/module/igdb/schemas/igdb-modes.schema';
 import { IGDBPlatforms } from 'src/module/igdb/schemas/igdb-platforms.schema';
 import { IGDBScreenshots } from 'src/module/igdb/schemas/igdb-screenshots.schema';
 import { IGDBThemes } from 'src/module/igdb/schemas/igdb-themes.schema';
+import { IGDBWebsites } from 'src/module/igdb/schemas/igdb-websites.schema';
 
 export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 
@@ -47,9 +49,9 @@ export class IGDBGames {
   summary: string;
   @Prop()
   first_release_date: number;
-  @Prop()
+  @Prop({ ref: IGDBInvolvedCompanies.name })
   involved_companies: number[];
-  @Prop()
+  @Prop({ ref: IGDBWebsites.name })
   websites: number[];
 }
 

@@ -9,6 +9,9 @@ export type ParserType =
   | 'keywords'
   | 'themes'
   | 'artworks'
+  | 'websites'
+  | 'involved_companies'
+  | 'companies'
   | 'platform_logos';
 
 export interface IGDBFilters {

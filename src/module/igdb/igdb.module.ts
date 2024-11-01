@@ -35,6 +35,18 @@ import {
   IGDBGames,
   IGDBGamesSchema,
 } from 'src/shared/schemas/igdb-games.schema';
+import {
+  IGDBWebsites,
+  IGDBWebsitesSchema,
+} from './schemas/igdb-websites.schema';
+import {
+  IGDBInvolvedCompanies,
+  IGDBInvolvedCompaniesSchema,
+} from './schemas/igdb-involved-companies.schema';
+import {
+  IGDBCompanies,
+  IGDBCompaniesSchema,
+} from './schemas/igdb-companies.schema';
 
 @Module({
   controllers: [IgdbController, IgdbParserController],
@@ -52,6 +64,9 @@ import {
       { name: IGDBScreenshots.name, schema: IGDBScreenshotsSchema },
       { name: IGDBArtworks.name, schema: IGDBArtworksSchema },
       { name: IGDBPlatformLogos.name, schema: IGDBPlatformLogosSchema },
+      { name: IGDBWebsites.name, schema: IGDBWebsitesSchema },
+      { name: IGDBInvolvedCompanies.name, schema: IGDBInvolvedCompaniesSchema },
+      { name: IGDBCompanies.name, schema: IGDBCompaniesSchema },
     ]),
   ],
 })

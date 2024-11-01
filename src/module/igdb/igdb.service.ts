@@ -14,7 +14,6 @@ import {
 } from './schemas/igdb-platforms.schema';
 import { IGDBModes, IGDBModesDocument } from './schemas/igdb-modes.schema';
 import { IGDBFilters, ParserType } from './interface/common.interface';
-import mongoose from 'mongoose';
 import {
   IGDBKeywords,
   IGDBKeywordsDocument,
@@ -38,32 +37,20 @@ import {
 } from 'src/shared/schemas/igdb-games.schema';
 import { categories } from './constants/common';
 import { updateOrInsertValues } from 'src/shared/db';
+import {
+  IGDBWebsites,
+  IGDBWebsitesDocument,
+} from './schemas/igdb-websites.schema';
+import {
+  IGDBInvolvedCompanies,
+  IGDBInvolvedCompaniesDocument,
+} from './schemas/igdb-involved-companies.schema';
+import {
+  IGDBCompanies,
+  IGDBCompaniesDocument,
+} from './schemas/igdb-companies.schema';
 
-const lookupAll = [
-  {
-    $lookup: {
-      from: 'igdbgenres',
-      localField: 'genres',
-      foreignField: '_id',
-      as: 'genres',
-    },
-  },
-  {
-    $lookup: {
-      from: 'igdbplatforms',
-      localField: 'platforms',
-      foreignField: '_id',
-      as: 'platforms',
-    },
-  },
-  {
-    $lookup: {
-      from: 'igdbmodes',
-      localField: 'game_modes',
-      foreignField: '_id',
-      as: 'game_modes',
-    },
-  },
+const lookup = (isBasic?: boolean) => [
   {
     $lookup: {
       from: 'igdbcovers',
@@ -73,44 +60,139 @@ const lookupAll = [
     },
   },
   {
-    $lookup: {
-      from: 'igdbscreenshots',
-      localField: 'screenshots',
-      foreignField: '_id',
-      as: 'screenshots',
-    },
-  },
-  {
-    $lookup: {
-      from: 'igdbartworks',
-      localField: 'artworks',
-      foreignField: '_id',
-      as: 'artworks',
-    },
-  },
-  {
-    $lookup: {
-      from: 'igdbkeywords',
-      localField: 'keywords',
-      foreignField: '_id',
-      as: 'keywords',
-    },
-  },
-  {
-    $lookup: {
-      from: 'igdbthemes',
-      localField: 'themes',
-      foreignField: '_id',
-      as: 'themes',
-    },
-  },
-  {
     $addFields: {
       cover: {
         $ifNull: [{ $arrayElemAt: ['$cover', 0] }, null],
       },
     },
   },
+  {
+    $lookup: {
+      from: 'igdbplatforms',
+      localField: 'platforms',
+      foreignField: '_id',
+      ...(!isBasic && {
+        pipeline: [
+          {
+            $lookup: {
+              from: 'igdbfamilies',
+              localField: 'platform_family',
+              foreignField: '_id',
+              as: 'platform_family',
+            },
+          },
+          {
+            $lookup: {
+              from: 'igdbplatformlogos',
+              localField: 'platform_logo',
+              foreignField: '_id',
+              as: 'platform_logo',
+            },
+          },
+          {
+            $addFields: {
+              platform_family: {
+                $ifNull: [{ $arrayElemAt: ['$platform_family', 0] }, null],
+              },
+            },
+          },
+          {
+            $addFields: {
+              platform_logo: {
+                $ifNull: [{ $arrayElemAt: ['$platform_logo', 0] }, null],
+              },
+            },
+          },
+        ],
+      }),
+      as: 'platforms',
+    },
+  },
+  ...(!isBasic
+    ? [
+        {
+          $lookup: {
+            from: 'igdbgenres',
+            localField: 'genres',
+            foreignField: '_id',
+            as: 'genres',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbmodes',
+            localField: 'game_modes',
+            foreignField: '_id',
+            as: 'game_modes',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbscreenshots',
+            localField: 'screenshots',
+            foreignField: '_id',
+            as: 'screenshots',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbartworks',
+            localField: 'artworks',
+            foreignField: '_id',
+            as: 'artworks',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbkeywords',
+            localField: 'keywords',
+            foreignField: '_id',
+            as: 'keywords',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbthemes',
+            localField: 'themes',
+            foreignField: '_id',
+            as: 'themes',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbwebsites',
+            localField: 'websites',
+            foreignField: '_id',
+            as: 'websites',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbinvolvedcompanies',
+            localField: 'involved_companies',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $lookup: {
+                  from: 'igdbcompanies',
+                  localField: 'company',
+                  foreignField: '_id',
+                  as: 'company',
+                },
+              },
+              {
+                $addFields: {
+                  company: {
+                    $ifNull: [{ $arrayElemAt: ['$company', 0] }, null],
+                  },
+                },
+              },
+            ],
+            as: 'involved_companies',
+          },
+        },
+      ]
+    : []),
 ];
 
 @Injectable()
@@ -138,6 +220,12 @@ export class IGDBService {
     private IGDBArtworksModel: Model<IGDBArtworksDocument>,
     @InjectModel(IGDBPlatformLogos.name)
     private IGDBPlatformLogosModel: Model<IGDBPlatformLogosDocument>,
+    @InjectModel(IGDBWebsites.name)
+    private IGDBWebsitesModel: Model<IGDBWebsitesDocument>,
+    @InjectModel(IGDBInvolvedCompanies.name)
+    private IGDBInvolvedCompaniesModel: Model<IGDBInvolvedCompaniesDocument>,
+    @InjectModel(IGDBCompanies.name)
+    private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -157,8 +245,8 @@ export class IGDBService {
 
   async getGameById(id: string) {
     const game = this.IGDBGamesModel.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(id) } },
-      ...lookupAll,
+      { $match: { _id: id } },
+      ...lookup(),
     ]);
 
     return (await game).pop();
@@ -167,7 +255,7 @@ export class IGDBService {
   async getGameBySlug(slug: string) {
     const game = this.IGDBGamesModel.aggregate([
       { $match: { slug: slug } },
-      ...lookupAll,
+      ...lookup(),
     ]);
 
     return (await game).pop();
@@ -223,17 +311,13 @@ export class IGDBService {
                     mode === 'any'
                       ? {
                           $in: Array.isArray(selected?.genres)
-                            ? selected?.genres.map(
-                                (genre) => new mongoose.Types.ObjectId(genre),
-                              )
-                            : [new mongoose.Types.ObjectId(selected?.genres)],
+                            ? selected?.genres.map((genre) => genre)
+                            : [selected?.genres],
                         }
                       : {
                           $all: Array.isArray(selected?.genres)
-                            ? selected?.genres.map(
-                                (genre) => new mongoose.Types.ObjectId(genre),
-                              )
-                            : [new mongoose.Types.ObjectId(selected?.genres)],
+                            ? selected?.genres.map((genre) => genre)
+                            : [selected?.genres],
                         },
                 },
               ]
@@ -243,10 +327,8 @@ export class IGDBService {
                 {
                   genres: {
                     $nin: Array.isArray(excluded?.genres)
-                      ? excluded?.genres.map(
-                          (genre) => new mongoose.Types.ObjectId(genre),
-                        )
-                      : [new mongoose.Types.ObjectId(excluded?.genres)],
+                      ? excluded?.genres.map((genre) => genre)
+                      : [excluded?.genres],
                   },
                 },
               ]
@@ -258,25 +340,13 @@ export class IGDBService {
                     mode === 'any'
                       ? {
                           $in: Array.isArray(selected?.platforms)
-                            ? selected?.platforms.map(
-                                (item) => new mongoose.Types.ObjectId(item),
-                              )
-                            : [
-                                new mongoose.Types.ObjectId(
-                                  selected?.platforms,
-                                ),
-                              ],
+                            ? selected?.platforms.map((item) => item)
+                            : [selected?.platforms],
                         }
                       : {
                           $all: Array.isArray(selected?.platforms)
-                            ? selected?.platforms.map(
-                                (item) => new mongoose.Types.ObjectId(item),
-                              )
-                            : [
-                                new mongoose.Types.ObjectId(
-                                  selected?.platforms,
-                                ),
-                              ],
+                            ? selected?.platforms.map((item) => item)
+                            : [selected?.platforms],
                         },
                 },
               ]
@@ -286,10 +356,8 @@ export class IGDBService {
                 {
                   platforms: {
                     $nin: Array.isArray(excluded?.platforms)
-                      ? excluded?.platforms.map(
-                          (platform) => new mongoose.Types.ObjectId(platform),
-                        )
-                      : [new mongoose.Types.ObjectId(excluded?.platforms)],
+                      ? excluded?.platforms.map((platform) => platform)
+                      : [excluded?.platforms],
                   },
                 },
               ]
@@ -301,17 +369,13 @@ export class IGDBService {
                     mode === 'any'
                       ? {
                           $in: Array.isArray(selected?.modes)
-                            ? selected?.modes.map(
-                                (item) => new mongoose.Types.ObjectId(item),
-                              )
-                            : [new mongoose.Types.ObjectId(selected?.modes)],
+                            ? selected?.modes.map((item) => item)
+                            : [selected?.modes],
                         }
                       : {
                           $all: Array.isArray(selected?.modes)
-                            ? selected?.modes.map(
-                                (item) => new mongoose.Types.ObjectId(item),
-                              )
-                            : [new mongoose.Types.ObjectId(selected?.modes)],
+                            ? selected?.modes.map((item) => item)
+                            : [selected?.modes],
                         },
                 },
               ]
@@ -321,10 +385,8 @@ export class IGDBService {
                 {
                   game_modes: {
                     $nin: Array.isArray(excluded?.modes)
-                      ? excluded?.modes.map(
-                          (mode) => new mongoose.Types.ObjectId(mode),
-                        )
-                      : [new mongoose.Types.ObjectId(excluded?.modes)],
+                      ? excluded?.modes.map((mode) => mode)
+                      : [excluded?.modes],
                   },
                 },
               ]
@@ -345,7 +407,7 @@ export class IGDBService {
       filters,
       {
         $facet: {
-          results: [...pagination, ...lookupAll],
+          results: [...pagination, ...lookup(true)],
           totalCount: [{ $count: 'count' }],
         },
       },
@@ -372,7 +434,9 @@ export class IGDBService {
   }
 
   async getPlatforms() {
-    return this.IGDBPlatformsModel.find().sort({ name: 1 });
+    return this.IGDBPlatformsModel.find()
+      .populate('platform_logo')
+      .sort({ name: 1 });
   }
 
   async getGameModes() {
@@ -380,6 +444,15 @@ export class IGDBService {
   }
 
   async parseAll() {
+    await this.parser<IGDBCompaniesDocument>(
+      'companies',
+      this.IGDBCompaniesModel,
+    );
+    await this.parser<IGDBWebsitesDocument>('websites', this.IGDBWebsitesModel);
+    await this.parser<IGDBInvolvedCompaniesDocument>(
+      'involved_companies',
+      this.IGDBInvolvedCompaniesModel,
+    );
     await this.parser<IGDBThemesDocument>('themes', this.IGDBThemesModel);
     await this.parser<IGDBKeywordsDocument>('keywords', this.IGDBKeywordsModel);
     await this.parser<IGDBModesDocument>('modes', this.IGDBModesModel);
@@ -400,7 +473,7 @@ export class IGDBService {
     await this.parser<IGDBArtworksDocument>('artworks', this.IGDBArtworksModel);
     await this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
 
-    this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
+    return this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
   }
 
   async parseSelected(type: ParserType) {
@@ -441,6 +514,21 @@ export class IGDBService {
         return this.parser<IGDBPlatformLogosDocument>(
           'platform_logos',
           this.IGDBPlatformLogosModel,
+        );
+      case 'websites':
+        return this.parser<IGDBWebsitesDocument>(
+          'websites',
+          this.IGDBWebsitesModel,
+        );
+      case 'involved_companies':
+        return this.parser<IGDBInvolvedCompaniesDocument>(
+          'involved_companies',
+          this.IGDBInvolvedCompaniesModel,
+        );
+      case 'companies':
+        return this.parser<IGDBCompaniesDocument>(
+          'companies',
+          this.IGDBCompaniesModel,
         );
     }
   }

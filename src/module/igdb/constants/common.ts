@@ -1,17 +1,20 @@
 import { ParserType } from '../interface/common.interface';
 
 export const parserTypes: ParserType[] = [
-  'games',
+  'companies',
+  'involved_companies',
+  'websites',
+  'platform_logos',
+  'families',
+  'platforms',
   'genres',
   'covers',
   'modes',
-  'platforms',
-  'families',
   'screenshots',
   'keywords',
   'themes',
   'artworks',
-  'platform_logos',
+  'games',
 ];
 
 export const categories = {
