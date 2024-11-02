@@ -52,13 +52,15 @@ const getLink = (type: ParserType) => {
       return 'https://api.igdb.com/v4/involved_companies';
     case 'companies':
       return 'https://api.igdb.com/v4/companies';
+    case 'release_dates':
+      return 'https://api.igdb.com/v4/release_dates';
   }
 };
 
 const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date, involved_companies, websites';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date, involved_companies, websites, release_dates, url';
     case 'covers':
       return 'url, game, width, height';
     case 'genres':
@@ -85,6 +87,8 @@ const getFields = (type: ParserType) => {
       return 'company, developer, publisher, supporting, porting';
     case 'companies':
       return 'name, slug, description, start_date, published, developed, logo, url, country';
+    case 'release_dates':
+      return 'category, date, human, m, y, platform, region';
   }
 };
 

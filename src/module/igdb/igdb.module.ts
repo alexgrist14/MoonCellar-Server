@@ -47,6 +47,10 @@ import {
   IGDBCompanies,
   IGDBCompaniesSchema,
 } from './schemas/igdb-companies.schema';
+import {
+  IGDBReleaseDates,
+  IGDBReleaseDatesSchema,
+} from './schemas/igdb-release-dates.schema';
 
 @Module({
   controllers: [IgdbController, IgdbParserController],
@@ -67,6 +71,7 @@ import {
       { name: IGDBWebsites.name, schema: IGDBWebsitesSchema },
       { name: IGDBInvolvedCompanies.name, schema: IGDBInvolvedCompaniesSchema },
       { name: IGDBCompanies.name, schema: IGDBCompaniesSchema },
+      { name: IGDBReleaseDates.name, schema: IGDBReleaseDatesSchema },
     ]),
   ],
 })

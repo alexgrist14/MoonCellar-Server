@@ -49,6 +49,10 @@ import {
   IGDBCompanies,
   IGDBCompaniesDocument,
 } from './schemas/igdb-companies.schema';
+import {
+  IGDBReleaseDates,
+  IGDBReleaseDatesDocument,
+} from './schemas/igdb-release-dates.schema';
 
 const lookup = (isBasic?: boolean) => [
   {
@@ -64,6 +68,33 @@ const lookup = (isBasic?: boolean) => [
       cover: {
         $ifNull: [{ $arrayElemAt: ['$cover', 0] }, null],
       },
+    },
+  },
+  {
+    $lookup: {
+      from: 'igdbreleasedates',
+      localField: 'release_dates',
+      foreignField: '_id',
+      ...(!isBasic && {
+        pipeline: [
+          {
+            $lookup: {
+              from: 'igdbplatforms',
+              localField: 'platform',
+              foreignField: '_id',
+              as: 'platform',
+            },
+          },
+          {
+            $addFields: {
+              platform: {
+                $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
+              },
+            },
+          },
+        ],
+      }),
+      as: 'release_dates',
     },
   },
   {
@@ -226,6 +257,8 @@ export class IGDBService {
     private IGDBInvolvedCompaniesModel: Model<IGDBInvolvedCompaniesDocument>,
     @InjectModel(IGDBCompanies.name)
     private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
+    @InjectModel(IGDBReleaseDates.name)
+    private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -472,6 +505,10 @@ export class IGDBService {
     );
     await this.parser<IGDBArtworksDocument>('artworks', this.IGDBArtworksModel);
     await this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
+    await this.parser<IGDBReleaseDatesDocument>(
+      'release_dates',
+      this.IGDBReleaseDatesModel,
+    );
 
     return this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
   }
@@ -529,6 +566,11 @@ export class IGDBService {
         return this.parser<IGDBCompaniesDocument>(
           'companies',
           this.IGDBCompaniesModel,
+        );
+      case 'release_dates':
+        return this.parser<IGDBReleaseDatesDocument>(
+          'release_dates',
+          this.IGDBReleaseDatesModel,
         );
     }
   }

@@ -12,6 +12,7 @@ export type ParserType =
   | 'websites'
   | 'involved_companies'
   | 'companies'
+  | 'release_dates'
   | 'platform_logos';
 
 export interface IGDBFilters {

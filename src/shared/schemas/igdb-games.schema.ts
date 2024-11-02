@@ -7,6 +7,7 @@ import { IGDBInvolvedCompanies } from 'src/module/igdb/schemas/igdb-involved-com
 import { IGDBKeywords } from 'src/module/igdb/schemas/igdb-keywords.schema';
 import { IGDBModes } from 'src/module/igdb/schemas/igdb-modes.schema';
 import { IGDBPlatforms } from 'src/module/igdb/schemas/igdb-platforms.schema';
+import { IGDBReleaseDates } from 'src/module/igdb/schemas/igdb-release-dates.schema';
 import { IGDBScreenshots } from 'src/module/igdb/schemas/igdb-screenshots.schema';
 import { IGDBThemes } from 'src/module/igdb/schemas/igdb-themes.schema';
 import { IGDBWebsites } from 'src/module/igdb/schemas/igdb-websites.schema';
@@ -27,6 +28,8 @@ export class IGDBGames {
   platforms: number[];
   @Prop()
   slug: string;
+  @Prop()
+  url: string;
   @Prop({ ref: IGDBKeywords.name })
   keywords: number[];
   @Prop({ ref: IGDBThemes.name })
@@ -53,6 +56,8 @@ export class IGDBGames {
   involved_companies: number[];
   @Prop({ ref: IGDBWebsites.name })
   websites: number[];
+  @Prop({ ref: IGDBReleaseDates.name })
+  release_dates: number[];
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);
