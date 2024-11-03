@@ -1,11 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
+import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 
 @Schema({
   timestamps: true,
 })
 export class User extends Document {
-  @Prop({ required: true })
+  @Prop({ unique: true, required: true })
   name: string;
   @Prop({ unique: [true, 'Duplicate email entered'] })
   email: string;
@@ -17,12 +18,12 @@ export class User extends Document {
   refreshToken?: string;
   @Prop({
     type: {
-      completed: [{ type: String, ref: 'RAGame' }],
-      wishlist: [{ type: String, ref: 'RAGame' }],
-      playing: [{ type: String, ref: 'RAGame' }],
-      dropped: [{ type: String, ref: 'RAGame' }],
+      completed: [{ type: Number, ref: IGDBGames.name }],
+      wishlist: [{ type: Number, ref: IGDBGames.name }],
+      playing: [{ type: Number, ref: IGDBGames.name }],
+      dropped: [{ type: Number, ref: IGDBGames.name }],
     },
-    ref: 'RAgame',
+    ref: IGDBGames.name,
     default: {
       completed: [],
       wishlist: [],
@@ -31,11 +32,39 @@ export class User extends Document {
     },
   })
   games: {
-    completed: string[];
-    wishlist: string[];
-    playing: string[];
-    dropped: string[];
+    completed: number[];
+    wishlist: number[];
+    playing: number[];
+    dropped: number[];
   };
+  @Prop({
+    type: [
+      {
+        game: { type: Number, ref: IGDBGames.name, required: true },
+        rating: { type: Number, required: true },
+      },
+    ],
+    default: [],
+  })
+  gamesRating: {
+    game: number;
+    rating: number;
+  }[];
+  @Prop({
+    type: [
+      {
+        date: { type: Date, default: Date.now },
+        action: { type: String, required: true },
+        gameId: { type: String, required: true },
+      },
+    ],
+    default: [],
+  })
+  logs: {
+    date: Date;
+    action: string;
+    gameId: string;
+  }[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

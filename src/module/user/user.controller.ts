@@ -33,6 +33,16 @@ import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
 import { UserService } from './services/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './services/file-upload.service';
+import { AddGameRatingDto } from './dto/add-game-rating.dto';
+
+type categoriesType = 'completed' | 'wishlist' | 'dropped' | 'playing';
+
+const categories: categoriesType[] = [
+  'completed',
+  'wishlist',
+  'dropped',
+  'playing',
+];
 
 @ApiTags('user')
 @Controller('user')
@@ -43,7 +53,7 @@ export class UserController {
   ) {}
   @Patch(':id/games/:gameId')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  //@UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Add game to category' })
   @ApiResponse({
     status: 200,
@@ -57,12 +67,17 @@ export class UserController {
     status: 404,
     description: 'User or game not found',
   })
+  @ApiQuery({ name: 'category', enum: categories })
   @HttpCode(HttpStatus.OK)
   async addGameToCategory(
     @Param('id') userId: string,
     @Param('gameId') gameId: string,
-    @Query('category') category: string,
+    @Query('category') category: categoriesType,
+    @Req() req,
   ): Promise<{ message: string }> {
+    if (req.user._id.toString() !== userId) {
+      throw new UnauthorizedException('You can only update your own games');
+    }
     try {
       await this.usersService.addGameToCategory(userId, gameId, category);
       return { message: `Game successfully added to ${category}` };
@@ -97,7 +112,11 @@ export class UserController {
     @Param('id') userId: string,
     @Param('gameId') gameId: string,
     @Query('category') category: string,
+    @Req() req,
   ): Promise<{ message: string }> {
+    if (req.user._id.toString() !== userId) {
+      throw new UnauthorizedException('You can only update your own games');
+    }
     try {
       await this.usersService.removeGameFromCategory(userId, gameId, category);
       return { message: `Game successfully removed from ${category}` };
@@ -112,26 +131,61 @@ export class UserController {
     }
   }
 
+  @Patch('rating/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add user rating to game' })
+  @ApiResponse({ status: 200, description: 'Rating added successfully' })
+  async addGameRating(
+    @Param('id') userId: string,
+    @Body() gameRatingDto: AddGameRatingDto,
+    //@Req() req,
+  ): Promise<{ message: string }> {
+    // if (req.user._id.toString() !== userId) {
+    //   throw new UnauthorizedException('You can only update your own games');
+    // }
+    await this.usersService.addGameRating(
+      userId,
+      gameRatingDto.game,
+      gameRatingDto.rating,
+    );
+    return { message: `Rating successfully added to ${gameRatingDto.game}` };
+  }
+
+  @Delete('rating/:id/:gameId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove user rating from game' })
+  @ApiResponse({ status: 200, description: 'Rating removed successfully' })
+  async removeGameRating(
+    @Param('id') userId: string,
+    @Param('gameId') gameId: number,
+    //@Req() req,
+  ): Promise<{ message: string }>{
+    await this.usersService.removeGameRating(
+      userId,gameId
+    );
+    return { message: `Rating successfully removed from ${gameId}` };
+  }
+
   @Get('name')
-  @ApiOperation({summary: 'Get user by name'})
+  @ApiOperation({ summary: 'Get user by name' })
   @ApiResponse({
     status: 200,
     description: 'Success',
   })
-  @ApiQuery({name: 'name'})
-  findByName(@Query('name') query: string): Promise<User>{
-    return this.usersService.findByString(query,"name");
+  @ApiQuery({ name: 'name' })
+  findByName(@Query('name') query: string): Promise<User> {
+    return this.usersService.findByString(query, 'name');
   }
 
   @Get('email')
-  @ApiOperation({summary: 'Get user by email'})
+  @ApiOperation({ summary: 'Get user by email' })
   @ApiResponse({
     status: 200,
     description: 'Success',
   })
-  @ApiQuery({name: 'email'})
-  findByEmail(@Query('email') query: string): Promise<User>{
-    return this.usersService.findByString(query,"email");
+  @ApiQuery({ name: 'email' })
+  findByEmail(@Query('email') query: string): Promise<User> {
+    return this.usersService.findByString(query, 'email');
   }
 
   @Get(':id')
@@ -144,14 +198,7 @@ export class UserController {
     return this.usersService.findById(userId);
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Get all Users' })
-  @ApiResponse({
-    status: 200,
-    description: 'Success',
-  })
-
-  @Patch(':id/email')
+  @Patch('email/:id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user email' })
@@ -167,7 +214,7 @@ export class UserController {
     return this.usersService.updateEmail(userId, updateEmailDto);
   }
 
-  @Patch(':id/password')
+  @Patch('password/:id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user password' })
@@ -177,14 +224,13 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
     @Req() req,
   ): Promise<User> {
-    console.log(req.user)
     if (req.user._id.toString() !== userId) {
       throw new UnauthorizedException('You can only update your own password');
     }
     return this.usersService.updatePassword(userId, updatePasswordDto);
   }
 
-  @Post(':id/profile-picture')
+  @Post('profile-picture/:id')
   //@UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Add user profile picture' })
@@ -211,7 +257,7 @@ export class UserController {
     return { profilePicture: fileName };
   }
 
-  @Get(':id/profile-picture')
+  @Get('profile-picture/:id')
   @ApiOperation({ summary: 'Get user profile picture' })
   @ApiResponse({ status: 200, description: 'Success' })
   async getProfilePicture(@Param('id') userId: string) {
@@ -222,6 +268,6 @@ export class UserController {
       throw new NotFoundException('Profile picture not found');
     }
 
-    return {fileName};
+    return { fileName };
   }
 }

@@ -81,6 +81,37 @@ export class UserService {
     return user;
   }
 
+  async addGameRating(
+    userId: string,
+    gameId: number,
+    rating: number,
+  ): Promise<User> {
+    const user = await this.userModel.findById(userId);
+
+    const existingRating = user.gamesRating.find(
+      (gameRating) => gameRating.game === gameId,
+    );
+    if (existingRating) {
+      existingRating.rating = rating;
+    } else {
+      user.gamesRating.push({ game: gameId, rating: rating });
+    }
+
+    await user.save();
+
+    return user;
+  }
+
+  async removeGameRating(userId: string, gameId: number): Promise<User> {
+    const user = await this.userModel.findById(userId);
+    user.gamesRating = user.gamesRating.filter(
+      (gameRating) =>gameRating.game !== +gameId
+    );
+
+    await user.save();
+    return user;
+  }
+
   async findById(userId: string): Promise<User> {
     return await this.userModel.findById(userId).select(['-password', '-__v']);
   }
