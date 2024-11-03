@@ -56,6 +56,12 @@ export class UserService {
       user.games[category].push(gameId);
     }
 
+    user.logs.push({
+      date: new Date(Date.now()),
+      action: `Added game to ${category}`,
+      gameId: gameId,
+    });
+
     await user.save();
     return user;
   }

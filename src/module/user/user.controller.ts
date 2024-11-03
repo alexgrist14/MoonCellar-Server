@@ -34,15 +34,9 @@ import { UserService } from './services/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './services/file-upload.service';
 import { AddGameRatingDto } from './dto/add-game-rating.dto';
+import { categories, categoriesType } from './types/actions';
 
-type categoriesType = 'completed' | 'wishlist' | 'dropped' | 'playing';
 
-const categories: categoriesType[] = [
-  'completed',
-  'wishlist',
-  'dropped',
-  'playing',
-];
 
 @ApiTags('user')
 @Controller('user')
@@ -75,9 +69,9 @@ export class UserController {
     @Query('category') category: categoriesType,
     @Req() req,
   ): Promise<{ message: string }> {
-    if (req.user._id.toString() !== userId) {
-      throw new UnauthorizedException('You can only update your own games');
-    }
+    // if (req.user._id.toString() !== userId) {
+    //   throw new UnauthorizedException('You can only update your own games');
+    // }
     try {
       await this.usersService.addGameToCategory(userId, gameId, category);
       return { message: `Game successfully added to ${category}` };

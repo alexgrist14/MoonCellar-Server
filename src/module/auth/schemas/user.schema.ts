@@ -53,7 +53,7 @@ export class User extends Document {
   @Prop({
     type: [
       {
-        date: { type: Date, default: Date.now },
+        date: { type: Date, default: Date.now, required: false },
         action: { type: String, required: true },
         gameId: { type: String, required: true },
       },
