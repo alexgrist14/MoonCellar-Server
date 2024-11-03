@@ -38,7 +38,7 @@ export class AuthController {
       const { accessToken, refreshToken } =
         await this.authService.signUp(signUpDto);
       const userId = (
-        await this.usersService.findByString(signUpDto.name, 'name')
+        await this.usersService.findByString(signUpDto.userName, 'name')
       ).id;
 
       this.authService.setCookies(

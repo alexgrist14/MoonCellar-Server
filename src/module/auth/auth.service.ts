@@ -41,15 +41,17 @@ export class AuthService {
   async signUp(
     signUpDto: SignUpDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const { name, email, password } = signUpDto;
-    const isEmailExist = await this.userModel.findOne({ email });
+    const { userName, email, password } = signUpDto;
+    const isEmailExists = await this.userModel.findOne({ email });
+    const isUserExists = await this.userModel.findOne({ userName });
 
-    if (isEmailExist) throw new BadRequestException('Email already exists');
+    if (isEmailExists) throw new BadRequestException('Email already exists');
+    if (isUserExists) throw new BadRequestException('UserName already exists');
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.userModel.create({
-      name,
+      userName,
       email,
       password: hashedPassword,
     });

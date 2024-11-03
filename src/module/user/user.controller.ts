@@ -34,9 +34,7 @@ import { UserService } from './services/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './services/file-upload.service';
 import { AddGameRatingDto } from './dto/add-game-rating.dto';
-import { categories, categoriesType } from './types/actions';
-
-
+import { categories, categoriesType, ILogs } from './types/actions';
 
 @ApiTags('user')
 @Controller('user')
@@ -45,7 +43,7 @@ export class UserController {
     private readonly usersService: UserService,
     private readonly fileUploadService: FileUploadService,
   ) {}
-  @Patch(':id/games/:gameId')
+  @Patch(':userId/games/:gameId')
   @ApiBearerAuth()
   //@UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Add game to category' })
@@ -64,10 +62,10 @@ export class UserController {
   @ApiQuery({ name: 'category', enum: categories })
   @HttpCode(HttpStatus.OK)
   async addGameToCategory(
-    @Param('id') userId: string,
-    @Param('gameId') gameId: string,
+    @Param('userId') userId: string,
+    @Param('gameId') gameId: number,
     @Query('category') category: categoriesType,
-    @Req() req,
+    //@Req() req,
   ): Promise<{ message: string }> {
     // if (req.user._id.toString() !== userId) {
     //   throw new UnauthorizedException('You can only update your own games');
@@ -86,7 +84,7 @@ export class UserController {
     }
   }
 
-  @Delete(':id/games/:gameId')
+  @Delete(':userId/games/:gameId')
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove game from category' })
   @ApiResponse({
@@ -101,11 +99,12 @@ export class UserController {
     status: 404,
     description: 'User or game not found',
   })
+  @ApiQuery({ name: 'category', enum: categories })
   @HttpCode(HttpStatus.OK)
   async removeGameFromCategory(
-    @Param('id') userId: string,
-    @Param('gameId') gameId: string,
-    @Query('category') category: string,
+    @Param('userId') userId: string,
+    @Param('gameId') gameId: number,
+    @Query('category') category: categoriesType,
     @Req() req,
   ): Promise<{ message: string }> {
     if (req.user._id.toString() !== userId) {
@@ -125,12 +124,12 @@ export class UserController {
     }
   }
 
-  @Patch('rating/:id')
+  @Patch('rating/:userId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add user rating to game' })
   @ApiResponse({ status: 200, description: 'Rating added successfully' })
   async addGameRating(
-    @Param('id') userId: string,
+    @Param('userId') userId: string,
     @Body() gameRatingDto: AddGameRatingDto,
     //@Req() req,
   ): Promise<{ message: string }> {
@@ -145,18 +144,16 @@ export class UserController {
     return { message: `Rating successfully added to ${gameRatingDto.game}` };
   }
 
-  @Delete('rating/:id/:gameId')
+  @Delete('rating/:userId/:gameId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove user rating from game' })
   @ApiResponse({ status: 200, description: 'Rating removed successfully' })
   async removeGameRating(
-    @Param('id') userId: string,
+    @Param('userId') userId: string,
     @Param('gameId') gameId: number,
     //@Req() req,
-  ): Promise<{ message: string }>{
-    await this.usersService.removeGameRating(
-      userId,gameId
-    );
+  ): Promise<{ message: string }> {
+    await this.usersService.removeGameRating(userId, gameId);
     return { message: `Rating successfully removed from ${gameId}` };
   }
 
@@ -182,23 +179,33 @@ export class UserController {
     return this.usersService.findByString(query, 'email');
   }
 
-  @Get(':id')
+  @Get(':userId')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({
     status: 200,
     description: 'Success',
   })
-  async findById(@Param('id') userId: string): Promise<User> {
+  async findById(@Param('userId') userId: string): Promise<User> {
     return this.usersService.findById(userId);
   }
 
-  @Patch('email/:id')
+  @Get('/logs/:userId')
+  @ApiOperation({ summary: 'Get user logs' })
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  async getUserLogs(@Param('userId') userId: string): Promise<ILogs[]> {
+    return this.usersService.getUserLogs(userId);
+  }
+
+  @Patch('email/:userId')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user email' })
   @ApiResponse({ status: 200, description: 'success' })
   async updateEmail(
-    @Param('id') userId: string,
+    @Param('userId') userId: string,
     @Body() updateEmailDto: UpdateEmailDto,
     @Req() req,
   ): Promise<User> {
@@ -208,13 +215,13 @@ export class UserController {
     return this.usersService.updateEmail(userId, updateEmailDto);
   }
 
-  @Patch('password/:id')
+  @Patch('password/:userId')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user password' })
   @ApiResponse({ status: 200, description: 'Success' })
   async updatePassword(
-    @Param('id') userId: string,
+    @Param('userId') userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
     @Req() req,
   ): Promise<User> {
@@ -224,7 +231,7 @@ export class UserController {
     return this.usersService.updatePassword(userId, updatePasswordDto);
   }
 
-  @Post('profile-picture/:id')
+  @Post('profile-picture/:userId')
   //@UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Add user profile picture' })
@@ -242,7 +249,7 @@ export class UserController {
     },
   })
   async uploadProfilePicture(
-    @Param('id') userId: string,
+    @Param('userId') userId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     const fileName = await this.fileUploadService.uploadFile(file);
@@ -251,10 +258,10 @@ export class UserController {
     return { profilePicture: fileName };
   }
 
-  @Get('profile-picture/:id')
+  @Get('profile-picture/:userId')
   @ApiOperation({ summary: 'Get user profile picture' })
   @ApiResponse({ status: 200, description: 'Success' })
-  async getProfilePicture(@Param('id') userId: string) {
+  async getProfilePicture(@Param('userId') userId: string) {
     const fileName = await this.usersService.getProfilePicture(userId);
     //const filePath = this.fileUploadService.getFilePath(fileName);
 

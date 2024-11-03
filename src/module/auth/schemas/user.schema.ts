@@ -7,7 +7,7 @@ import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 })
 export class User extends Document {
   @Prop({ unique: true, required: true })
-  name: string;
+  userName: string;
   @Prop({ unique: [true, 'Duplicate email entered'] })
   email: string;
   @Prop({ required: true })
@@ -55,6 +55,8 @@ export class User extends Document {
       {
         date: { type: Date, default: Date.now, required: false },
         action: { type: String, required: true },
+        isAdd: { type: Boolean, required: true },
+        rating: { type: Number, required: false },
         gameId: { type: String, required: true },
       },
     ],
@@ -63,7 +65,9 @@ export class User extends Document {
   logs: {
     date: Date;
     action: string;
-    gameId: string;
+    isAdd: boolean;
+    rating?: number | undefined;
+    gameId: number;
   }[];
 }
 

@@ -15,6 +15,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
+import { ILogs } from '../types/actions';
 
 @Injectable()
 export class UserService {
@@ -32,14 +33,16 @@ export class UserService {
 
   async addGameToCategory(
     userId: string,
-    gameId: string,
+    gameId: number,
     category: string,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
+    console.log(gameId);
 
     this.userAndCategoryCheck(user, category);
 
     const gameExists = await this.gameModel.exists({ _id: gameId });
+    console.log(gameExists);
 
     if (!gameExists) throw new NotFoundException('Game not found');
 
@@ -48,7 +51,7 @@ export class UserService {
 
     for (const cat of ['completed', 'wishlist', 'playing', 'dropped']) {
       if (cat !== category && user.games[cat].includes(gameId)) {
-        user.games[cat] = user.games[cat].filter((id: string) => id !== gameId);
+        user.games[cat] = user.games[cat].filter((id: number) => id !== gameId);
       }
     }
 
@@ -58,7 +61,8 @@ export class UserService {
 
     user.logs.push({
       date: new Date(Date.now()),
-      action: `Added game to ${category}`,
+      action: category,
+      isAdd: true,
       gameId: gameId,
     });
 
@@ -68,7 +72,7 @@ export class UserService {
 
   async removeGameFromCategory(
     userId: string,
-    gameId: string,
+    gameId: number,
     category: string,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
@@ -79,8 +83,15 @@ export class UserService {
       throw new NotFoundException(`Game not found in ${category} category`);
 
     user.games[category] = user.games[category].filter(
-      (id: string) => id !== gameId,
+      (id: number) => id !== gameId,
     );
+
+    user.logs.push({
+      date: new Date(Date.now()),
+      action: category,
+      isAdd: false,
+      gameId: gameId,
+    });
 
     await user.save();
 
@@ -103,6 +114,14 @@ export class UserService {
       user.gamesRating.push({ game: gameId, rating: rating });
     }
 
+    user.logs.push({
+      date: new Date(Date.now()),
+      action: 'rating',
+      isAdd: true,
+      rating: rating,
+      gameId: gameId,
+    });
+
     await user.save();
 
     return user;
@@ -111,11 +130,23 @@ export class UserService {
   async removeGameRating(userId: string, gameId: number): Promise<User> {
     const user = await this.userModel.findById(userId);
     user.gamesRating = user.gamesRating.filter(
-      (gameRating) =>gameRating.game !== +gameId
+      (gameRating) => gameRating.game !== gameId,
     );
+
+    user.logs.push({
+      date: new Date(Date.now()),
+      action: 'rating',
+      isAdd: false,
+      gameId: gameId,
+    });
 
     await user.save();
     return user;
+  }
+
+  async getUserLogs(userId: string): Promise<ILogs[]> {
+    const user = await this.userModel.findById(userId);
+    return user.logs;
   }
 
   async findById(userId: string): Promise<User> {
