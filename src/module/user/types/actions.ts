@@ -1,10 +1,15 @@
-export type categoriesType = 'completed' | 'wishlist' | 'dropped' | 'playing';
+export type categoriesType =
+  | 'completed'
+  | 'wishlist'
+  | 'dropped'
+  | 'playing'
+  | 'backlog';
 
 export interface ILogs {
   date: Date;
   action: string;
   isAdd: boolean;
-  rating?: number | undefined;
+  rating?: number;
   gameId: number;
 }
 
@@ -13,4 +18,5 @@ export const categories: categoriesType[] = [
   'wishlist',
   'dropped',
   'playing',
+  'backlog',
 ];

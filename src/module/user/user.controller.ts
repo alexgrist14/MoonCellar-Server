@@ -66,22 +66,23 @@ export class UserController {
     @Param('gameId') gameId: number,
     @Query('category') category: categoriesType,
     //@Req() req,
-  ): Promise<{ message: string }> {
+  ) {
     // if (req.user._id.toString() !== userId) {
     //   throw new UnauthorizedException('You can only update your own games');
     // }
-    try {
-      await this.usersService.addGameToCategory(userId, gameId, category);
-      return { message: `Game successfully added to ${category}` };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      )
-        throw error;
-
-      throw new BadRequestException('Failed to add game to category');
-    }
+    // try {
+    //   await this.usersService.addGameToCategory(userId, gameId, category);
+    //   return { message: `Game successfully added to ${category}` };
+    // } catch (error) {
+    //   if (
+    //     error instanceof NotFoundException ||
+    //     error instanceof BadRequestException
+    //   )
+    //     throw error;
+    //
+    //   throw new BadRequestException('Failed to add game to category');
+    // }
+    return this.usersService.addGameToCategory(userId, gameId, category);
   }
 
   @Delete(':userId/games/:gameId')

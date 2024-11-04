@@ -15,7 +15,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { ILogs } from '../types/actions';
+import { categories, categoriesType, ILogs } from '../types/actions';
 
 @Injectable()
 export class UserService {
@@ -24,39 +24,38 @@ export class UserService {
     @InjectModel(IGDBGames.name) private gameModel: Model<IGDBGamesDocument>,
   ) {}
 
-  private userAndCategoryCheck(user: User, category: string) {
+  private userAndCategoryCheck(user: User, category: categoriesType) {
     if (!user) throw new NotFoundException('User not found');
 
-    if (!['completed', 'wishlist', 'playing', 'dropped'].includes(category))
+    if (!categories.includes(category))
       throw new BadRequestException('Invalid category');
   }
 
   async addGameToCategory(
     userId: string,
     gameId: number,
-    category: string,
+    category: categoriesType,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
-    console.log(gameId);
 
     this.userAndCategoryCheck(user, category);
 
-    const gameExists = await this.gameModel.exists({ _id: gameId });
-    console.log(gameExists);
-
-    if (!gameExists) throw new NotFoundException('Game not found');
-
-    if (user.games[category].includes(gameId))
-      throw new BadRequestException(`Game already in ${category} category`);
-
-    for (const cat of ['completed', 'wishlist', 'playing', 'dropped']) {
-      if (cat !== category && user.games[cat].includes(gameId)) {
-        user.games[cat] = user.games[cat].filter((id: number) => id !== gameId);
-      }
-    }
-
     if (!user.games[category].includes(gameId)) {
+      const gameExists = await this.gameModel.exists({ _id: gameId });
+
+      if (!gameExists) throw new NotFoundException('Game not found');
+
       user.games[category].push(gameId);
+
+      for (const cat of categories) {
+        if (cat !== category && user.games[cat]?.includes(gameId)) {
+          user.games[cat] = user.games[cat]?.filter(
+            (id: number) => id !== gameId,
+          );
+        }
+      }
+    } else {
+      throw new BadRequestException(`Game already in ${category} category`);
     }
 
     user.logs.push({
@@ -73,7 +72,7 @@ export class UserService {
   async removeGameFromCategory(
     userId: string,
     gameId: number,
-    category: string,
+    category: categoriesType,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
 

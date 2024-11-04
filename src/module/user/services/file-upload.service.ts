@@ -9,7 +9,7 @@ export class FileUploadService {
   private readonly uploadPath = `${rootDir}/uploads/photos`;
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
-    const fileName = `${uuidv4()}-${file.originalname}`;
+    const fileName = `${uuidv4()}-${file?.originalname}`;
     const filePath = join(this.uploadPath, fileName);
 
     await fs.mkdir(this.uploadPath, { recursive: true });
