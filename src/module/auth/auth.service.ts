@@ -106,19 +106,24 @@ export class AuthService {
     refreshToken: string,
     origin?: string,
   ): void {
+    const domain = origin?.includes('localhost') ? '.localhost' : 'mooncellar.space';
+    const httpOnly = !origin?.includes('localhost');
+    const secure = origin?.includes('https') ? true : false;
+    const sameSite = origin?.includes('localhost') || !secure ? undefined : 'none';
+
     res.cookie('accessMoonToken', accessToken, {
-      httpOnly: !origin?.includes('localhost'),
-      secure: !origin?.includes('localhost'),
-      sameSite: 'none',
-      domain: 'mooncellar.space',
+      httpOnly: httpOnly,
+      domain: domain,
+      secure: secure,
+      sameSite: sameSite,      
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       maxAge: 24 * 60 * 60 * 1000,
     });
     res.cookie('refreshMoonToken', refreshToken, {
-      httpOnly: !origin?.includes('localhost'),
-      secure: !origin?.includes('localhost'),
-      sameSite: 'none',
-      domain: 'mooncellar.space',
+      httpOnly: httpOnly,
+      domain: domain,
+      secure: secure,
+      sameSite: sameSite,          
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
