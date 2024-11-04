@@ -166,7 +166,7 @@ export class UserController {
   })
   @ApiQuery({ name: 'name' })
   findByName(@Query('name') query: string): Promise<User> {
-    return this.usersService.findByString(query, 'name');
+    return this.usersService.findByString(query, 'userName');
   }
 
   @Get('email')
