@@ -50,7 +50,7 @@ export class UserService {
       for (const cat of categories) {
         if (cat !== category && user.games[cat]?.includes(gameId)) {
           user.games[cat] = user.games[cat]?.filter(
-            (id: number) => id !== gameId,
+            (id: number) => id !== Number(gameId),
           );
         }
       }
@@ -82,7 +82,7 @@ export class UserService {
       throw new NotFoundException(`Game not found in ${category} category`);
 
     user.games[category] = user.games[category].filter(
-      (id: number) => id !== gameId,
+      (id: number) => id !== Number(gameId),
     );
 
     user.logs.push({
