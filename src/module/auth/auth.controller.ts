@@ -37,9 +37,9 @@ export class AuthController {
     try {
       const { accessToken, refreshToken } =
         await this.authService.signUp(signUpDto);
-      const userId = (
-        await this.usersService.findByString(signUpDto.userName, 'userName')
-      ).id;
+      // const userId = (
+      //   await this.usersService.findByString(signUpDto.userName, 'userName')
+      // ).id;
 
       this.authService.setCookies(
         res,
@@ -47,7 +47,7 @@ export class AuthController {
         refreshToken,
         headers?.origin,
       );
-      return res.status(HttpStatus.OK).json({ userId });
+      return res.status(HttpStatus.OK).json({ accessToken, refreshToken});
     } catch (err) {
       console.log(err);
       throw new UnprocessableEntityException(`${err.message}`);
@@ -78,7 +78,7 @@ export class AuthController {
       headers?.origin,
     );
 
-    return res.status(HttpStatus.OK).json({ userId });
+    return res.status(HttpStatus.OK).json({ accessToken, refreshToken, userId});
   }
 
   @Post('/refresh-token')
