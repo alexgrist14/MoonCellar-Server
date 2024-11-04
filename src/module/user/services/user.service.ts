@@ -15,7 +15,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { categories, categoriesType, ILogs } from '../types/actions';
+import { ILogs } from '../types/actions';
 
 @Injectable()
 export class UserService {
@@ -24,38 +24,39 @@ export class UserService {
     @InjectModel(IGDBGames.name) private gameModel: Model<IGDBGamesDocument>,
   ) {}
 
-  private userAndCategoryCheck(user: User, category: categoriesType) {
+  private userAndCategoryCheck(user: User, category: string) {
     if (!user) throw new NotFoundException('User not found');
 
-    if (!categories.includes(category))
+    if (!['completed', 'wishlist', 'playing', 'dropped'].includes(category))
       throw new BadRequestException('Invalid category');
   }
 
   async addGameToCategory(
     userId: string,
     gameId: number,
-    category: categoriesType,
+    category: string,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
+    console.log(gameId);
 
     this.userAndCategoryCheck(user, category);
 
-    if (!user.games[category].includes(gameId)) {
-      const gameExists = await this.gameModel.exists({ _id: gameId });
+    const gameExists = await this.gameModel.exists({ _id: gameId });
+    console.log(gameExists);
 
-      if (!gameExists) throw new NotFoundException('Game not found');
+    if (!gameExists) throw new NotFoundException('Game not found');
 
-      user.games[category].push(gameId);
-
-      for (const cat of categories) {
-        if (cat !== category && user.games[cat]?.includes(gameId)) {
-          user.games[cat] = user.games[cat]?.filter(
-            (id: number) => id !== Number(gameId),
-          );
-        }
-      }
-    } else {
+    if (user.games[category].includes(gameId))
       throw new BadRequestException(`Game already in ${category} category`);
+
+    for (const cat of ['completed', 'wishlist', 'playing', 'dropped']) {
+      if (cat !== category && user.games[cat].includes(gameId)) {
+        user.games[cat] = user.games[cat].filter((id: number) => id !== gameId);
+      }
+    }
+
+    if (!user.games[category].includes(gameId)) {
+      user.games[category].push(gameId);
     }
 
     user.logs.push({
@@ -72,7 +73,7 @@ export class UserService {
   async removeGameFromCategory(
     userId: string,
     gameId: number,
-    category: categoriesType,
+    category: string,
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
 
@@ -82,7 +83,7 @@ export class UserService {
       throw new NotFoundException(`Game not found in ${category} category`);
 
     user.games[category] = user.games[category].filter(
-      (id: number) => id !== Number(gameId),
+      (id: number) => id !== gameId,
     );
 
     user.logs.push({
@@ -154,7 +155,7 @@ export class UserService {
 
   async findByString(
     searchString: string,
-    searchType: 'name' | 'email',
+    searchType: 'userName' | 'email',
   ): Promise<User> {
     return await this.userModel
       .findOne({ [searchType]: searchString })
