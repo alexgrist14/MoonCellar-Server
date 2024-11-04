@@ -22,6 +22,7 @@ export class User extends Document {
       wishlist: [{ type: Number, ref: IGDBGames.name }],
       playing: [{ type: Number, ref: IGDBGames.name }],
       dropped: [{ type: Number, ref: IGDBGames.name }],
+      backlog: [{ type: Number, ref: IGDBGames.name }],
     },
     ref: IGDBGames.name,
     default: {
@@ -29,6 +30,7 @@ export class User extends Document {
       wishlist: [],
       playing: [],
       dropped: [],
+      backlog:[],
     },
   })
   games: {
@@ -36,6 +38,7 @@ export class User extends Document {
     wishlist: number[];
     playing: number[];
     dropped: number[];
+    backlog: number[];
   };
   @Prop({
     type: [
