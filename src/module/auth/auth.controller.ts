@@ -71,12 +71,12 @@ export class AuthController {
       await this.usersService.findByString(loginDto.email, 'email')
     ).id;
 
-    this.authService.setCookies(
-      res,
-      accessToken,
-      refreshToken,
-      headers?.origin,
-    );
+    // this.authService.setCookies(
+    //   res,
+    //   accessToken,
+    //   refreshToken,
+    //   headers?.origin,
+    // );
 
     return res.status(HttpStatus.OK).json({ accessToken, refreshToken, userId});
   }
