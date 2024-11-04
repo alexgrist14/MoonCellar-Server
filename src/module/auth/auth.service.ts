@@ -108,11 +108,13 @@ export class AuthService {
   ): void {
     res.cookie('accessMoonToken', accessToken, {
       httpOnly: !origin?.includes('localhost'),
+      secure: !origin?.includes('localhost'),
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       maxAge: 24 * 60 * 60 * 1000,
     });
     res.cookie('refreshMoonToken', refreshToken, {
       httpOnly: !origin?.includes('localhost'),
+      secure: !origin?.includes('localhost'),
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
