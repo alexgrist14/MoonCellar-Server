@@ -106,23 +106,24 @@ export class UserController {
     @Param('userId') userId: string,
     @Param('gameId') gameId: number,
     @Query('category') category: categoriesType,
-    @Req() req,
-  ): Promise<{ message: string }> {
-    if (req.user._id.toString() !== userId) {
-      throw new UnauthorizedException('You can only update your own games');
-    }
-    try {
-      await this.usersService.removeGameFromCategory(userId, gameId, category);
-      return { message: `Game successfully removed from ${category}` };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      )
-        throw error;
+  ) {
+    // if (req.user._id.toString() !== userId) {
+    //   throw new UnauthorizedException('You can only update your own games');
+    // }
+    // try {
+    //   await this.usersService.removeGameFromCategory(userId, gameId, category);
+    //   return { message: `Game successfully removed from ${category}` };
+    // } catch (error) {
+    //   if (
+    //     error instanceof NotFoundException ||
+    //     error instanceof BadRequestException
+    //   )
+    //     throw error;
+    //
+    //   throw new BadRequestException('Failed to remove game from category');
+    // }
 
-      throw new BadRequestException('Failed to remove game from category');
-    }
+    return this.usersService.removeGameFromCategory(userId, gameId, category);
   }
 
   @Patch('rating/:userId')
