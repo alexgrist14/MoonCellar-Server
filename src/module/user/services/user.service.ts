@@ -16,6 +16,8 @@ import {
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
 import { categories, categoriesType, ILogs } from '../types/actions';
+import mongoose from 'mongoose';
+import { gamesLookup } from 'src/shared/utils';
 
 @Injectable()
 export class UserService {
@@ -152,6 +154,62 @@ export class UserService {
     return await this.userModel.findById(userId).select(['-password', '-__v']);
   }
 
+  async getUserGames(userId: string) {
+    return (
+      await this.userModel.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(userId) },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.completed',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.completed',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.playing',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.playing',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.wishlist',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.wishlist',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.backlog',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.backlog',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.dropped',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.dropped',
+          },
+        },
+        { $project: { games: 1 } },
+      ])
+    ).pop();
+  }
+
   async findByString(
     searchString: string,
     searchType: 'userName' | 'email',
@@ -236,3 +294,4 @@ export class UserService {
     return user.profilePicture;
   }
 }
+

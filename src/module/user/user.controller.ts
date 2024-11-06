@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -65,23 +64,7 @@ export class UserController {
     @Param('userId') userId: string,
     @Param('gameId') gameId: number,
     @Query('category') category: categoriesType,
-    //@Req() req,
   ) {
-    // if (req.user._id.toString() !== userId) {
-    //   throw new UnauthorizedException('You can only update your own games');
-    // }
-    // try {
-    //   await this.usersService.addGameToCategory(userId, gameId, category);
-    //   return { message: `Game successfully added to ${category}` };
-    // } catch (error) {
-    //   if (
-    //     error instanceof NotFoundException ||
-    //     error instanceof BadRequestException
-    //   )
-    //     throw error;
-    //
-    //   throw new BadRequestException('Failed to add game to category');
-    // }
     return this.usersService.addGameToCategory(userId, gameId, category);
   }
 
@@ -107,22 +90,6 @@ export class UserController {
     @Param('gameId') gameId: number,
     @Query('category') category: categoriesType,
   ) {
-    // if (req.user._id.toString() !== userId) {
-    //   throw new UnauthorizedException('You can only update your own games');
-    // }
-    // try {
-    //   await this.usersService.removeGameFromCategory(userId, gameId, category);
-    //   return { message: `Game successfully removed from ${category}` };
-    // } catch (error) {
-    //   if (
-    //     error instanceof NotFoundException ||
-    //     error instanceof BadRequestException
-    //   )
-    //     throw error;
-    //
-    //   throw new BadRequestException('Failed to remove game from category');
-    // }
-
     return this.usersService.removeGameFromCategory(userId, gameId, category);
   }
 
@@ -143,7 +110,7 @@ export class UserController {
       userId,
       gameRatingDto.game,
       gameRatingDto.rating,
-    );;
+    );
   }
 
   @Delete('rating/:userId/:gameId')
@@ -198,6 +165,16 @@ export class UserController {
   })
   async getUserLogs(@Param('userId') userId: string): Promise<ILogs[]> {
     return this.usersService.getUserLogs(userId);
+  }
+
+  @Get('/games/:userId')
+  @ApiOperation({ summary: 'Get user games' })
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  async getUserGames(@Param('userId') userId: string) {
+    return this.usersService.getUserGames(userId);
   }
 
   @Patch('email/:userId')
