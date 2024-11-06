@@ -134,16 +134,16 @@ export class UserController {
     @Param('userId') userId: string,
     @Body() gameRatingDto: AddGameRatingDto,
     //@Req() req,
-  ): Promise<{ message: string }> {
+  ) {
     // if (req.user._id.toString() !== userId) {
     //   throw new UnauthorizedException('You can only update your own games');
     // }
-    await this.usersService.addGameRating(
+
+    return this.usersService.addGameRating(
       userId,
       gameRatingDto.game,
       gameRatingDto.rating,
-    );
-    return { message: `Rating successfully added to ${gameRatingDto.game}` };
+    );;
   }
 
   @Delete('rating/:userId/:gameId')
@@ -154,9 +154,8 @@ export class UserController {
     @Param('userId') userId: string,
     @Param('gameId') gameId: number,
     //@Req() req,
-  ): Promise<{ message: string }> {
-    await this.usersService.removeGameRating(userId, gameId);
-    return { message: `Rating successfully removed from ${gameId}` };
+  ) {
+    return this.usersService.removeGameRating(userId, gameId);
   }
 
   @Get('name')
