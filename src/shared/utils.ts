@@ -19,26 +19,38 @@ export const gamesLookup = (isBasic?: boolean) => [
       from: 'igdbreleasedates',
       localField: 'release_dates',
       foreignField: '_id',
-      ...(!isBasic && {
-        pipeline: [
-          {
-            $lookup: {
-              from: 'igdbplatforms',
-              localField: 'platform',
-              foreignField: '_id',
-              as: 'platform',
-            },
-          },
-          {
-            $addFields: {
-              platform: {
-                $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
+      pipeline: [
+        ...(!isBasic
+          ? [
+              {
+                $lookup: {
+                  from: 'igdbplatforms',
+                  localField: 'platform',
+                  foreignField: '_id',
+                  as: 'platform',
+                },
               },
-            },
-          },
-        ],
-      }),
+              {
+                $addFields: {
+                  platform: {
+                    $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
+                  },
+                },
+              },
+            ]
+          : []),
+      ],
       as: 'release_dates',
+    },
+  },
+  {
+    $set: {
+      release_dates: {
+        $sortArray: {
+          input: '$release_dates',
+          sortBy: { date: 1 },
+        },
+      },
     },
   },
   {
