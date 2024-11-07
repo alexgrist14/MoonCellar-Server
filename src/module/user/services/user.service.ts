@@ -131,7 +131,7 @@ export class UserService {
   async removeGameRating(userId: string, gameId: number): Promise<User> {
     const user = await this.userModel.findById(userId);
     user.gamesRating = user.gamesRating.filter(
-      (gameRating) => gameRating.game !== gameId,
+      (gameRating) => gameRating.game !== Number(gameId),
     );
 
     user.logs.push({
