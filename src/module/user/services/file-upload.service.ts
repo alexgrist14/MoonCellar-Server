@@ -18,6 +18,11 @@ export class FileUploadService {
     return fileName;
   }
 
+  async deleteFile(file: string){
+    const filePath = join(this.uploadPath, file);
+    await fs.unlink(filePath);
+  }
+
   getFilePath(fileName: string): string {
     return join(this.uploadPath, fileName);
   }
