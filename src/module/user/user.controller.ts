@@ -233,7 +233,7 @@ export class UserController {
     const fileName = await this.fileUploadService.uploadFile(file);
     const prevPicture = await this.usersService.getProfilePicture(userId);
     await this.usersService.updateProfilePicture(userId, fileName);
-    await this.fileUploadService.deleteFile(prevPicture)
+    if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
 
     return { profilePicture: fileName };
   }
