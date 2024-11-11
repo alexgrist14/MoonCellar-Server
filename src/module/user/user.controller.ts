@@ -231,9 +231,10 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const fileName = await this.fileUploadService.uploadFile(file);
-    const prevPicture = await this.usersService.getProfilePicture(userId);
     await this.usersService.updateProfilePicture(userId, fileName);
-    if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
+    //const prevPicture = await this.usersService.getProfilePicture(userId);
+
+    //if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
 
     return { profilePicture: fileName };
   }
