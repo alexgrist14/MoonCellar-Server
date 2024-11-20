@@ -177,6 +177,36 @@ export class UserController {
     return this.usersService.getUserGames(userId);
   }
 
+  @Get('/followings/:userId')
+  @ApiOperation({ summary: 'Get user followings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  async getUserFollowings(@Param('userId') userId: string) {
+    return this.usersService.getUserFollowings(userId);
+  }
+
+  @Patch('/followings/:userId/:followingId')
+  @ApiOperation({ summary: 'Add following to user' })
+  @ApiResponse({ status: 200, description: 'success' })
+  async addUserFollowing(
+    @Param('userId') userId: string,
+    @Param('followingId') followingId: string,
+  ) {
+    return this.usersService.addUserFollowing(userId, followingId);
+  }
+
+  @Delete('/followings/:userId/:followingId')
+  @ApiOperation({ summary: 'Remove user following' })
+  @ApiResponse({ status: 200, description: 'success' })
+  async removeUserFollowing(
+    @Param('userId') userId: string,
+    @Param('followingId') followingId: string,
+  ) {
+    return this.usersService.removeUserFollowing(userId, followingId);
+  }
+
   @Patch('email/:userId')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()

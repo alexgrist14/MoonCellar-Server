@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 
 @Schema({
@@ -8,14 +8,22 @@ import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 export class User extends Document {
   @Prop({ unique: true, required: true })
   userName: string;
+
   @Prop({ unique: [true, 'Duplicate email entered'] })
   email: string;
+
   @Prop({ required: true })
   password: string;
-  @Prop()
+
+  @Prop({ default: '' })
   profilePicture?: string;
+
   @Prop({ type: String })
   refreshToken?: string;
+
+  @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: 'User' }], default: [] })
+  followings: mongoose.Types.ObjectId[];
+
   @Prop({
     type: {
       completed: [{ type: Number, ref: IGDBGames.name }],
@@ -30,7 +38,7 @@ export class User extends Document {
       wishlist: [],
       playing: [],
       dropped: [],
-      backlog:[],
+      backlog: [],
     },
   })
   games: {
@@ -40,6 +48,7 @@ export class User extends Document {
     dropped: number[];
     backlog: number[];
   };
+
   @Prop({
     type: [
       {
@@ -53,6 +62,7 @@ export class User extends Document {
     game: number;
     rating: number;
   }[];
+
   @Prop({
     type: [
       {

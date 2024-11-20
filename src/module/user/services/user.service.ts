@@ -293,5 +293,63 @@ export class UserService {
 
     return user.profilePicture;
   }
-}
 
+  async addUserFollowing(userId: string, followingId: string) {
+    const user = await this.userModel.findById(userId);
+    const followingUser = await this.userModel.findById(followingId);
+    if (!user || !followingUser) throw new NotFoundException('User not found');
+    if (user.followings.includes(new mongoose.Types.ObjectId(followingId)))
+      throw new BadRequestException(`User already in following list`);
+
+    user.followings.push(new mongoose.Types.ObjectId(followingId));
+    await user.save();
+    return user;
+  }
+
+  async removeUserFollowing(userId: string, followingId: string) {
+    const user = await this.userModel.findById(userId);
+    const followingUser = await this.userModel.findById(followingId);
+    if (!user || !followingUser) throw new NotFoundException('User not found');
+
+    user.followings = user.followings.filter(
+      (user) => user.toString() !== followingId,
+    );
+    await user.save();
+    return user;
+  }
+
+  async getUserFollowings(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    return (
+      await this.userModel.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(userId) },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'followings',
+            foreignField: '_id',
+            as: 'followings',
+          },
+        },
+        {
+          $project: {
+            followings: {
+              $map: {
+                input: '$followings',
+                as: 'following',
+                in: {
+                  userId: '$$following._id',
+                  userName: '$$following.userName',
+                  profilePicture: '$$following.profilePicture',
+                },
+              },
+            },
+          },
+        },
+      ])
+    ).pop();
+  }
+}
