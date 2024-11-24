@@ -265,7 +265,7 @@ export class IGDBService {
     ];
 
     const games = await this.IGDBGamesModel.aggregate([
-      { $sort: { total_rating: -1 } },
+      { $sort: { total_rating_count: -1 } },
       filters,
       {
         $facet: {

@@ -60,7 +60,7 @@ const getLink = (type: ParserType) => {
 const getFields = (type: ParserType) => {
   switch (type) {
     case 'games':
-      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date, involved_companies, websites, release_dates, url';
+      return 'name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, category, storyline, summary, first_release_date, involved_companies, websites, release_dates, url, total_rating_count';
     case 'covers':
       return 'url, game, width, height';
     case 'genres':
