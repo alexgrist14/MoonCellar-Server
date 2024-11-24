@@ -155,6 +155,7 @@ export class IGDBService {
                 categories.remaster,
                 categories.expanded_game,
                 categories.port,
+                categories.bundle,
               ],
             },
           },
