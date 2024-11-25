@@ -205,6 +205,24 @@ export class UserService {
             as: 'games.dropped',
           },
         },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.mastered',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.mastered',
+          },
+        },
+        {
+          $lookup: {
+            from: 'igdbgames',
+            localField: 'games.played',
+            foreignField: '_id',
+            pipeline: [...gamesLookup(true)],
+            as: 'games.played',
+          },
+        },
         { $project: { games: 1 } },
       ])
     ).pop();

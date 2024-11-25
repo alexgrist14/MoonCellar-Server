@@ -69,7 +69,6 @@ export class UserController {
   }
 
   @Delete(':userId/games/:gameId')
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove game from category' })
   @ApiResponse({
     status: 200,
