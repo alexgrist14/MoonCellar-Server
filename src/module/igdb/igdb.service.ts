@@ -156,6 +156,8 @@ export class IGDBService {
                 categories.expanded_game,
                 categories.port,
                 categories.bundle,
+                categories.mod,
+                categories.dlc_addon,
               ],
             },
           },
