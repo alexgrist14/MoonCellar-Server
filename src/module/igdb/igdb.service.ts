@@ -294,6 +294,13 @@ export class IGDBService {
     return games.pop();
   }
 
+  async getArt(id: number) {
+    const artwork = await this.IGDBArtworksModel.findById(id);
+    const screenshot = await this.IGDBScreenshotsModel.findById(id);
+
+    return artwork || screenshot || null;
+  }
+
   async getGenres() {
     return this.IGDBGenresModel.find().sort({ name: 1 });
   }
