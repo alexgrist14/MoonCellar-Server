@@ -15,35 +15,6 @@ export const gamesLookup = (isBasic?: boolean) => [
     },
   },
   {
-    $lookup: {
-      from: 'igdbreleasedates',
-      localField: 'release_dates',
-      foreignField: '_id',
-      pipeline: [
-        ...(!isBasic
-          ? [
-              {
-                $lookup: {
-                  from: 'igdbplatforms',
-                  localField: 'platform',
-                  foreignField: '_id',
-                  as: 'platform',
-                },
-              },
-              {
-                $addFields: {
-                  platform: {
-                    $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
-                  },
-                },
-              },
-            ]
-          : []),
-      ],
-      as: 'release_dates',
-    },
-  },
-  {
     $set: {
       release_dates: {
         $sortArray: {
@@ -97,6 +68,31 @@ export const gamesLookup = (isBasic?: boolean) => [
   },
   ...(!isBasic
     ? [
+        {
+          $lookup: {
+            from: 'igdbreleasedates',
+            localField: 'release_dates',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $lookup: {
+                  from: 'igdbplatforms',
+                  localField: 'platform',
+                  foreignField: '_id',
+                  as: 'platform',
+                },
+              },
+              {
+                $addFields: {
+                  platform: {
+                    $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
+                  },
+                },
+              },
+            ],
+            as: 'release_dates',
+          },
+        },
         {
           $lookup: {
             from: 'igdbgenres',

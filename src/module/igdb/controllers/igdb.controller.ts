@@ -67,6 +67,13 @@ export class IgdbController {
     return this.service.getPlatforms();
   }
 
+  @Get('/themes')
+  @ApiOperation({ summary: 'Get themes' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  themes() {
+    return this.service.getThemes();
+  }
+
   @Get('/modes')
   @ApiOperation({ summary: 'Get game modes' })
   @ApiResponse({ status: 200, description: 'Get over here!' })

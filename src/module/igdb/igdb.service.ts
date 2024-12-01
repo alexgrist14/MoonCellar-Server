@@ -214,8 +214,38 @@ export class IGDBService {
             : []),
           { genres: { $exists: true } },
           { keywords: { $exists: true } },
+          { themes: { $exists: true } },
           { platforms: { $exists: true } },
           { game_modes: { $exists: true } },
+          ...(!!selected?.themes?.length
+            ? [
+                {
+                  themes:
+                    mode === 'any'
+                      ? {
+                          $in: Array.isArray(selected?.themes)
+                            ? selected?.themes.map((theme) => theme)
+                            : [selected?.themes],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.themes)
+                            ? selected?.themes.map((theme) => theme)
+                            : [selected?.themes],
+                        },
+                },
+              ]
+            : []),
+          ...(!!excluded?.themes?.length
+            ? [
+                {
+                  themes: {
+                    $nin: Array.isArray(excluded?.themes)
+                      ? excluded?.themes.map((theme) => theme)
+                      : [excluded?.themes],
+                  },
+                },
+              ]
+            : []),
           ...(!!selected?.genres?.length
             ? [
                 {
@@ -356,6 +386,10 @@ export class IGDBService {
     return this.IGDBPlatformsModel.find()
       .populate('platform_logo')
       .sort({ name: 1 });
+  }
+
+  async getThemes() {
+    return this.IGDBThemesModel.find().sort({ name: 1 });
   }
 
   async getGameModes() {

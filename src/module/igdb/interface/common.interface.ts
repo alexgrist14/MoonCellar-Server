@@ -20,4 +20,5 @@ export interface IGDBFilters {
   platforms?: string[] | string;
   modes?: string[] | string;
   keywords?: string[] | string;
+  themes?: string[] | string;
 }
