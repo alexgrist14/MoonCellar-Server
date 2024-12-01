@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IGDBService } from '../igdb.service';
+import { categories as gameCategories } from '../constants/common';
 
 @ApiTags('IGDB')
 @Controller('igdb')
@@ -30,6 +31,9 @@ export class IgdbController {
     @Query('excluded') excluded: string,
     @Query('rating') rating: number,
     @Query('search') search: string,
+    @Query('company') company: string,
+    @Query('years') years: [number, number],
+    @Query('categories') categories: (keyof typeof gameCategories)[],
     @Query('mode') mode: 'any' | 'all',
   ) {
     const games = this.service.getGames({
@@ -41,6 +45,9 @@ export class IgdbController {
       rating,
       search,
       mode,
+      categories,
+      company,
+      years,
     });
 
     return games;

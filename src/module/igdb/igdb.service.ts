@@ -35,7 +35,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { categories } from './constants/common';
+import { categories as gameCategories } from './constants/common';
 import { updateOrInsertValues } from 'src/shared/db';
 import {
   IGDBWebsites,
@@ -132,6 +132,9 @@ export class IGDBService {
     rating,
     search,
     mode = 'any',
+    company,
+    categories,
+    years,
   }: {
     take?: number | string;
     isRandom?: boolean | string;
@@ -140,28 +143,69 @@ export class IGDBService {
     excluded?: IGDBFilters;
     rating?: number | string;
     search?: string;
+    company?: string;
+    years?: [number, number];
+    categories?: (keyof typeof gameCategories)[];
     mode?: 'any' | 'all';
   }) {
+    const companies = !!company
+      ? (
+          await this.IGDBCompaniesModel.find({
+            name: {
+              $regex: `${company.replaceAll(' ', '\\s*')}`,
+              $options: 'i',
+            },
+          })
+        )?.map((company) => company._id)
+      : [];
+
     const filters = {
       $match: {
         $and: [
           {
-            category: {
-              $in: [
-                categories.main_game,
-                categories.expansion,
-                categories.standalone_expansion,
-                categories.remake,
-                categories.remaster,
-                categories.expanded_game,
-                categories.port,
-                categories.bundle,
-                categories.mod,
-                categories.dlc_addon,
-              ],
-            },
+            category: !!categories
+              ? { $in: categories.map((category) => gameCategories[category]) }
+              : {
+                  $in: [
+                    gameCategories.main_game,
+                    gameCategories.expansion,
+                    gameCategories.standalone_expansion,
+                    gameCategories.remake,
+                    gameCategories.remaster,
+                    gameCategories.expanded_game,
+                    gameCategories.port,
+                    gameCategories.bundle,
+                    gameCategories.mod,
+                    gameCategories.dlc_addon,
+                  ],
+                },
           },
           ...(!!search ? [{ name: { $regex: search, $options: 'i' } }] : []),
+          ...(!!years
+            ? [
+                {
+                  first_release_date: {
+                    $gte: new Date(years[0]).getTime() / 1000,
+                    $lte: new Date(years[1]).getTime() / 1000,
+                  },
+                },
+              ]
+            : []),
+          ...(!!company
+            ? [
+                {
+                  involved_companies: {
+                    $in: (
+                      await this.IGDBInvolvedCompaniesModel.find({
+                        company: {
+                          $in: companies,
+                        },
+                      })
+                    )?.map((company) => company._id),
+                  },
+                },
+              ]
+            : []),
           ...(rating !== undefined
             ? [{ total_rating: { $gte: +rating } }]
             : []),
