@@ -186,7 +186,10 @@ export class IGDBService {
                 {
                   first_release_date: {
                     $gte: new Date(years[0]).getTime() / 1000,
-                    $lte: new Date(years[1]).getTime() / 1000,
+                    $lte:
+                      (new Date((+years[1] + 1).toString()).getTime() -
+                        24 * 60 * 60 * 1000) /
+                      1000,
                   },
                 },
               ]
