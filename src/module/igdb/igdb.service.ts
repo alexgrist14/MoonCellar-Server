@@ -53,7 +53,7 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
 } from './schemas/igdb-release-dates.schema';
-import { gamesLookup } from 'src/shared/utils';
+import { gamesLookup, getRandomArray } from 'src/shared/utils';
 
 @Injectable()
 export class IGDBService {
@@ -337,19 +337,14 @@ export class IGDBService {
       },
     };
 
-    const pagination = [
-      ...(isRandom === 'true' ? [] : [{ $skip: (+page - 1) * +take }]),
-      ...(isRandom === 'true'
-        ? [{ $sample: { size: +take } }]
-        : [{ $limit: +take }]),
-    ];
+    const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
     const games = await this.IGDBGamesModel.aggregate([
       { $sort: { total_rating_count: -1 } },
       filters,
       {
         $facet: {
-          results: [...pagination, ...gamesLookup(true)],
+          results: [...(isRandom ? [] : pagination), ...gamesLookup(true)],
           totalCount: [{ $count: 'count' }],
         },
       },
@@ -368,7 +363,11 @@ export class IGDBService {
       },
     ]);
 
-    return games.pop();
+    const finalGames = games.pop();
+
+    return isRandom
+      ? { ...finalGames, results: getRandomArray(finalGames.results, 20) }
+      : finalGames;
   }
 
   async getArt(id: number) {
@@ -498,5 +497,15 @@ export class IGDBService {
   async getToken() {
     const { data: authData } = await igdbAuth();
     return authData;
+  }
+
+  async testFunction() {
+    console.time('Test');
+    console.log();
+    console.timeEnd('Test');
+
+    console.time('Test 2');
+    console.log();
+    console.timeEnd('Test 2');
   }
 }

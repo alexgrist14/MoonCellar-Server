@@ -1,3 +1,19 @@
+export const getRandomInt = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+export const getRandomArray = (array: unknown[], count: number) => {
+  const randomIndices = [];
+
+  for (let i = 0; i < count; i++) {
+    const randomIndex = getRandomInt(0, array.length - 1);
+
+    randomIndices.push(randomIndex);
+  }
+
+  return randomIndices.map((index) => array[index]);
+};
+
 export const gamesLookup = (isBasic?: boolean) => [
   {
     $lookup: {

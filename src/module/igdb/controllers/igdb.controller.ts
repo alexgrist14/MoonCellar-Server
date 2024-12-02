@@ -23,6 +23,9 @@ export class IgdbController {
   @ApiQuery({ name: 'mode', required: false, enum: ['any', 'all'] })
   @ApiQuery({ name: 'selected', required: false })
   @ApiQuery({ name: 'excluded', required: false })
+  @ApiQuery({ name: 'years', required: false })
+  @ApiQuery({ name: 'categories', required: false })
+  @ApiQuery({ name: 'company', required: false })
   getGames(
     @Query('take') take: number,
     @Query('page') page: number,
@@ -100,5 +103,12 @@ export class IgdbController {
   @ApiResponse({ status: 200, description: 'Get over here!' })
   getGameBySlug(@Param('slug') slug: string) {
     return this.service.getGameBySlug(slug);
+  }
+
+  @Get('/test')
+  @ApiOperation({ summary: 'test' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  test() {
+    return this.service.testFunction();
   }
 }
