@@ -370,11 +370,16 @@ export class IGDBService {
       : finalGames;
   }
 
-  async getArt(id: number) {
-    const artwork = await this.IGDBArtworksModel.findById(id);
+  async getScreenshot(id: number) {
     const screenshot = await this.IGDBScreenshotsModel.findById(id);
 
-    return artwork || screenshot || null;
+    return screenshot || null;
+  }
+
+  async getArtwork(id: number) {
+    const artwork = await this.IGDBArtworksModel.findById(id);
+
+    return artwork || null;
   }
 
   async getGenres() {

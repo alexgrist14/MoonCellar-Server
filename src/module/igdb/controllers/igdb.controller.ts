@@ -84,11 +84,18 @@ export class IgdbController {
     return this.service.getGameModes();
   }
 
-  @Get('/art/:id')
+  @Get('/screenshot/:id')
   @ApiOperation({ summary: 'Get game artwork or screenshot' })
   @ApiResponse({ status: 200, description: 'Get over here!' })
-  art(@Param('id') id: number) {
-    return this.service.getArt(id);
+  screenshot(@Param('id') id: number) {
+    return this.service.getScreenshot(id);
+  }
+
+  @Get('/artwork/:id')
+  @ApiOperation({ summary: 'Get game artwork or screenshot' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  artwork(@Param('id') id: number) {
+    return this.service.getArtwork(id);
   }
 
   @Get('/by-id/:id')
