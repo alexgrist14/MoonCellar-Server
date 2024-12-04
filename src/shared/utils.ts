@@ -5,10 +5,13 @@ export const getRandomInt = (min: number, max: number) => {
 export const getRandomArray = (array: unknown[], count: number) => {
   const randomIndices = [];
 
-  for (let i = 0; i < count; i++) {
+  if (!array.length) return [];
+  if (array.length <= count) return array;
+
+  while (randomIndices.length !== count) {
     const randomIndex = getRandomInt(0, array.length - 1);
 
-    randomIndices.push(randomIndex);
+    !randomIndices.includes(randomIndex) && randomIndices.push(randomIndex);
   }
 
   return randomIndices.map((index) => array[index]);

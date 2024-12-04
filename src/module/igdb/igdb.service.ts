@@ -135,6 +135,8 @@ export class IGDBService {
     company,
     categories,
     years,
+    votes,
+    excludeGames,
   }: {
     take?: number | string;
     isRandom?: boolean | string;
@@ -142,11 +144,13 @@ export class IGDBService {
     selected?: IGDBFilters;
     excluded?: IGDBFilters;
     rating?: number | string;
+    votes?: string;
     search?: string;
     company?: string;
     years?: [number, number];
     categories?: (keyof typeof gameCategories)[];
     mode?: 'any' | 'all';
+    excludeGames?: number[];
   }) {
     const companies = !!company
       ? (
@@ -162,6 +166,9 @@ export class IGDBService {
     const filters = {
       $match: {
         $and: [
+          ...(!!excludeGames?.length
+            ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
+            : []),
           {
             category: !!categories
               ? { $in: categories.map((category) => gameCategories[category]) }
@@ -211,6 +218,9 @@ export class IGDBService {
             : []),
           ...(rating !== undefined
             ? [{ total_rating: { $gte: +rating } }]
+            : []),
+          ...(votes !== undefined
+            ? [{ total_rating_count: { $gte: +votes } }]
             : []),
           { genres: { $exists: true } },
           { keywords: { $exists: true } },

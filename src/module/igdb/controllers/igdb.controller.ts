@@ -19,6 +19,7 @@ export class IgdbController {
   })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'rating', required: false })
+  @ApiQuery({ name: 'votes', required: false })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'mode', required: false, enum: ['any', 'all'] })
   @ApiQuery({ name: 'selected', required: false })
@@ -26,6 +27,7 @@ export class IgdbController {
   @ApiQuery({ name: 'years', required: false })
   @ApiQuery({ name: 'categories', required: false })
   @ApiQuery({ name: 'company', required: false })
+  @ApiQuery({ name: 'excludeGames', required: false })
   getGames(
     @Query('take') take: number,
     @Query('page') page: number,
@@ -33,8 +35,10 @@ export class IgdbController {
     @Query('selected') selected: string,
     @Query('excluded') excluded: string,
     @Query('rating') rating: number,
+    @Query('votes') votes: string,
     @Query('search') search: string,
     @Query('company') company: string,
+    @Query('excludeGames') excludeGames: number[],
     @Query('years') years: [number, number],
     @Query('categories') categories: (keyof typeof gameCategories)[],
     @Query('mode') mode: 'any' | 'all',
@@ -51,6 +55,8 @@ export class IgdbController {
       categories,
       company,
       years,
+      excludeGames,
+      votes,
     });
 
     return games;
