@@ -166,6 +166,11 @@ export class IGDBService {
     const filters = {
       $match: {
         $and: [
+          { genres: { $exists: true } },
+          { keywords: { $exists: true } },
+          { themes: { $exists: true } },
+          { platforms: { $exists: true } },
+          { game_modes: { $exists: true } },
           ...(!!excludeGames?.length
             ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
             : []),
@@ -187,7 +192,16 @@ export class IGDBService {
                   ],
                 },
           },
-          ...(!!search ? [{ name: { $regex: search, $options: 'i' } }] : []),
+          ...(!!search
+            ? [
+                {
+                  name: {
+                    $regex: search.replaceAll(' ', '\\s*'),
+                    $options: 'i',
+                  },
+                },
+              ]
+            : []),
           ...(!!years
             ? [
                 {
@@ -222,11 +236,6 @@ export class IGDBService {
           ...(votes !== undefined
             ? [{ total_rating_count: { $gte: +votes } }]
             : []),
-          { genres: { $exists: true } },
-          { keywords: { $exists: true } },
-          { themes: { $exists: true } },
-          { platforms: { $exists: true } },
-          { game_modes: { $exists: true } },
           ...(!!selected?.themes?.length
             ? [
                 {
@@ -350,11 +359,14 @@ export class IGDBService {
     const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
     const games = await this.IGDBGamesModel.aggregate([
-      { $sort: { total_rating_count: -1 } },
       filters,
+      { $sort: { total_rating_count: -1 } },
       {
         $facet: {
-          results: [...(isRandom ? [] : pagination), ...gamesLookup(true)],
+          results: [
+            ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
+            ...gamesLookup(true),
+          ],
           totalCount: [{ $count: 'count' }],
         },
       },
@@ -373,11 +385,7 @@ export class IGDBService {
       },
     ]);
 
-    const finalGames = games.pop();
-
-    return isRandom
-      ? { ...finalGames, results: getRandomArray(finalGames.results, 20) }
-      : finalGames;
+    return games.pop();
   }
 
   async getScreenshot(id: number) {
