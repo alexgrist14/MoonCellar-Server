@@ -4,12 +4,17 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
+import { Request } from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request)=>{
+          return request?.cookies?.['refreshMoonToken'];
+        }
+      ]),
       secretOrKey: process.env.JWT_SECRET,
     });
   }

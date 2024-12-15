@@ -44,21 +44,7 @@ export class UserController {
   ) {}
   @Patch(':userId/games/:gameId')
   @ApiBearerAuth()
-  //@UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Add game to category' })
-  @ApiResponse({
-    status: 200,
-    description: 'Game added successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Incorrect category or game already in category',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User or game not found',
-  })
-  @ApiQuery({ name: 'category', enum: categories })
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   async addGameToCategory(
     @Param('userId') userId: string,
@@ -69,6 +55,8 @@ export class UserController {
   }
 
   @Delete(':userId/games/:gameId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove game from category' })
   @ApiResponse({
     status: 200,
@@ -94,17 +82,13 @@ export class UserController {
 
   @Patch('rating/:userId')
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Add user rating to game' })
   @ApiResponse({ status: 200, description: 'Rating added successfully' })
   async addGameRating(
     @Param('userId') userId: string,
     @Body() gameRatingDto: AddGameRatingDto,
-    //@Req() req,
   ) {
-    // if (req.user._id.toString() !== userId) {
-    //   throw new UnauthorizedException('You can only update your own games');
-    // }
-
     return this.usersService.addGameRating(
       userId,
       gameRatingDto.game,
@@ -114,12 +98,12 @@ export class UserController {
 
   @Delete('rating/:userId/:gameId')
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove user rating from game' })
   @ApiResponse({ status: 200, description: 'Rating removed successfully' })
   async removeGameRating(
     @Param('userId') userId: string,
     @Param('gameId') gameId: number,
-    //@Req() req,
   ) {
     return this.usersService.removeGameRating(userId, gameId);
   }
@@ -187,6 +171,8 @@ export class UserController {
   }
 
   @Patch('/followings/:userId/:followingId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Add following to user' })
   @ApiResponse({ status: 200, description: 'success' })
   async addUserFollowing(
@@ -197,6 +183,8 @@ export class UserController {
   }
 
   @Delete('/followings/:userId/:followingId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove user following' })
   @ApiResponse({ status: 200, description: 'success' })
   async removeUserFollowing(
@@ -239,7 +227,8 @@ export class UserController {
   }
 
   @Post('profile-picture/:userId')
-  //@UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Add user profile picture' })
   @ApiResponse({ status: 201, description: 'picture name' })

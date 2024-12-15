@@ -88,6 +88,7 @@ export class AuthController {
     @Headers() headers?: any,
   ): Promise<Response> {
     const oldRefreshToken = req.cookies.refreshMoonToken;
+    console.log(oldRefreshToken)
     if (oldRefreshToken) {
       const decodedToken = jwtDecode<ExtendedJwtPayload>(oldRefreshToken);
       const userId = decodedToken.id;
