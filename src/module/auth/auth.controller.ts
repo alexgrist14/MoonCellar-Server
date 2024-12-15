@@ -1,19 +1,22 @@
 import {
-  Controller,
-  Post,
   Body,
-  Res,
-  HttpStatus,
+  Controller,
   Headers,
-  UnprocessableEntityException,
+  HttpStatus,
   Param,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { SignUpDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
+import { jwtDecode } from 'jwt-decode';
 import { UserService } from '../user/services/user.service';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { SignUpDto } from './dto/signup.dto';
+import { ExtendedJwtPayload } from './types/jwt';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -34,24 +37,19 @@ export class AuthController {
     @Res() res: Response,
     @Headers() headers: any,
   ): Promise<Response> {
-    try {
-      const { accessToken, refreshToken } =
-        await this.authService.signUp(signUpDto);
-      // const userId = (
-      //   await this.usersService.findByString(signUpDto.userName, 'userName')
-      // ).id;
+    const { accessToken, refreshToken } =
+      await this.authService.signUp(signUpDto);
+    const userId = (
+      await this.usersService.findByString(signUpDto.userName, 'userName')
+    ).id;
 
-      this.authService.setCookies(
-        res,
-        accessToken,
-        refreshToken,
-        headers?.origin,
-      );
-      return res.status(HttpStatus.OK).json({ accessToken, refreshToken});
-    } catch (err) {
-      console.log(err);
-      throw new UnprocessableEntityException(`${err.message}`);
-    }
+    this.authService.setCookies(
+      res,
+      accessToken,
+      refreshToken,
+      headers?.origin,
+    );
+    return res.status(HttpStatus.OK).json({ userId });
   }
 
   @Post('/login')
@@ -78,29 +76,34 @@ export class AuthController {
       headers?.origin,
     );
 
-    return res.status(HttpStatus.OK).json({ accessToken, refreshToken, userId});
+    return res.status(HttpStatus.OK).json({ userId });
   }
 
   @Post('/refresh-token')
   @ApiOperation({ summary: 'Refresh token' })
   @ApiResponse({ status: 200, description: 'Refresh successful' })
   async refreshToken(
-    @Body('userId') userId: string,
-    @Body('refreshToken') oldRefreshToken: string,
     @Res() res: Response,
-    @Headers() headers: any,
+    @Req() req: Request,
+    @Headers() headers?: any,
   ): Promise<Response> {
-    const { accessToken, refreshToken } = await this.authService.refreshToken(
-      userId,
-      oldRefreshToken,
-    );
-    this.authService.setCookies(
-      res,
-      accessToken,
-      refreshToken,
-      headers?.origin,
-    );
-    return res.status(HttpStatus.OK);
+    const oldRefreshToken = req.cookies.refreshMoonToken;
+    if (oldRefreshToken) {
+      const decodedToken = jwtDecode<ExtendedJwtPayload>(oldRefreshToken);
+      const userId = decodedToken.id;
+
+      if (decodedToken.exp) {
+        const { accessToken, refreshToken } =
+          await this.authService.refreshToken(userId, oldRefreshToken);
+        this.authService.setCookies(
+          res,
+          accessToken,
+          refreshToken,
+          headers?.origin,
+        );
+        return res.status(HttpStatus.OK).json({ userId });
+      } else throw new UnauthorizedException();
+    }
   }
 
   @Post(':id/logout')
