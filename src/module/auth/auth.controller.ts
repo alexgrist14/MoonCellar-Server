@@ -8,8 +8,14 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { jwtDecode } from 'jwt-decode';
 import { UserService } from '../user/services/user.service';
@@ -17,6 +23,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { ExtendedJwtPayload } from './types/jwt';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -80,6 +87,8 @@ export class AuthController {
   }
 
   @Post('/refresh-token')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Refresh token' })
   @ApiResponse({ status: 200, description: 'Refresh successful' })
   async refreshToken(
@@ -88,20 +97,16 @@ export class AuthController {
     @Headers() headers?: any,
   ): Promise<Response> {
     const oldRefreshToken = req.cookies.refreshMoonToken;
-    console.log(oldRefreshToken)
     if (oldRefreshToken) {
       const decodedToken = jwtDecode<ExtendedJwtPayload>(oldRefreshToken);
       const userId = decodedToken.id;
 
       if (decodedToken.exp) {
-        const { accessToken, refreshToken } =
-          await this.authService.refreshToken(userId, oldRefreshToken);
-        this.authService.setCookies(
-          res,
-          accessToken,
-          refreshToken,
-          headers?.origin,
+        const { accessToken } = await this.authService.refreshToken(
+          userId,
+          oldRefreshToken,
         );
+        this.authService.setCookies(res, accessToken, headers?.origin);
         return res.status(HttpStatus.OK).json({ userId });
       } else throw new UnauthorizedException();
     }

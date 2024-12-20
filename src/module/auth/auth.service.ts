@@ -11,6 +11,12 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { Response } from 'express';
+import {
+  ACCESS_TOKEN,
+  accessExpire,
+  REFRESH_TOKEN,
+  refreshExpire,
+} from 'src/shared/constants';
 
 @Injectable()
 export class AuthService {
@@ -25,11 +31,11 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.jwtService.sign(
       { id: user._id },
-      { expiresIn: '24h' },
+      { expiresIn: accessExpire },
     );
     const refreshToken = this.jwtService.sign(
       { id: user._id },
-      { expiresIn: '30d' },
+      { expiresIn: refreshExpire },
     );
 
     user.refreshToken = refreshToken;
@@ -75,10 +81,7 @@ export class AuthService {
     return this.generateTokensAndUpdateUser(user);
   }
 
-  async refreshToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshToken(userId: string, refreshToken: string) {
     const user = await this.userModel.findById(userId);
 
     if (!user || user.refreshToken !== refreshToken) {
@@ -87,17 +90,10 @@ export class AuthService {
 
     const newAccessToken = this.jwtService.sign(
       { id: user._id },
-      { expiresIn: '24h' },
-    );
-    const newRefreshToken = this.jwtService.sign(
-      { id: user._id },
-      { expiresIn: '30d' },
+      { expiresIn: accessExpire },
     );
 
-    user.refreshToken = newRefreshToken;
-    await user.save();
-
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    return { accessToken: newAccessToken };
   }
 
   setCookies(
@@ -106,34 +102,36 @@ export class AuthService {
     refreshToken: string,
     origin?: string,
   ): void {
-    const domain = origin?.includes('localhost') ? '.localhost' : 'mooncellar.space';
-    //const httpOnly = !origin?.includes('localhost');
+    const domain = origin?.includes('localhost')
+      ? '.localhost'
+      : 'mooncellar.space';
     const secure = origin?.includes('https') ? true : false;
-    const sameSite = origin?.includes('localhost') || !secure ? undefined : 'none';
+    const sameSite =
+      origin?.includes('localhost') || !secure ? undefined : 'none';
 
-    res.cookie('accessMoonToken', accessToken, {
+    res.cookie(ACCESS_TOKEN, accessToken, {
       httpOnly: true,
       domain: domain,
       secure: secure,
-      sameSite: sameSite,      
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: sameSite,
+      expires: new Date(Date.now() + accessExpire),
+      maxAge: accessExpire,
     });
-    res.cookie('refreshMoonToken', refreshToken, {
+    res.cookie(REFRESH_TOKEN, refreshToken, {
       httpOnly: true,
       domain: domain,
       secure: secure,
-      sameSite: sameSite,          
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: sameSite,
+      expires: new Date(Date.now() + refreshExpire),
+      maxAge: refreshExpire,
     });
   }
 
   clearCookies(res: Response, origin?: string): void {
-    res.clearCookie('accessMoonToken', {
+    res.clearCookie(ACCESS_TOKEN, {
       httpOnly: !origin?.includes('localhost'),
     });
-    res.clearCookie('refreshMoonToken', {
+    res.clearCookie(REFRESH_TOKEN, {
       httpOnly: !origin?.includes('localhost'),
     });
   }

@@ -5,15 +5,16 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { Request } from 'express';
+import { ACCESS_TOKEN } from 'src/shared/constants';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request)=>{
-          return request?.cookies?.['refreshMoonToken'];
-        }
+        (request: Request) => {
+          return request?.cookies?.[ACCESS_TOKEN];
+        },
       ]),
       secretOrKey: process.env.JWT_SECRET,
     });
