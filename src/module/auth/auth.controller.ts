@@ -102,11 +102,11 @@ export class AuthController {
       const userId = decodedToken.id;
 
       if (decodedToken.exp) {
-        const { accessToken } = await this.authService.refreshToken(
+        const { accessToken,refreshToken } = await this.authService.refreshToken(
           userId,
           oldRefreshToken,
         );
-        this.authService.setCookies(res, accessToken, headers?.origin);
+        this.authService.setCookies(res, accessToken, refreshToken, headers?.origin);
         return res.status(HttpStatus.OK).json({ userId });
       } else throw new UnauthorizedException();
     }

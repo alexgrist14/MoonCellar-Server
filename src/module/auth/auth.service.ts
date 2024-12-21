@@ -93,7 +93,14 @@ export class AuthService {
       { expiresIn: accessExpire },
     );
 
-    return { accessToken: newAccessToken };
+    const newRefreshToken = this.jwtService.sign(
+      { id: user._id },
+      { expiresIn: refreshExpire },
+    );
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
   setCookies(
