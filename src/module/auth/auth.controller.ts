@@ -10,6 +10,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -17,13 +19,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { jwtDecode } from 'jwt-decode';
 import { UserService } from '../user/services/user.service';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { ExtendedJwtPayload } from './types/jwt';
-import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -31,6 +30,7 @@ export class AuthController {
   constructor(
     private readonly usersService: UserService,
     private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('/signup')
@@ -97,19 +97,24 @@ export class AuthController {
     @Headers() headers?: any,
   ): Promise<Response> {
     const oldRefreshToken = req.cookies.refreshMoonToken;
-    if (oldRefreshToken) {
-      const decodedToken = jwtDecode<ExtendedJwtPayload>(oldRefreshToken);
-      const userId = decodedToken.id;
 
-      if (decodedToken.exp) {
-        const { accessToken,refreshToken } = await this.authService.refreshToken(
-          userId,
-          oldRefreshToken,
-        );
-        this.authService.setCookies(res, accessToken, refreshToken, headers?.origin);
-        return res.status(HttpStatus.OK).json({ userId });
-      } else throw new UnauthorizedException();
-    }
+    if (oldRefreshToken) {
+      const payload = this.jwtService.verify(oldRefreshToken, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      const userId = payload.id;
+
+      const { accessToken, refreshToken } =
+        await this.authService.refreshToken(userId);
+      this.authService.setCookies(
+        res,
+        accessToken,
+        refreshToken,
+        headers?.origin,
+      );
+      return res.status(HttpStatus.OK).json({ userId });
+    } else throw new UnauthorizedException();
   }
 
   @Post(':id/logout')

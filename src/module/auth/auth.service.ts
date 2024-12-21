@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -81,11 +82,11 @@ export class AuthService {
     return this.generateTokensAndUpdateUser(user);
   }
 
-  async refreshToken(userId: string, refreshToken: string) {
+  async refreshToken(userId: string) {
     const user = await this.userModel.findById(userId);
 
-    if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
+    if (!user?.refreshToken) {
+      throw new ForbiddenException();
     }
 
     const newAccessToken = this.jwtService.sign(
