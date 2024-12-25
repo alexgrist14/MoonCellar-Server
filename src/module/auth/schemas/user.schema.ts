@@ -76,7 +76,7 @@ export class User extends Document {
         action: { type: String, required: true },
         isAdd: { type: Boolean, required: true },
         rating: { type: Number, required: false },
-        gameId: { type: String, required: true },
+        gameId: { type: Number, required: true },
       },
     ],
     default: [],

@@ -15,6 +15,10 @@ export interface ILogs {
   gameId: number;
 }
 
+export interface IUserLogs{
+  logs: ILogs[];
+}
+
 export const categories: categoriesType[] = [
   'completed',
   'wishlist',

@@ -16,7 +16,8 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { User } from '../auth/schemas/user.schema';
+import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -26,14 +27,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { UpdateEmailDto } from '../auth/dto/update-email.dto';
 import { UpdatePasswordDto } from '../auth/dto/update-password.dto';
-import { UserService } from './services/user.service';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { FileUploadService } from './services/file-upload.service';
+import { User } from '../auth/schemas/user.schema';
 import { AddGameRatingDto } from './dto/add-game-rating.dto';
-import { categories, categoriesType, ILogs } from './types/actions';
+import { FileUploadService } from './services/file-upload.service';
+import { UserService } from './services/user.service';
+import { categories, categoriesType } from './types/actions';
 
 @ApiTags('user')
 @Controller('user')
@@ -146,7 +146,7 @@ export class UserController {
     status: 200,
     description: 'Success',
   })
-  async getUserLogs(@Param('userId') userId: string): Promise<ILogs[]> {
+  async getUserLogs(@Param('userId') userId: string) {
     return this.usersService.getUserLogs(userId);
   }
 

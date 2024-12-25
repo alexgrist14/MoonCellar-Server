@@ -15,7 +15,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { categories, categoriesType, ILogs } from '../types/actions';
+import { categories, categoriesType, ILogs, IUserLogs } from '../types/actions';
 import mongoose from 'mongoose';
 import { gamesLookup } from 'src/shared/utils';
 
@@ -145,9 +145,61 @@ export class UserService {
     return user;
   }
 
-  async getUserLogs(userId: string): Promise<ILogs[]> {
-    const user = await this.userModel.findById(userId);
-    return user.logs;
+  async getUserLogs(userId: string) {
+    return (await this.userModel.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $project: {
+          logs: { $slice: ['$logs', -50] },
+        },
+      },
+      {
+        $unwind: '$logs',
+      },
+      {
+        $lookup: {
+          from: 'igdbgames',
+          localField: 'logs.gameId',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                name: 1,
+                slug: 1,
+                cover: 1,
+              },
+            },
+            {
+              $lookup: {
+                from: 'igdbcovers',
+                localField: 'cover',
+                foreignField: '_id',
+                pipeline: [
+                  {
+                    $project: { url: 1, _id: 0 },
+                  },
+                ],
+                as: 'cover',
+              },
+            },
+            { $unwind: '$cover' },
+          ],
+          as: 'logs.game',
+        },
+      },
+      {
+        $unwind: '$logs.game',
+      },
+      {
+        $group: {
+          _id: '$_id',
+          logs: { $push: '$logs' },
+        },
+      },
+    ])) as IUserLogs[];
   }
 
   async findById(userId: string): Promise<User> {
@@ -165,7 +217,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.completed',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.completed' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.completed',
           },
         },
@@ -174,7 +243,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.playing',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.playing' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.playing',
           },
         },
@@ -183,7 +269,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.wishlist',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.wishlist' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.wishlist',
           },
         },
@@ -192,7 +295,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.backlog',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.backlog' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.backlog',
           },
         },
@@ -201,7 +321,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.dropped',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.dropped' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.dropped',
           },
         },
@@ -210,7 +347,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.mastered',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.mastered' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.mastered',
           },
         },
@@ -219,7 +373,24 @@ export class UserService {
             from: 'igdbgames',
             localField: 'games.played',
             foreignField: '_id',
-            pipeline: [...gamesLookup(true)],
+            let: { ids: '$games.played' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $in: ['$_id', '$$ids'] },
+                },
+              },
+              {
+                $addFields: {
+                  sort: {
+                    $indexOfArray: ['$$ids', '$_id'],
+                  },
+                },
+              },
+              { $sort: { sort: -1 } },
+              { $addFields: { sort: '$$REMOVE' } },
+              ...gamesLookup(true),
+            ],
             as: 'games.played',
           },
         },
