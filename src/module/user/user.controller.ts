@@ -45,6 +45,7 @@ export class UserController {
   @Patch(':userId/games/:gameId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
+  @ApiQuery({ name: 'category', enum: categories })
   @HttpCode(HttpStatus.OK)
   async addGameToCategory(
     @Param('userId') userId: string,
@@ -156,8 +157,22 @@ export class UserController {
     status: 200,
     description: 'Success',
   })
-  async getUserGames(@Param('userId') userId: string) {
-    return this.usersService.getUserGames(userId);
+  @ApiQuery({ name: 'category', enum: categories })
+  async getUserGames(
+    @Param('userId') userId: string,
+    @Query('category') category: categoriesType,
+  ) {
+    return this.usersService.getUserGames(userId, category);
+  }
+
+  @Get('/games/length/:userId')
+  @ApiOperation({ summary: 'Get user games length' })
+  @ApiResponse({
+    status: 200,
+    description: 'Success',
+  })
+  async getUserGamesLength(@Param('userId') userId: string){
+    return this.usersService.getUserGamesLength(userId);
   }
 
   @Get('/followings/:userId')

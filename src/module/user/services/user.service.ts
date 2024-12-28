@@ -5,19 +5,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Query as ExpressQuery } from 'express-serve-static-core';
 import * as bcrypt from 'bcryptjs';
-import { User } from 'src/module/auth/schemas/user.schema';
-import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
+import { Query as ExpressQuery } from 'express-serve-static-core';
+import mongoose, { Model } from 'mongoose';
 import { UpdateEmailDto } from 'src/module/auth/dto/update-email.dto';
+import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
+import { User } from 'src/module/auth/schemas/user.schema';
 import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { categories, categoriesType, ILogs, IUserLogs } from '../types/actions';
-import mongoose from 'mongoose';
 import { gamesLookup } from 'src/shared/utils';
+import { categories, categoriesType, IUserLogs } from '../types/actions';
 
 @Injectable()
 export class UserService {
@@ -203,10 +202,29 @@ export class UserService {
   }
 
   async findById(userId: string): Promise<User> {
-    return await this.userModel.findById(userId).select(['-password', '-__v']);
+    return await this.userModel.findById(userId).select([
+      '-password',
+      '-logs',
+      '-createdAt',
+      '-updatedAt',
+      '-refreshToken',
+      '-__v',
+    ]);;
   }
 
-  async getUserGames(userId: string) {
+  async getUserGamesLength(userId: string, ){
+    const user = await this.userModel.findById(userId);
+    const gamesLength = {};
+
+    categories.forEach((cat)=>{
+      gamesLength[cat]= user.games[cat].length;
+    });
+
+    return gamesLength;
+
+  }
+
+  async getUserGames(userId: string, category: categoriesType) {
     return (
       await this.userModel.aggregate([
         {
@@ -215,9 +233,9 @@ export class UserService {
         {
           $lookup: {
             from: 'igdbgames',
-            localField: 'games.completed',
+            localField: `games.${category}`,
             foreignField: '_id',
-            let: { ids: '$games.completed' },
+            let: { ids: `$games.${category}` },
             pipeline: [
               {
                 $match: {
@@ -235,165 +253,10 @@ export class UserService {
               { $addFields: { sort: '$$REMOVE' } },
               ...gamesLookup(true),
             ],
-            as: 'games.completed',
+            as: `games.${category}`,
           },
         },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.playing',
-            foreignField: '_id',
-            let: { ids: '$games.playing' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.playing',
-          },
-        },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.wishlist',
-            foreignField: '_id',
-            let: { ids: '$games.wishlist' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.wishlist',
-          },
-        },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.backlog',
-            foreignField: '_id',
-            let: { ids: '$games.backlog' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.backlog',
-          },
-        },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.dropped',
-            foreignField: '_id',
-            let: { ids: '$games.dropped' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.dropped',
-          },
-        },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.mastered',
-            foreignField: '_id',
-            let: { ids: '$games.mastered' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.mastered',
-          },
-        },
-        {
-          $lookup: {
-            from: 'igdbgames',
-            localField: 'games.played',
-            foreignField: '_id',
-            let: { ids: '$games.played' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
-                },
-              },
-              {
-                $addFields: {
-                  sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
-                  },
-                },
-              },
-              { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
-              ...gamesLookup(true),
-            ],
-            as: 'games.played',
-          },
-        },
+
         { $project: { games: 1 } },
       ])
     ).pop();
