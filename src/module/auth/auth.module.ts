@@ -14,6 +14,7 @@ import {
   IGDBGames,
   IGDBGamesSchema,
 } from 'src/shared/schemas/igdb-games.schema';
+import { UserFiltersService } from '../user/services/user-filters.service';
 
 @Module({
   imports: [
@@ -37,7 +38,13 @@ import {
     }),
   ],
   controllers: [AuthController, UserController],
-  providers: [AuthService, UserService, JwtStrategy, FileUploadService],
+  providers: [
+    AuthService,
+    UserService,
+    UserFiltersService,
+    JwtStrategy,
+    FileUploadService,
+  ],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

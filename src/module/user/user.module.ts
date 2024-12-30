@@ -8,6 +8,7 @@ import {
   IGDBGames,
   IGDBGamesSchema,
 } from 'src/shared/schemas/igdb-games.schema';
+import { UserFiltersService } from './services/user-filters.service';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import {
   ],
 
   controllers: [UserController],
-  providers: [UserService, FileUploadService],
+  providers: [UserService, UserFiltersService, FileUploadService],
 })
 export class UserModule {}

@@ -88,6 +88,8 @@ export class User extends Document {
     rating?: number | undefined;
     gameId: number;
   }[];
+  @Prop()
+  filters: { name: string; filter: string }[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

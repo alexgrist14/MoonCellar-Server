@@ -34,6 +34,8 @@ import { AddGameRatingDto } from './dto/add-game-rating.dto';
 import { FileUploadService } from './services/file-upload.service';
 import { UserService } from './services/user.service';
 import { categories, categoriesType } from './types/actions';
+import { UserFiltersService } from './services/user-filters.service';
+import { FilterDto } from './dto/filters.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -41,6 +43,7 @@ export class UserController {
   constructor(
     private readonly usersService: UserService,
     private readonly fileUploadService: FileUploadService,
+    private readonly userFiltersService: UserFiltersService,
   ) {}
   @Patch(':userId/games/:gameId')
   @ApiBearerAuth()
@@ -171,7 +174,7 @@ export class UserController {
     status: 200,
     description: 'Success',
   })
-  async getUserGamesLength(@Param('userId') userId: string){
+  async getUserGamesLength(@Param('userId') userId: string) {
     return this.usersService.getUserGamesLength(userId);
   }
 
@@ -284,5 +287,36 @@ export class UserController {
     }
 
     return { fileName };
+  }
+
+  @Post('filters/:userId')
+  @ApiOperation({ summary: 'Save filter to user' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async addFilter(
+    @Param('userId') userId: string,
+    @Body() filterDto: FilterDto,
+  ) {
+    return await this.userFiltersService.addFilter(
+      userId,
+      filterDto.name,
+      filterDto.filter,
+    );
+  }
+
+  @Delete('filters/:userId')
+  @ApiOperation({ summary: 'Remove filter from user' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async deleteFilter(
+    @Param('userId') userId: string,
+    @Query('name') name: string,
+  ) {
+    return await this.userFiltersService.removeFilter(userId, name);
+  }
+
+  @Get('filters/:userId')
+  @ApiOperation({ summary: 'Get user filters' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getFilters(@Param('userId') userId: string) {
+    return await this.userFiltersService.getFilters(userId);
   }
 }
