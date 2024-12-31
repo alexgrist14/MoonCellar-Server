@@ -393,7 +393,7 @@ export class UserService {
                 input: '$followings',
                 as: 'following',
                 in: {
-                  userId: '$$following._id',
+                  _id: '$$following._id',
                   userName: '$$following.userName',
                   profilePicture: '$$following.profilePicture',
                 },
