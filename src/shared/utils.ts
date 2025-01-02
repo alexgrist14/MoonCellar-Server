@@ -17,6 +17,32 @@ export const getRandomArray = (array: unknown[], count: number) => {
   return randomIndices.map((index) => array[index]);
 };
 
+export const followersLookup = () => [
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'followings',
+      foreignField: '_id',
+      as: 'followings',
+    },
+  },
+  {
+    $project: {
+      followings: {
+        $map: {
+          input: '$followings',
+          as: 'following',
+          in: {
+            _id: '$$following._id',
+            userName: '$$following.userName',
+            profilePicture: '$$following.profilePicture',
+          },
+        },
+      },
+    },
+  },
+];
+
 export const gamesLookup = (isBasic?: boolean) => [
   {
     $lookup: {

@@ -15,7 +15,7 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
-import { gamesLookup } from 'src/shared/utils';
+import { followersLookup, gamesLookup } from 'src/shared/utils';
 import { categories, categoriesType, IUserLogs } from '../types/actions';
 
 @Injectable()
@@ -202,26 +202,27 @@ export class UserService {
   }
 
   async findById(userId: string): Promise<User> {
-    return await this.userModel.findById(userId).select([
-      '-password',
-      '-logs',
-      '-createdAt',
-      '-updatedAt',
-      '-refreshToken',
-      '-__v',
-    ]);;
+    return await this.userModel
+      .findById(userId)
+      .select([
+        '-password',
+        '-logs',
+        '-createdAt',
+        '-updatedAt',
+        '-refreshToken',
+        '-__v',
+      ]);
   }
 
-  async getUserGamesLength(userId: string, ){
+  async getUserGamesLength(userId: string) {
     const user = await this.userModel.findById(userId);
     const gamesLength = {};
 
-    categories.forEach((cat)=>{
-      gamesLength[cat]= user.games[cat].length;
+    categories.forEach((cat) => {
+      gamesLength[cat] = user.games[cat].length;
     });
 
     return gamesLength;
-
   }
 
   async getUserGames(userId: string, category: categoriesType) {
@@ -268,14 +269,7 @@ export class UserService {
   ): Promise<User> {
     return await this.userModel
       .findOne({ [searchType]: searchString })
-      .select([
-        '-password',
-        '-games',
-        '-createdAt',
-        '-updatedAt',
-        '-refreshToken',
-        '-__v',
-      ]);
+      .select(['-password', '-createdAt', '-refreshToken', '-__v']);
   }
 
   async findAll(query: ExpressQuery): Promise<User[]> {
@@ -355,7 +349,14 @@ export class UserService {
 
     user.followings.push(new mongoose.Types.ObjectId(followingId));
     await user.save();
-    return user;
+    return (
+      await this.userModel.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(userId) },
+        },
+        ...followersLookup(),
+      ])
+    ).pop();
   }
 
   async removeUserFollowing(userId: string, followingId: string) {
@@ -367,7 +368,14 @@ export class UserService {
       (user) => user.toString() !== followingId,
     );
     await user.save();
-    return user;
+    return (
+      await this.userModel.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(userId) },
+        },
+        ...followersLookup(),
+      ])
+    ).pop();
   }
 
   async getUserFollowings(userId: string) {
@@ -378,29 +386,7 @@ export class UserService {
         {
           $match: { _id: new mongoose.Types.ObjectId(userId) },
         },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'followings',
-            foreignField: '_id',
-            as: 'followings',
-          },
-        },
-        {
-          $project: {
-            followings: {
-              $map: {
-                input: '$followings',
-                as: 'following',
-                in: {
-                  _id: '$$following._id',
-                  userName: '$$following.userName',
-                  profilePicture: '$$following.profilePicture',
-                },
-              },
-            },
-          },
-        },
+        ...followersLookup(),
       ])
     ).pop();
   }
