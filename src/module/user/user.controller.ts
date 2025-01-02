@@ -36,6 +36,7 @@ import { UserService } from './services/user.service';
 import { categories, categoriesType } from './types/actions';
 import { UserFiltersService } from './services/user-filters.service';
 import { FilterDto } from './dto/filters.dto';
+import { UpdateDescriptionDto } from './dto/update-description.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -318,5 +319,21 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Success' })
   async getFilters(@Param('userId') userId: string) {
     return await this.userFiltersService.getFilters(userId);
+  }
+
+  @Patch('description/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Update user description' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async updateDescription(
+    @Param('userId') userId: string,
+    @Body() descriptionDto: UpdateDescriptionDto,
+  ) {
+    console.log(descriptionDto.description);
+    return await this.usersService.updateUserDescription(
+      userId,
+      descriptionDto.description,
+    );
   }
 }

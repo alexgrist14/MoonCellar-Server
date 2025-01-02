@@ -390,4 +390,12 @@ export class UserService {
       ])
     ).pop();
   }
+
+  async updateUserDescription(userId: string, description: string){
+    const user = await this.userModel.findById(userId);
+
+    user.description = description;
+    await user.save();
+    return user;
+  }
 }

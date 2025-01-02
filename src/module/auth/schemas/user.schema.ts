@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { MaxLength } from 'class-validator';
 import mongoose, { Document } from 'mongoose';
 import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 
@@ -90,6 +91,9 @@ export class User extends Document {
   }[];
   @Prop()
   filters: { name: string; filter: string }[];
+  @Prop()
+  @MaxLength(450)
+  description: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
