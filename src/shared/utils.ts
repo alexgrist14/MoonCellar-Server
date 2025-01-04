@@ -44,6 +44,21 @@ export const followersLookup = () => [
 ];
 
 export const gamesLookup = (isBasic?: boolean) => [
+  ...(isBasic
+    ? [
+        {
+          $project: {
+            name: 1,
+            slug: 1,
+            first_release_date: 100,
+            cover: 1,
+            platforms: 1,
+            category: 1,
+            summary: 1,
+          },
+        },
+      ]
+    : []),
   {
     $lookup: {
       from: 'igdbcovers',
@@ -56,16 +71,6 @@ export const gamesLookup = (isBasic?: boolean) => [
     $addFields: {
       cover: {
         $ifNull: [{ $arrayElemAt: ['$cover', 0] }, null],
-      },
-    },
-  },
-  {
-    $set: {
-      release_dates: {
-        $sortArray: {
-          input: '$release_dates',
-          sortBy: { date: 1 },
-        },
       },
     },
   },
@@ -113,6 +118,16 @@ export const gamesLookup = (isBasic?: boolean) => [
   },
   ...(!isBasic
     ? [
+        {
+          $set: {
+            release_dates: {
+              $sortArray: {
+                input: '$release_dates',
+                sortBy: { date: 1 },
+              },
+            },
+          },
+        },
         {
           $lookup: {
             from: 'igdbreleasedates',

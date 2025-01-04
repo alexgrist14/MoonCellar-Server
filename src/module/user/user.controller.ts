@@ -291,6 +291,8 @@ export class UserController {
   }
 
   @Post('filters/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Save filter to user' })
   @ApiResponse({ status: 200, description: 'Success' })
   async addFilter(
@@ -305,6 +307,8 @@ export class UserController {
   }
 
   @Delete('filters/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Remove filter from user' })
   @ApiResponse({ status: 200, description: 'Success' })
   async deleteFilter(
@@ -315,6 +319,8 @@ export class UserController {
   }
 
   @Get('filters/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Get user filters' })
   @ApiResponse({ status: 200, description: 'Success' })
   async getFilters(@Param('userId') userId: string) {

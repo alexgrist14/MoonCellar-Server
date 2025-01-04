@@ -11,19 +11,12 @@ import mongoose, { Model } from 'mongoose';
 import { UpdateEmailDto } from 'src/module/auth/dto/update-email.dto';
 import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
 import { User } from 'src/module/auth/schemas/user.schema';
-import {
-  IGDBGames,
-  IGDBGamesDocument,
-} from 'src/shared/schemas/igdb-games.schema';
 import { followersLookup, gamesLookup } from 'src/shared/utils';
 import { categories, categoriesType, IUserLogs } from '../types/actions';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(IGDBGames.name) private gameModel: Model<IGDBGamesDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   private userAndCategoryCheck(user: User, category: categoriesType) {
     if (!user) throw new NotFoundException('User not found');
@@ -37,36 +30,40 @@ export class UserService {
     gameId: number,
     category: categoriesType,
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
+    const user = this.userModel.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(userId),
+        [`games.${category}`]: { $exists: true },
+      },
+      [
+        {
+          $set: {
+            [`games.${category}`]: {
+              $concatArrays: [`$games.${category}`, [Number(gameId)]],
+            },
+            logs: {
+              $concatArrays: [
+                `$logs`,
+                [
+                  {
+                    date: new Date(Date.now()),
+                    action: category,
+                    isAdd: true,
+                    gameId: Number(gameId),
+                  },
+                ],
+              ],
+            },
+          },
+        },
+      ],
+      { new: true },
+    );
 
-    this.userAndCategoryCheck(user, category);
-
-    if (!user.games[category].includes(gameId)) {
-      const gameExists = await this.gameModel.exists({ _id: gameId });
-
-      if (!gameExists) throw new NotFoundException('Game not found');
-
-      user.games[category].push(gameId);
-
-      for (const cat of categories) {
-        if (cat !== category && user.games[cat]?.includes(gameId)) {
-          user.games[cat] = user.games[cat]?.filter(
-            (id: number) => id !== Number(gameId),
-          );
-        }
-      }
-    } else {
-      throw new BadRequestException(`Game already in ${category} category`);
+    if (!user) {
+      throw new BadRequestException('User or category not found!');
     }
 
-    user.logs.push({
-      date: new Date(Date.now()),
-      action: category,
-      isAdd: true,
-      gameId: gameId,
-    });
-
-    await user.save();
     return user;
   }
 
@@ -75,25 +72,43 @@ export class UserService {
     gameId: number,
     category: categoriesType,
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
-
-    this.userAndCategoryCheck(user, category);
-
-    if (!user.games[category].includes(gameId))
-      throw new NotFoundException(`Game not found in ${category} category`);
-
-    user.games[category] = user.games[category].filter(
-      (id: number) => id !== Number(gameId),
+    const user = this.userModel.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(userId),
+        [`games.${category}`]: { $exists: true },
+      },
+      [
+        {
+          $set: {
+            [`games.${category}`]: {
+              $filter: {
+                input: `$games.${category}`,
+                as: 'gameId',
+                cond: { $ne: ['$$gameId', Number(gameId)] },
+              },
+            },
+            logs: {
+              $concatArrays: [
+                `$logs`,
+                [
+                  {
+                    date: new Date(Date.now()),
+                    action: category,
+                    isAdd: false,
+                    gameId: Number(gameId),
+                  },
+                ],
+              ],
+            },
+          },
+        },
+      ],
+      { new: true },
     );
 
-    user.logs.push({
-      date: new Date(Date.now()),
-      action: category,
-      isAdd: false,
-      gameId: gameId,
-    });
-
-    await user.save();
+    if (!user) {
+      throw new BadRequestException('User or category not found!');
+    }
 
     return user;
   }
@@ -391,7 +406,7 @@ export class UserService {
     ).pop();
   }
 
-  async updateUserDescription(userId: string, description: string){
+  async updateUserDescription(userId: string, description: string) {
     const user = await this.userModel.findById(userId);
 
     user.description = description;
