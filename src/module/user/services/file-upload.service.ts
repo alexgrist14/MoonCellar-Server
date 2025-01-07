@@ -20,7 +20,10 @@ export class FileUploadService {
 
   async deleteFile(file: string) {
     const filePath = join(this.uploadPath, file);
-    await fs.unlink(filePath);
+    fs.access(filePath).then(async ()=>{
+      await fs.unlink(filePath);
+    }).catch(()=>{})
+    
   }
 
   getFilePath(fileName: string): string {
