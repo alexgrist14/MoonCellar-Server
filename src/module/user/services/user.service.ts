@@ -13,24 +13,41 @@ import { UpdatePasswordDto } from 'src/module/auth/dto/update-password.dto';
 import { User } from 'src/module/auth/schemas/user.schema';
 import { followersLookup, gamesLookup } from 'src/shared/utils';
 import { categories, categoriesType, IUserLogs } from '../types/actions';
+import {
+  IGDBGames,
+  IGDBGamesDocument,
+} from 'src/shared/schemas/igdb-games.schema';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
-
-  private userAndCategoryCheck(user: User, category: categoriesType) {
-    if (!user) throw new NotFoundException('User not found');
-
-    if (!categories.includes(category))
-      throw new BadRequestException('Invalid category');
-  }
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>,
+  ) {}
 
   async addGameToCategory(
     userId: string,
     gameId: number,
     category: categoriesType,
   ): Promise<User> {
-    const user = this.userModel.findOneAndUpdate(
+    const filterCategories = categories
+      .filter((cat) => cat !== category)
+      .reduce((res, category) => {
+        res[`games.${category}`] = {
+          $filter: {
+            input: `$games.${category}`,
+            as: 'gameId',
+            cond: { $ne: ['$$gameId', Number(gameId)] },
+          },
+        };
+        return res;
+      }, {});
+
+    if (!this.gamesModel.exists({ _id: gameId })) {
+      throw new BadRequestException('Game not found!');
+    }
+
+    const user = await this.userModel.findOneAndUpdate(
       {
         _id: new mongoose.Types.ObjectId(userId),
         [`games.${category}`]: { $exists: true },
@@ -38,6 +55,7 @@ export class UserService {
       [
         {
           $set: {
+            ...filterCategories,
             [`games.${category}`]: {
               $concatArrays: [`$games.${category}`, [Number(gameId)]],
             },
