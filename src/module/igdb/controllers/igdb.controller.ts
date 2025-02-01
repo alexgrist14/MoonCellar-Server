@@ -83,6 +83,13 @@ export class IgdbController {
     return this.service.getThemes();
   }
 
+  @Get('/keywords')
+  @ApiOperation({ summary: 'Get keywords' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  keywords() {
+    return this.service.getKeywords();
+  }
+
   @Get('/modes')
   @ApiOperation({ summary: 'Get game modes' })
   @ApiResponse({ status: 200, description: 'Get over here!' })

@@ -236,6 +236,24 @@ export class IGDBService {
           ...(votes !== undefined
             ? [{ total_rating_count: { $gte: +votes } }]
             : []),
+          ...(!!selected?.keywords?.length
+            ? [
+                {
+                  keywords:
+                    mode === 'any'
+                      ? {
+                          $in: Array.isArray(selected?.keywords)
+                            ? selected?.keywords
+                            : [selected?.keywords],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.keywords)
+                            ? selected?.keywords
+                            : [selected?.keywords],
+                        },
+                },
+              ]
+            : []),
           ...(!!selected?.themes?.length
             ? [
                 {
@@ -412,6 +430,10 @@ export class IGDBService {
 
   async getThemes() {
     return this.IGDBThemesModel.find().sort({ name: 1 });
+  }
+
+  async getKeywords() {
+    return this.IGDBKeywordsModel.find().sort({ name: 1 });
   }
 
   async getGameModes() {

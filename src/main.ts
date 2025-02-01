@@ -14,7 +14,10 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: [process.env.LOCAL_CONNECTION, 'https://mooncellar.space'],
+    origin: [
+      ...process.env.LOCAL_CONNECTION.split(','),
+      'https://mooncellar.space',
+    ],
   });
   app.useGlobalPipes(new ValidationPipe());
   app.use(json({ limit: '2mb' }));
