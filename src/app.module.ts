@@ -8,6 +8,7 @@ import { UserModule } from './module/user/user.module';
 import { IgdbModule } from './module/igdb/igdb.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { rootDir } from './shared/constants';
+import { RetroachievementsModule } from './module/retroach/retroach.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { rootDir } from './shared/constants';
     AuthModule,
     UserModule,
     IgdbModule,
+    RetroachievementsModule,
     ServeStaticModule.forRoot({
       rootPath: `${rootDir}/uploads/photos`,
       serveRoot: '/photos',
