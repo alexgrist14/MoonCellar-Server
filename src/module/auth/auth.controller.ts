@@ -19,7 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { UserService } from '../user/services/user.service';
+import { UserProfileService } from '../user/services/user-profile.service';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
@@ -28,7 +28,7 @@ import { SignUpDto } from './dto/signup.dto';
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly usersService: UserService,
+    private readonly userProfileService: UserProfileService,
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
   ) {}
@@ -47,7 +47,7 @@ export class AuthController {
     const { accessToken, refreshToken } =
       await this.authService.signUp(signUpDto);
     const userId = (
-      await this.usersService.findByString(signUpDto.userName, 'userName')
+      await this.userProfileService.findByString(signUpDto.userName, 'userName')
     ).id;
 
     this.authService.setCookies(
@@ -73,7 +73,7 @@ export class AuthController {
     const { accessToken, refreshToken } =
       await this.authService.login(loginDto);
     const userId = (
-      await this.usersService.findByString(loginDto.email, 'email')
+      await this.userProfileService.findByString(loginDto.email, 'email')
     ).id;
 
     this.authService.setCookies(

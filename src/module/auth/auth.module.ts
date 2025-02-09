@@ -2,19 +2,21 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema } from './schemas/user.schema';
+import { UserSchema } from '../user/schemas/user.schema';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
-import { UserController } from '../user/user.controller';
-import { UserService } from '../user/services/user.service';
+import { UserProfileController } from '../user/controllers/user-profile.controller';
+import { UserProfileService } from '../user/services/user-profile.service';
 import { FileUploadService } from '../user/services/file-upload.service';
 import {
   IGDBGames,
   IGDBGamesSchema,
 } from 'src/shared/schemas/igdb-games.schema';
 import { UserFiltersService } from '../user/services/user-filters.service';
+import { UserFollowingsService } from '../user/services/user-followings.service';
+import { UserGamesService } from '../user/services/user-games.service';
 
 @Module({
   imports: [
@@ -37,11 +39,13 @@ import { UserFiltersService } from '../user/services/user-filters.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController, UserController],
+  controllers: [AuthController, UserProfileController],
   providers: [
     AuthService,
-    UserService,
+    UserProfileService,
     UserFiltersService,
+    UserFollowingsService,
+    UserGamesService,
     JwtStrategy,
     FileUploadService,
   ],

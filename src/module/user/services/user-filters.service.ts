@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Model } from 'mongoose';
-import { User } from 'src/module/auth/schemas/user.schema';
+import { User } from 'src/module/user/schemas/user.schema';
 
 @Injectable()
 export class UserFiltersService {

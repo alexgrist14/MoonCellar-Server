@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { MaxLength } from 'class-validator';
 import mongoose, { Document } from 'mongoose';
+import { IRAAward } from 'src/module/retroach/types/retroachievements';
 import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 
 @Schema({
@@ -94,6 +95,10 @@ export class User extends Document {
   @Prop()
   @MaxLength(450)
   description: string;
+  @Prop()
+  raUsername: string;
+  @Prop()
+  raAwards: IRAAward[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
