@@ -18,6 +18,7 @@ import {
   REFRESH_TOKEN,
   refreshExpire,
 } from 'src/shared/constants';
+import validate from 'deep-email-validator';
 
 @Injectable()
 export class AuthService {
@@ -51,9 +52,12 @@ export class AuthService {
     const { userName, email, password } = signUpDto;
     const isEmailExists = await this.userModel.findOne({ email });
     const isUserExists = await this.userModel.findOne({ userName });
+    const isEmailValid = await validate(email);
+
 
     if (isEmailExists) throw new BadRequestException('Email already exists');
     if (isUserExists) throw new BadRequestException('UserName already exists');
+    if(!isEmailValid) throw new BadRequestException('Please input a correct email');
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -71,6 +75,7 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
+
 
     if (!user) throw new UnauthorizedException('Email does not exists');
 
