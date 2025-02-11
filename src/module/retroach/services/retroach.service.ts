@@ -61,7 +61,7 @@ export class RetroachievementsService {
     return this.getGamesForPlatform(platformId);
   }
 
-  @Cron('0 0 * * *')
+  //@Cron('0 0 * * *')
   async parseConsolesAndGames() {
     await this.consoleService
       .parseConsoles(await this.consoleService.getConsoles())
