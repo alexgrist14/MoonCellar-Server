@@ -58,6 +58,7 @@ export const gamesLookup = (isBasic?: boolean) => [
             screenshots: 1,
             artworks: 1,
             url: 1,
+            raIds: 1,
           },
         },
       ]
