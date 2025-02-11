@@ -51,6 +51,8 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesSchema,
 } from './schemas/igdb-release-dates.schema';
+import { RAGame, RASchema } from '../retroach/schemas/retroach.schema';
+import { RAConsole, RAConsoleSchema } from '../retroach/schemas/console.schema';
 
 @Module({
   controllers: [IgdbController, IgdbParserController],
@@ -72,6 +74,8 @@ import {
       { name: IGDBInvolvedCompanies.name, schema: IGDBInvolvedCompaniesSchema },
       { name: IGDBCompanies.name, schema: IGDBCompaniesSchema },
       { name: IGDBReleaseDates.name, schema: IGDBReleaseDatesSchema },
+      { name: RAGame.name, schema: RASchema },
+      { name: RAConsole.name, schema: RAConsoleSchema },
     ]),
   ],
 })

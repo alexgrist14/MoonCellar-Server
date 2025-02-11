@@ -8,6 +8,8 @@ export class RAConsole {
   name: string;
   @Prop()
   iconUrl: string;
+  @Prop()
+  igdbIds: number[];
 }
 
 export const RAConsoleSchema = SchemaFactory.createForClass(RAConsole);

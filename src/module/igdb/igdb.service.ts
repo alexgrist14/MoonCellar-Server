@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { igdbAuth, igdbParser } from './utils/igdb';
 import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
 import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
@@ -53,7 +53,9 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
 } from './schemas/igdb-release-dates.schema';
-import { gamesLookup, getRandomArray } from 'src/shared/utils';
+import { gamesLookup } from 'src/shared/utils';
+import { RAGame } from '../retroach/schemas/retroach.schema';
+import { RAConsole } from '../retroach/schemas/console.schema';
 
 @Injectable()
 export class IGDBService {
@@ -88,6 +90,10 @@ export class IGDBService {
     private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
     @InjectModel(IGDBReleaseDates.name)
     private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
+    @InjectModel(RAGame.name)
+    private RAGamesModel: Model<RAGame>,
+    @InjectModel(RAConsole.name)
+    private RAConsoleModel: Model<RAConsole>,
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -542,6 +548,91 @@ export class IGDBService {
   async getToken() {
     const { data: authData } = await igdbAuth();
     return authData;
+  }
+
+  async parseRAGames() {
+    const raConsoles = await this.RAConsoleModel.find();
+    const raGames = await this.RAGamesModel.find();
+    const IGDBGames = await this.IGDBGamesModel.find().select('name platforms');
+
+    const IGDBGamesSorted = IGDBGames.reduce((result, game) => {
+      result[
+        game.name
+          .replaceAll('The ', '')
+          .replaceAll('The,', '')
+          .replaceAll("Disney's", '')
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .toLowerCase()
+      ] = game;
+      return result;
+    }, {});
+
+    const gameIds = raGames.reduce((result, ragame) => {
+      const igame =
+        IGDBGamesSorted[
+          ragame.title
+            .replaceAll('The ', '')
+            .replaceAll('The,', '')
+            .replaceAll("Disney's", '')
+            .replaceAll('~Hack~', '')
+            .replaceAll('~Demo~', '')
+            .replaceAll('~Homebrew~', '')
+            .replaceAll('~Prototype~', '')
+            .replaceAll('~Z~', '')
+            .replaceAll('~Unlicensed~', '')
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .toLowerCase()
+        ];
+
+      const raConsole = raConsoles.find(
+        (console) => console.name === ragame.consoleName,
+      );
+
+      const tempRaGame = {
+        ...ragame,
+        consoleId: raConsole?.igdbIds || null,
+      };
+
+      if (!!igame) {
+        const isConsoleExist =
+          !!tempRaGame.consoleId &&
+          igame.platforms.some((id: number) =>
+            tempRaGame.consoleId.includes(id),
+          );
+
+        if (isConsoleExist) {
+          !!result[igame._id]?.length
+            ? result[igame._id].push(ragame.id)
+            : (result[igame._id] = [ragame.id]);
+        }
+      }
+
+      return result;
+    }, {});
+
+    // console.log(raConsoles);
+    console.log(Object.values(gameIds).flat().length);
+    // console.log(
+    //   Object.values(gameIds)
+    //     .flat()
+    //     .find((id) => id == 17750),
+    // );
+
+    await this.IGDBGamesModel.bulkWrite(
+      Object.keys(gameIds).map((key) => ({
+        updateOne: {
+          filter: {
+            _id: key,
+          },
+          update: { $set: { raIds: gameIds[key] } },
+        },
+      })),
+    );
+
+    // console.log(raGames.slice(0, 20));
+    // console.log(IGDBGames.slice(0, 20));
+
+    // return raGames;
   }
 
   async testFunction() {

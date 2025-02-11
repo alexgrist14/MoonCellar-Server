@@ -16,6 +16,13 @@ export class IgdbParserController {
     return this.service.getToken();
   }
 
+  @Post('/ra')
+  @ApiOperation({ summary: 'Parse RA ids' })
+  @ApiResponse({ status: 200, description: 'Successfully started' })
+  raParse() {
+    return this.service.parseRAGames();
+  }
+
   @Post('/')
   @ApiOperation({ summary: 'Parse all IGDB databases' })
   @ApiResponse({ status: 200, description: 'Successfully started' })

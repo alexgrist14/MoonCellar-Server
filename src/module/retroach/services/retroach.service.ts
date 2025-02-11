@@ -63,9 +63,9 @@ export class RetroachievementsService {
 
   //@Cron('0 0 * * *')
   async parseConsolesAndGames() {
-    await this.consoleService
-      .parseConsoles(await this.consoleService.getConsoles())
-      .then(async () => await this.parseGames());
+    // await this.consoleService
+    //   .parseConsoles(await this.consoleService.getConsoles())
+    //   .then(async () => await this.parseGames());
   }
 
   private async parseGames() {
