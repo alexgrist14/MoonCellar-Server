@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import { Model } from 'mongoose';
 import { igdbAuth, igdbParser } from './utils/igdb';
 import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
 import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
@@ -56,6 +56,8 @@ import {
 import { gamesLookup } from 'src/shared/utils';
 import { RAGame } from '../retroach/schemas/retroach.schema';
 import { RAConsole } from '../retroach/schemas/console.schema';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class IGDBService {
@@ -555,34 +557,53 @@ export class IGDBService {
     const raGames = await this.RAGamesModel.find();
     const IGDBGames = await this.IGDBGamesModel.find().select('name platforms');
 
-    const IGDBGamesSorted = IGDBGames.reduce((result, game) => {
-      result[
-        game.name
-          .replaceAll('The ', '')
-          .replaceAll('The,', '')
-          .replaceAll("Disney's", '')
-          .replace(/[^a-zA-Z0-9]/g, '')
-          .toLowerCase()
-      ] = game;
-      return result;
-    }, {});
+    const getFormattedTitle = (title: string) => {
+      return title
+        .replaceAll('The ', '')
+        .replaceAll('The,', '')
+        .replaceAll("Disney's", '')
+        .replaceAll("Dreamworks'", '')
+        .replaceAll('DreamWorks', '')
+        .replaceAll('Dreamworks', '')
+        .replaceAll(' and ', '')
+        .replaceAll('James Bond', '')
+        .replaceAll('~Hack~', '')
+        .replaceAll('~Demo~', '')
+        .replaceAll('~Homebrew~', '')
+        .replaceAll('~Prototype~', '')
+        .replaceAll('~Z~', '')
+        .replaceAll('~Unlicensed~', '')
+        .replace(/[^a-zA-Z0-9\|]/g, '')
+        .toLowerCase();
+    };
+
+    const IGDBGamesSorted = IGDBGames.reduce(
+      (
+        result: {
+          [key: string]: { _id: number; name: string; platforms: number[] }[];
+        },
+        game,
+      ) => {
+        const title = getFormattedTitle(game.name);
+
+        Array.isArray(result[title]) && !!result[title]?.length
+          ? result[title].push(game)
+          : (result[title] = [game]);
+
+        return result;
+      },
+      {},
+    );
+
+    const unrecognised = [];
 
     const gameIds = raGames.reduce((result, ragame) => {
-      const igame =
-        IGDBGamesSorted[
-          ragame.title
-            .replaceAll('The ', '')
-            .replaceAll('The,', '')
-            .replaceAll("Disney's", '')
-            .replaceAll('~Hack~', '')
-            .replaceAll('~Demo~', '')
-            .replaceAll('~Homebrew~', '')
-            .replaceAll('~Prototype~', '')
-            .replaceAll('~Z~', '')
-            .replaceAll('~Unlicensed~', '')
-            .replace(/[^a-zA-Z0-9]/g, '')
-            .toLowerCase()
-        ];
+      const title = getFormattedTitle(ragame.title);
+      const igames: { _id: number; name: string; platforms: number[] }[] =
+        title.includes('|')
+          ? IGDBGamesSorted[title.split('|')[0]] ||
+            IGDBGamesSorted[title.split('|')[1]]
+          : IGDBGamesSorted[title];
 
       const raConsole = raConsoles.find(
         (console) => console.name === ragame.consoleName,
@@ -593,18 +614,20 @@ export class IGDBService {
         consoleId: raConsole?.igdbIds || null,
       };
 
-      if (!!igame) {
-        const isConsoleExist =
+      const igame = igames?.find(
+        (game) =>
           !!tempRaGame.consoleId &&
-          igame.platforms.some((id: number) =>
+          game.platforms.some((id: number) =>
             tempRaGame.consoleId.includes(id),
-          );
+          ),
+      );
 
-        if (isConsoleExist) {
-          !!result[igame._id]?.length
-            ? result[igame._id].push(ragame.id)
-            : (result[igame._id] = [ragame.id]);
-        }
+      if (!!igame) {
+        !!result[igame._id]?.length
+          ? result[igame._id].push(ragame.id)
+          : (result[igame._id] = [ragame.id]);
+      } else {
+        unrecognised.push(ragame);
       }
 
       return result;
@@ -615,8 +638,13 @@ export class IGDBService {
     // console.log(
     //   Object.values(gameIds)
     //     .flat()
-    //     .find((id) => id == 17750),
+    //     .find((id) => id == 14494),
     // );
+
+    fs.writeFile(
+      join(process.cwd(), 'db', 'unrecognised.json'),
+      JSON.stringify(unrecognised),
+    );
 
     await this.IGDBGamesModel.bulkWrite(
       Object.keys(gameIds).map((key) => ({
@@ -628,11 +656,6 @@ export class IGDBService {
         },
       })),
     );
-
-    // console.log(raGames.slice(0, 20));
-    // console.log(IGDBGames.slice(0, 20));
-
-    // return raGames;
   }
 
   async testFunction() {
