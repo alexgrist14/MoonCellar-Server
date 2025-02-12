@@ -134,6 +134,7 @@ export class IGDBService {
   async getGames({
     take = 50,
     isRandom = false,
+    isOnlyWithAchievements = false,
     page = 1,
     selected,
     excluded,
@@ -148,6 +149,7 @@ export class IGDBService {
   }: {
     take?: number | string;
     isRandom?: boolean | string;
+    isOnlyWithAchievements?: boolean | string;
     page?: number | string;
     selected?: IGDBFilters;
     excluded?: IGDBFilters;
@@ -179,6 +181,18 @@ export class IGDBService {
           { themes: { $exists: true } },
           { platforms: { $exists: true } },
           { game_modes: { $exists: true } },
+          ...(isOnlyWithAchievements === 'true' ||
+          isOnlyWithAchievements === true
+            ? [
+                {
+                  raIds: {
+                    $exists: true,
+                    $type: 'array',
+                    $ne: [],
+                  },
+                },
+              ]
+            : []),
           ...(!!excludeGames?.length
             ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
             : []),

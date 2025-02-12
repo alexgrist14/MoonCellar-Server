@@ -32,6 +32,7 @@ export class IgdbController {
     @Query('take') take: number,
     @Query('page') page: number,
     @Query('isRandom') isRandom: boolean,
+    @Query('isOnlyWithAchievements') isOnlyWithAchievements: boolean,
     @Query('selected') selected: string,
     @Query('excluded') excluded: string,
     @Query('rating') rating: number,
@@ -57,6 +58,7 @@ export class IgdbController {
       years,
       excludeGames,
       votes,
+      isOnlyWithAchievements,
     });
 
     return games;
