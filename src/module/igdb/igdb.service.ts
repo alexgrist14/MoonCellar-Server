@@ -565,6 +565,7 @@ export class IGDBService {
         .replaceAll("Dreamworks'", '')
         .replaceAll('DreamWorks', '')
         .replaceAll('Dreamworks', '')
+        .replaceAll('Zero', '0')
         .replaceAll(' and ', '')
         .replaceAll('James Bond', '')
         .replaceAll('~Hack~', '')

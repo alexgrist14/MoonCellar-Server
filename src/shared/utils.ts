@@ -80,6 +80,14 @@ export const gamesLookup = (isBasic?: boolean) => [
   },
   {
     $lookup: {
+      from: 'ragames',
+      localField: 'raIds',
+      foreignField: 'id',
+      as: 'raIds',
+    },
+  },
+  {
+    $lookup: {
       from: 'igdbplatforms',
       localField: 'platforms',
       foreignField: '_id',
@@ -211,14 +219,6 @@ export const gamesLookup = (isBasic?: boolean) => [
             localField: 'websites',
             foreignField: '_id',
             as: 'websites',
-          },
-        },
-        {
-          $lookup: {
-            from: 'ragames',
-            localField: 'raIds',
-            foreignField: 'id',
-            as: 'raIds',
           },
         },
         {
