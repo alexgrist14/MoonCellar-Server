@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { MaxLength } from 'class-validator';
 import mongoose, { Document } from 'mongoose';
 import { IRAAward } from 'src/module/retroach/types/retroachievements';
+import { Role } from 'src/module/roles/enums/role.enum';
 import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
 
 @Schema({
@@ -99,6 +100,8 @@ export class User extends Document {
   raUsername: string;
   @Prop()
   raAwards: IRAAward[];
+  @Prop({ type: [{ type: String, enum: Role }], default: [Role.User] })
+  roles: Role[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

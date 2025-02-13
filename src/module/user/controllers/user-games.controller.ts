@@ -22,6 +22,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserIdGuard } from 'src/module/auth/user.guard';
 import { categories, categoriesType } from '../types/actions';
 import { AddGameRatingDto } from '../dto/add-game-rating.dto';
+import { Role } from 'src/module/roles/enums/role.enum';
+import { Roles } from 'src/module/roles/roles.decorator';
+import { RolesGuard } from 'src/module/roles/roles.guard';
 
 @ApiTags('User Games')
 @Controller('user')
@@ -98,6 +101,7 @@ export class UserGamesController {
       gameRatingDto.rating,
     );
   }
+
 
   @Get('/games/:userId')
   @ApiOperation({ summary: 'Get user games' })
