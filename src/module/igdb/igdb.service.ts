@@ -454,8 +454,23 @@ export class IGDBService {
     return this.IGDBThemesModel.find().sort({ name: 1 });
   }
 
-  async getKeywords() {
-    return this.IGDBKeywordsModel.find().sort({ name: 1 });
+  async getKeywords(query?: string) {
+    return this.IGDBKeywordsModel.find(
+      !!query && {
+        name: {
+          $regex: `${query.replaceAll(' ', '\\s*')}`,
+          $options: 'i',
+        },
+      },
+    ).sort({ name: 1 });
+  }
+
+  async getKeywordsByIds(ids: number[]) {
+    return this.IGDBKeywordsModel.find({
+      _id: {
+        $in: ids,
+      },
+    }).sort({ name: 1 });
   }
 
   async getGameModes() {

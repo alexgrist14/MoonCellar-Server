@@ -88,8 +88,17 @@ export class IgdbController {
   @Get('/keywords')
   @ApiOperation({ summary: 'Get keywords' })
   @ApiResponse({ status: 200, description: 'Get over here!' })
-  keywords() {
-    return this.service.getKeywords();
+  @ApiQuery({ name: 'query', required: false })
+  keywords(@Query('query') query: string) {
+    return this.service.getKeywords(query);
+  }
+
+  @Get('/keywords/by-id')
+  @ApiOperation({ summary: 'Get keywords' })
+  @ApiResponse({ status: 200, description: 'Get over here!' })
+  @ApiQuery({ name: 'ids', required: false })
+  keywordsById(@Query('ids') ids: number[]) {
+    return this.service.getKeywordsByIds(ids);
   }
 
   @Get('/modes')
