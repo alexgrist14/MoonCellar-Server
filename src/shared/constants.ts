@@ -7,3 +7,5 @@ export const REFRESH_TOKEN = 'refreshMoonToken';
 
 export const accessExpire = 7 * 24 * 60 * 60 * 1000;
 export const refreshExpire = 30 * 24 * 60 * 60 * 1000;
+
+export const RA_MAIN_USER_NAME = 'alexgrist14';

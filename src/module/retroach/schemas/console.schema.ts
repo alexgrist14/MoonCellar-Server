@@ -3,7 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 @Schema()
 export class RAConsole {
   @Prop()
-  id: number;
+  _id: number;
   @Prop()
   name: string;
   @Prop()

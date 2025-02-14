@@ -7,8 +7,8 @@ import {
   getUserProfile,
 } from '@retroachievements/api';
 import { Model } from 'mongoose';
-import { RA_MAIN_USER_NAME } from 'src/module/retroach/types/retroachievements';
 import { User } from 'src/module/user/schemas/user.schema';
+import { RA_MAIN_USER_NAME } from 'src/shared/constants';
 
 @Injectable()
 export class UserRAService {

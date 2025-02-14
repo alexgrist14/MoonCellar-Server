@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { buildAuthorization, getGameList } from '@retroachievements/api';
-import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
-import { RAGame } from '../schemas/retroach.schema';
+import {
+  buildAuthorization,
+  GameList,
+  getConsoleIds,
+  getGameList,
+} from '@retroachievements/api';
 import mongoose from 'mongoose';
+import { updateOrInsertValues } from 'src/shared/db';
+
 import { RAConsole } from '../schemas/console.schema';
-import { ConsoleService } from './console.service';
-import { IDataBase, RA_MAIN_USER_NAME } from '../types/retroachievements';
+import { RAGame } from '../schemas/retroach.schema';
+import { RA_MAIN_USER_NAME } from 'src/shared/constants';
 
 @Injectable()
 export class RetroachievementsService {
@@ -14,81 +19,48 @@ export class RetroachievementsService {
     @InjectModel(RAGame.name) private gameModel: mongoose.Model<RAGame>,
     @InjectModel(RAConsole.name)
     private consoleModel: mongoose.Model<RAConsole>,
-    private readonly consoleService: ConsoleService,
   ) {}
-  private readonly platforms = [...Array(78).keys()].map((i) => i + 1);
   private readonly userName = RA_MAIN_USER_NAME;
   private readonly apiKey = process.env.RETROACHIEVEMENTS_API_KEY;
 
-  private async saveGamesToDB(
-    platformId: number,
-    games: RAGame[],
-  ): Promise<void> {
-    const gameDocuments = games.map((game) => ({
-      ...game,
-      platformId,
-    }));
-    await this.gameModel.insertMany(gameDocuments);
-  }
-
-  private async getGamesForPlatform(platformId: number): Promise<RAGame[]> {
-    const userName = this.userName;
-    const webApiKey = this.apiKey;
-    const authorization = buildAuthorization({ userName, webApiKey });
-
-    const platform = await this.consoleModel.findOne({ id: platformId });
-    if (!platform)
-      throw new Error(`Console with platformId ${platformId} not found`);
-
-    const gameList = await getGameList(authorization, {
-      consoleId: platformId,
-      shouldOnlyRetrieveGamesWithAchievements: false,
+  async parse(type: 'consoles' | 'games' | 'both') {
+    const authorization = buildAuthorization({
+      userName: this.userName,
+      webApiKey: this.apiKey,
     });
+    const consoles = await getConsoleIds(authorization);
+    let index = 0;
 
-    const updatedGameList = gameList.map((game) => ({
-      ...game,
-      consoleId: platform._id,
-    }));
+    console.log(`Consoles: ${consoles.length}`);
 
-    return updatedGameList as RAGame[];
-  }
+    const getGames = (consoleId: number, games: GameList) => {
+      getGameList(authorization, {
+        consoleId,
+        shouldOnlyRetrieveGamesWithAchievements: true,
+      }).then((res) => {
+        console.log(`Step: ${index + 1}. Games: ${games.length + res.length}`);
 
-  private async getGamesForPlatformWithDelay(
-    platformId: number,
-    delay = 400,
-  ): Promise<RAGame[]> {
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    return this.getGamesForPlatform(platformId);
-  }
+        setTimeout(() => {
+          index++;
+          index <= consoles.length - 1
+            ? getGames(consoles[index].id, [...games, ...res])
+            : updateOrInsertValues(this.gameModel, [...games, ...res]);
+        }, 400);
+      });
+    };
 
-  //@Cron('0 0 * * *')
-  async parseConsolesAndGames() {
-    // await this.consoleService
-    //   .parseConsoles(await this.consoleService.getConsoles())
-    //   .then(async () => await this.parseGames());
-  }
+    if (type === 'consoles') {
+      return updateOrInsertValues(this.consoleModel, consoles);
+    }
 
-  private async parseGames() {
-    await this.gameModel.deleteMany({});
-    const allGames = {} as IDataBase;
+    if (type === 'games') {
+      return getGames(consoles[index].id, []);
+    }
 
-    for (const platformId of this.platforms) {
-      try {
-        console.log(`${platformId} - parsed successfully`);
-        const games = await this.getGamesForPlatformWithDelay(platformId);
-        await this.saveGamesToDB(platformId, games);
-        allGames[platformId] = games;
-      } catch (error) {
-        console.error(
-          `Failed to fetch games for platform ${platformId}:`,
-          error,
-        );
-      }
+    if (type === 'both') {
+      await updateOrInsertValues(this.consoleModel, consoles);
+
+      return getGames(consoles[index].id, []);
     }
   }
-
-  async findAll(): Promise<RAGame[]> {
-    return await this.gameModel.find();
-  }
-
 }

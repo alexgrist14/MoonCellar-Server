@@ -53,7 +53,7 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
 } from './schemas/igdb-release-dates.schema';
-import { gamesLookup } from 'src/shared/utils';
+import { gamesLookup, getFormattedTitle } from 'src/shared/utils';
 import { RAGame } from '../retroach/schemas/retroach.schema';
 import { RAConsole } from '../retroach/schemas/console.schema';
 import { promises as fs } from 'fs';
@@ -586,27 +586,6 @@ export class IGDBService {
     const raGames = await this.RAGamesModel.find();
     const IGDBGames = await this.IGDBGamesModel.find().select('name platforms');
 
-    const getFormattedTitle = (title: string) => {
-      return title
-        .replaceAll('The ', '')
-        .replaceAll('The,', '')
-        .replaceAll("Disney's", '')
-        .replaceAll("Dreamworks'", '')
-        .replaceAll('DreamWorks', '')
-        .replaceAll('Dreamworks', '')
-        .replaceAll('Zero', '0')
-        .replaceAll(' and ', '')
-        .replaceAll('James Bond', '')
-        .replaceAll('~Hack~', '')
-        .replaceAll('~Demo~', '')
-        .replaceAll('~Homebrew~', '')
-        .replaceAll('~Prototype~', '')
-        .replaceAll('~Z~', '')
-        .replaceAll('~Unlicensed~', '')
-        .replace(/[^a-zA-Z0-9\|]/g, '')
-        .toLowerCase();
-    };
-
     const IGDBGamesSorted = IGDBGames.reduce(
       (
         result: {
@@ -636,7 +615,7 @@ export class IGDBService {
           : IGDBGamesSorted[title];
 
       const raConsole = raConsoles.find(
-        (console) => console.name === ragame.consoleName,
+        (console) => console._id === ragame.consoleId,
       );
 
       const tempRaGame = {
@@ -654,8 +633,8 @@ export class IGDBService {
 
       if (!!igame) {
         !!result[igame._id]?.length
-          ? result[igame._id].push(ragame.id)
-          : (result[igame._id] = [ragame.id]);
+          ? result[igame._id].push(ragame._id)
+          : (result[igame._id] = [ragame._id]);
       } else {
         unrecognised.push(ragame);
       }
@@ -663,13 +642,7 @@ export class IGDBService {
       return result;
     }, {});
 
-    // console.log(raConsoles);
     console.log(Object.values(gameIds).flat().length);
-    // console.log(
-    //   Object.values(gameIds)
-    //     .flat()
-    //     .find((id) => id == 14494),
-    // );
 
     fs.writeFile(
       join(process.cwd(), 'db', 'unrecognised.json'),

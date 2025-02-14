@@ -3,8 +3,6 @@ import { RetroachievementsService } from './services/retroach.service';
 import { RetroachievementsController } from './controllers/retroach.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RAGame, RASchema } from './schemas/retroach.schema';
-import { RAConsolesController } from './controllers/console.controller';
-import { ConsoleService } from './services/console.service';
 import { RAConsole, RAConsoleSchema } from './schemas/console.schema';
 
 @Module({
@@ -15,7 +13,7 @@ import { RAConsole, RAConsoleSchema } from './schemas/console.schema';
     ]),
   ],
 
-  controllers: [RetroachievementsController, RAConsolesController],
-  providers: [RetroachievementsService, ConsoleService],
+  controllers: [RetroachievementsController],
+  providers: [RetroachievementsService],
 })
 export class RetroachievementsModule {}

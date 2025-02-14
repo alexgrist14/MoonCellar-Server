@@ -1,19 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
 
 @Schema()
 export class RAGame {
-  @Prop({ required: true })
+  @Prop()
+  _id: number;
+  @Prop()
   title: string;
-  @Prop({ required: true })
-  id: number;
   @Prop({ ref: 'RAConsoles' })
-  consoleId: mongoose.Types.ObjectId;
-  @Prop({ required: true })
+  consoleId: number;
+  @Prop()
   consoleName: string;
-  @Prop({ required: true })
+  @Prop()
   imageIcon: string;
-  @Prop({ required: true })
+  @Prop()
   numAchievements: number;
 }
 

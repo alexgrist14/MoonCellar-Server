@@ -17,6 +17,27 @@ export const getRandomArray = (array: unknown[], count: number) => {
   return randomIndices.map((index) => array[index]);
 };
 
+export const getFormattedTitle = (title: string) => {
+  return title
+    .replaceAll('The ', '')
+    .replaceAll('The,', '')
+    .replaceAll("Disney's", '')
+    .replaceAll("Dreamworks'", '')
+    .replaceAll('DreamWorks', '')
+    .replaceAll('Dreamworks', '')
+    .replaceAll('Zero', '0')
+    .replaceAll(' and ', '')
+    .replaceAll('James Bond', '')
+    .replaceAll('~Hack~', '')
+    .replaceAll('~Demo~', '')
+    .replaceAll('~Homebrew~', '')
+    .replaceAll('~Prototype~', '')
+    .replaceAll('~Z~', '')
+    .replaceAll('~Unlicensed~', '')
+    .replace(/[^a-zA-Z0-9\|]/g, '')
+    .toLowerCase();
+};
+
 export const followersLookup = () => [
   {
     $lookup: {
@@ -82,7 +103,7 @@ export const gamesLookup = (isBasic?: boolean) => [
     $lookup: {
       from: 'ragames',
       localField: 'raIds',
-      foreignField: 'id',
+      foreignField: '_id',
       as: 'raIds',
     },
   },
