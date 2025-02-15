@@ -94,6 +94,8 @@ export class User extends Document {
   @Prop()
   filters: { name: string; filter: string }[];
   @Prop()
+  presets: { name: string; preset: string }[];
+  @Prop()
   @MaxLength(450)
   description: string;
   @Prop()

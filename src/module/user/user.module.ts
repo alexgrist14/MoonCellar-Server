@@ -16,6 +16,8 @@ import { UserFollowingsController } from './controllers/user-followings.controll
 import { UserGamesController } from './controllers/user-games.controller';
 import { UserRAService } from './services/user-ra.service';
 import { UserRAController } from './controllers/user-ra.controller';
+import { UserPresetsService } from './services/user-presets.service';
+import { UserPresetsController } from './controllers/user-presets.controller';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { UserRAController } from './controllers/user-ra.controller';
   controllers: [
     UserProfileController,
     UserFiltersController,
+    UserPresetsController,
     UserFollowingsController,
     UserGamesController,
     UserRAController,
@@ -35,6 +38,7 @@ import { UserRAController } from './controllers/user-ra.controller';
   providers: [
     UserProfileService,
     UserFiltersService,
+    UserPresetsService,
     FileUploadService,
     UserGamesService,
     UserFollowingsService,
