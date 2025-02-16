@@ -53,11 +53,7 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
 } from './schemas/igdb-release-dates.schema';
-import { gamesLookup, getFormattedTitle } from 'src/shared/utils';
-import { RAGame } from '../retroach/schemas/retroach.schema';
-import { RAConsole } from '../retroach/schemas/console.schema';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { gamesLookup } from 'src/shared/utils';
 
 @Injectable()
 export class IGDBService {
@@ -92,10 +88,6 @@ export class IGDBService {
     private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
     @InjectModel(IGDBReleaseDates.name)
     private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
-    @InjectModel(RAGame.name)
-    private RAGamesModel: Model<RAGame>,
-    @InjectModel(RAConsole.name)
-    private RAConsoleModel: Model<RAConsole>,
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -193,8 +185,14 @@ export class IGDBService {
                 },
               ]
             : []),
-          ...(!!excludeGames?.length
-            ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
+          ...(!!search
+            ? [
+                {
+                  $text: {
+                    $search: search,
+                  },
+                },
+              ]
             : []),
           {
             category: !!categories
@@ -214,16 +212,11 @@ export class IGDBService {
                   ],
                 },
           },
-          ...(!!search
-            ? [
-                {
-                  name: {
-                    $regex: search.replaceAll(' ', '\\s*'),
-                    $options: 'i',
-                  },
-                },
-              ]
-            : []),
+          // ...(!!search
+          //   ? [
+          //
+          //     ]
+          //   : []),
           ...(!!years
             ? [
                 {
@@ -391,6 +384,9 @@ export class IGDBService {
                   },
                 },
               ]
+            : []),
+          ...(!!excludeGames?.length
+            ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
             : []),
         ],
       },
