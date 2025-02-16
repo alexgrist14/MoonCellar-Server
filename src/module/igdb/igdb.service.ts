@@ -581,93 +581,13 @@ export class IGDBService {
     return authData;
   }
 
-  async parseRAGames() {
-    const raConsoles = await this.RAConsoleModel.find();
-    const raGames = await this.RAGamesModel.find();
-    const IGDBGames = await this.IGDBGamesModel.find().select('name platforms');
-
-    const IGDBGamesSorted = IGDBGames.reduce(
-      (
-        result: {
-          [key: string]: { _id: number; name: string; platforms: number[] }[];
-        },
-        game,
-      ) => {
-        const title = getFormattedTitle(game.name);
-
-        Array.isArray(result[title]) && !!result[title]?.length
-          ? result[title].push(game)
-          : (result[title] = [game]);
-
-        return result;
-      },
-      {},
-    );
-
-    const unrecognised = [];
-
-    const gameIds = raGames.reduce((result, ragame) => {
-      const title = getFormattedTitle(ragame.title);
-      const igames: { _id: number; name: string; platforms: number[] }[] =
-        title.includes('|')
-          ? IGDBGamesSorted[title.split('|')[0]] ||
-            IGDBGamesSorted[title.split('|')[1]]
-          : IGDBGamesSorted[title];
-
-      const raConsole = raConsoles.find(
-        (console) => console._id === ragame.consoleId,
-      );
-
-      const tempRaGame = {
-        ...ragame,
-        consoleId: raConsole?.igdbIds || null,
-      };
-
-      const igame = igames?.find(
-        (game) =>
-          !!tempRaGame.consoleId &&
-          game.platforms.some((id: number) =>
-            tempRaGame.consoleId.includes(id),
-          ),
-      );
-
-      if (!!igame) {
-        !!result[igame._id]?.length
-          ? result[igame._id].push(ragame._id)
-          : (result[igame._id] = [ragame._id]);
-      } else {
-        unrecognised.push(ragame);
-      }
-
-      return result;
-    }, {});
-
-    console.log(Object.values(gameIds).flat().length);
-
-    fs.writeFile(
-      join(process.cwd(), 'db', 'unrecognised.json'),
-      JSON.stringify(unrecognised),
-    );
-
-    await this.IGDBGamesModel.bulkWrite(
-      Object.keys(gameIds).map((key) => ({
-        updateOne: {
-          filter: {
-            _id: key,
-          },
-          update: { $set: { raIds: gameIds[key] } },
-        },
-      })),
-    );
-  }
-
-  async testFunction() {
-    console.time('Test');
-    console.log();
-    console.timeEnd('Test');
-
-    console.time('Test 2');
-    console.log();
-    console.timeEnd('Test 2');
-  }
+  // async testFunction() {
+  //   console.time('Test');
+  //   console.log();
+  //   console.timeEnd('Test');
+  //
+  //   console.time('Test 2');
+  //   console.log();
+  //   console.timeEnd('Test 2');
+  // }
 }

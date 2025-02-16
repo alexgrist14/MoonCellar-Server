@@ -136,10 +136,10 @@ export class IgdbController {
     return this.service.getGameBySlug(slug);
   }
 
-  @Get('/test')
-  @ApiOperation({ summary: 'test' })
-  @ApiResponse({ status: 200, description: 'Get over here!' })
-  test() {
-    return this.service.testFunction();
-  }
+  // @Get('/test')
+  // @ApiOperation({ summary: 'test' })
+  // @ApiResponse({ status: 200, description: 'Get over here!' })
+  // test() {
+  //   return this.service.testFunction();
+  // }
 }
