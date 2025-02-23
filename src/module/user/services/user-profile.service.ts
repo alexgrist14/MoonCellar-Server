@@ -30,7 +30,7 @@ export class UserProfileService {
       },
       {
         $project: {
-          logs: { $slice: ['$logs', -50] },
+          logs: { $reverseArray:{$slice: ['$logs', -50] } },
         },
       },
       {

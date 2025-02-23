@@ -1,13 +1,10 @@
-import {
-    BadRequestException,
-    Injectable
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { User } from 'src/module/user/schemas/user.schema';
 import {
-    IGDBGames,
-    IGDBGamesDocument,
+  IGDBGames,
+  IGDBGamesDocument,
 } from 'src/shared/schemas/igdb-games.schema';
 import { gamesLookup } from 'src/shared/utils';
 import { categories, categoriesType } from '../types/actions';
@@ -54,20 +51,60 @@ export class UserGamesService {
               $concatArrays: [`$games.${category}`, [Number(gameId)]],
             },
             logs: {
-              $concatArrays: [
-                `$logs`,
-                [
-                  {
-                    date: new Date(Date.now()),
-                    action: category,
-                    isAdd: true,
-                    gameId: Number(gameId),
-                  },
-                ],
-              ],
-            },
-          },
-        },
+              $cond: {
+                if: {
+                  $and: [
+                    { $eq: [{ $arrayElemAt: ["$logs.gameId", -1] }, Number(gameId)] },
+                    { $eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
+                  ]
+                },
+                then: {
+                  $concatArrays: [
+                    { $slice: ["$logs", { $subtract: [{ $size: "$logs" }, 1] }] },
+                    [
+                      {
+                        date: new Date(Date.now()),
+                        action: {
+                          $cond: {
+                            if: {
+                              $regexMatch: {
+                                input: { $arrayElemAt: ["$logs.action", -1] },
+                                regex: /rating/
+                              }
+                            },
+                            then: {
+                              $concat: [
+                                "rating and ",
+                                category
+                              ]
+                            },
+                            else: category
+                          }
+                        },
+                        isAdd: true,
+                        gameId: Number(gameId),
+                        rating: { $ifNull: [{ $arrayElemAt: ["$logs.rating", -1] }, null] },
+                      }
+                    ]
+                  ]
+                },
+                else: {
+                  $concatArrays: [
+                    "$logs",
+                    [
+                      {
+                        date: new Date(Date.now()),
+                        action: category,
+                        isAdd: true,
+                        gameId: Number(gameId),
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
       ],
       { new: true },
     );
@@ -130,26 +167,102 @@ export class UserGamesService {
     gameId: number,
     rating: number,
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
+    const user = await this.userModel.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(userId),
+      },
+      [
+        {
+          $set:{
+            gamesRating:{
+              $cond:{
+                if:{
+                  $in:[Number(gameId), "$gamesRating.game"]
+                },
+                then:{
+                  $map:{
+                    input: "$gamesRating",
+                    as: "gameRating",
+                    in:{
+                      $cond:{
+                        if:{$eq:["$$gameRating.game",Number(gameId)]},
+                        then:{game:Number(gameId), rating:rating},
+                        else: "$$gameRating"
+                      }
+                    }
+                  }
+                },
+                else:{
+                  $concatArrays:["$gamesRating",[{game:Number(gameId),rating: rating}]]
+                }
+              }
+            },
+            logs:{
+              $cond:{
+                if:{
+                  $and:[
+                    {$eq: [{$arrayElemAt:["$logs.gameId",-1]}, Number(gameId)]},
+                    {$eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
+                  ]
 
-    const existingRating = user.gamesRating.find(
-      (gameRating) => gameRating.game === gameId,
+                },
+                then:{
+                  $concatArrays:[
+                    {$slice: ["$logs",{$subtract:[{$size:"$logs"},1]}]},
+                   [
+                    {
+                      date: new Date(Date.now()),
+                      action:{$cond:{
+                        if:{
+                          $not: {
+                            $regexMatch: {
+                              input: { $arrayElemAt: ["$logs.action", -1] },
+                              regex: /rating/
+                            }
+                          }
+                        },
+                        then:{
+                          $concat:[
+                            "rating and ",
+                            { $arrayElemAt: ["$logs.action", -1] }
+                          ]
+                        },
+                        else:{
+                          $arrayElemAt:["$logs.action",-1]
+                        }
+                      }
+                        
+                      },
+                      isAdd: true,
+                      gameId: Number(gameId),
+                      rating: rating
+                    }
+                  ]
+                ]
+                },
+                else:{
+                  $concatArrays:[
+                    "$logs",
+                    [{
+                        date: new Date(Date.now()),
+                        action: "rating",
+                        isAdd: true,
+                        rating: rating,
+                        gameId: Number(gameId),
+                    }]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      { new: true },
     );
-    if (existingRating) {
-      existingRating.rating = rating;
-    } else {
-      user.gamesRating.push({ game: gameId, rating: rating });
+
+    if (!user) {
+      throw new BadRequestException('User not found!');
     }
-
-    user.logs.push({
-      date: new Date(Date.now()),
-      action: 'rating',
-      isAdd: true,
-      rating: rating,
-      gameId: gameId,
-    });
-
-    await user.save();
 
     return user;
   }

@@ -20,6 +20,8 @@ export class User extends Document {
 
   @Prop({ default: '' })
   profilePicture?: string;
+  @Prop({type: String, default: ''})
+  background?: string;
 
   @Prop({ type: String })
   refreshToken?: string;
@@ -61,7 +63,7 @@ export class User extends Document {
   @Prop({
     type: [
       {
-        game: { type: Number, ref: IGDBGames.name, required: true },
+        game: { type: Number, required: true },
         rating: { type: Number, required: true },
       },
     ],
