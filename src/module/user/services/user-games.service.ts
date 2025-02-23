@@ -268,19 +268,39 @@ export class UserGamesService {
   }
 
   async removeGameRating(userId: string, gameId: number): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    user.gamesRating = user.gamesRating.filter(
-      (gameRating) => gameRating.game !== Number(gameId),
+    await this.userModel.updateOne(
+      { _id: new mongoose.Types.ObjectId(userId) },
+      { $pull: { gamesRating: { game: Number(gameId) } } },
+    );
+    const user = await this.userModel.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(userId) },
+      [
+        {
+          $set: {
+            logs: {
+              $concatArrays: [
+                "$logs",
+                [
+                  {
+                    date: new Date(Date.now()),
+                    action: "rating",
+                    isAdd: false,
+                    gameId: Number(gameId),
+                  },
+                ],
+              ],
+            },
+          },
+        },
+      ],
+      { new: true },
     );
 
-    user.logs.push({
-      date: new Date(Date.now()),
-      action: 'rating',
-      isAdd: false,
-      gameId: gameId,
-    });
 
-    await user.save();
+    if (!user) {
+      throw new BadRequestException('User not found!');
+    }
+
     return user;
   }
 
