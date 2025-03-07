@@ -20,7 +20,7 @@ export class User extends Document {
 
   @Prop({ default: '' })
   profilePicture?: string;
-  @Prop({type: String, default: ''})
+  @Prop()
   background?: string;
 
   @Prop({ type: String })

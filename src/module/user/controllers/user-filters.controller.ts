@@ -4,27 +4,27 @@ import {
   Delete,
   Get,
   Param,
-  Post,
+  Put,
   Query,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserFiltersService } from '../services/user-filters.service';
-import { AuthGuard } from '@nestjs/passport';
 import { UserIdGuard } from 'src/module/auth/user.guard';
 import { FilterDto } from '../dto/filters.dto';
+import { UserFiltersService } from '../services/user-filters.service';
 
 @ApiTags('User Filters')
 @Controller('user')
 export class UserFiltersController {
   constructor(private readonly userFiltersService: UserFiltersService) {}
 
-  @Post('filters/:userId')
+  @Put('filters/:userId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), UserIdGuard)
   @ApiOperation({ summary: 'Save filter to user' })

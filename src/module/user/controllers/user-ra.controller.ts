@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Patch } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserRAService } from '../services/user-ra.service';
 
@@ -26,7 +26,7 @@ export class UserRAController {
   // async getAwards(@Param('raUsername') raUsername: string){
   //     return this.userRAService.getUserAwards(raUsername);
   // }
-  @Post('/ra/:userId/:raUserName')
+  @Patch('/ra/:userId/:raUserName')
   @ApiOperation({ summary: 'Set RA user info' })
   @ApiResponse({
     status: 201,

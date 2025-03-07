@@ -5,7 +5,6 @@ import {
   NotFoundException,
   Param,
   Patch,
-  Post,
   Query,
   Req,
   UnauthorizedException,
@@ -31,6 +30,7 @@ import { UpdateDescriptionDto } from '../dto/update-description.dto';
 import { User } from '../schemas/user.schema';
 import { FileUploadService } from '../services/file-upload.service';
 import { UserProfileService } from '../services/user-profile.service';
+import { BackgroundDto } from '../dto/background.dto';
 
 @ApiTags('User Profile')
 @Controller('user')
@@ -110,7 +110,7 @@ export class UserProfileController {
     return this.userProfileService.updatePassword(userId, updatePasswordDto);
   }
 
-  @Post('profile-picture/:userId')
+  @Patch('profile-picture/:userId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), UserIdGuard)
   @UseInterceptors(FileInterceptor('file'))
@@ -136,11 +136,34 @@ export class UserProfileController {
 
     if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
 
-    const fileName = await this.fileUploadService.uploadFile(file);
+    const fileName = await this.fileUploadService.uploadFile(file, 'photos');
     await this.userProfileService.updateProfilePicture(userId, fileName);
 
     return { profilePicture: fileName };
   }
+
+  @Patch('profile-background/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), UserIdGuard)
+  @ApiOperation({ summary: 'Add user profile background' })
+  @ApiResponse({ status: 201, description: 'background name' })
+  async uploadProfileBackground(
+    @Param('userId') userId: string,
+    @Body() background: BackgroundDto,
+  ) {
+    return await this.userProfileService.updateProfileBackground(
+      userId,
+      background.url,
+    );
+  }
+
+  @Get('profile-background/:userId')
+  @ApiOperation({ summary: 'Add user profile background' })
+  @ApiResponse({ status: 201, description: 'background name' })
+  async getProfileBackGround(@Param('userId') userId: string){
+    return await this.userProfileService.getProfileBackground(userId);
+  }
+
 
   @Get('profile-picture/:userId')
   @ApiOperation({ summary: 'Get user profile picture' })

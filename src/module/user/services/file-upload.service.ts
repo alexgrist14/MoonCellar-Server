@@ -6,13 +6,13 @@ import { rootDir } from 'src/shared/constants';
 
 @Injectable()
 export class FileUploadService {
-  private readonly uploadPath = `${rootDir}/uploads/photos`;
+  private readonly uploadPath = `${rootDir}/uploads/`;
 
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File,uploadFolder: string): Promise<string> {
     const fileName = `${uuidv4()}-${file?.originalname}`;
     const filePath = join(this.uploadPath, fileName);
 
-    await fs.mkdir(this.uploadPath, { recursive: true });
+    await fs.mkdir(this.uploadPath.concat(uploadFolder), { recursive: true });
     await fs.writeFile(filePath, file.buffer);
 
     return fileName;

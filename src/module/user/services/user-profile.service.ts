@@ -153,6 +153,14 @@ export class UserProfileService {
     return user;
   }
 
+  async updateProfileBackground(userId: string,link:string){
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    user.background = link;
+    return user.save();
+  }
+
   async updateProfilePicture(userId: string, fileName: string): Promise<User> {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -167,6 +175,15 @@ export class UserProfileService {
       throw new NotFoundException('Profile picture not found');
 
     return user.profilePicture;
+  }
+
+  async getProfileBackground(userId:string){
+    const user = await this.userModel.findById(userId);
+    if (!user || !user.background)
+      throw new NotFoundException('Profile picture not found');
+
+    return user.background;
+
   }
 
   async updateUserDescription(userId: string, description: string) {

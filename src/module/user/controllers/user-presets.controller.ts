@@ -4,27 +4,27 @@ import {
   Delete,
   Get,
   Param,
-  Post,
+  Put,
   Query,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { UserIdGuard } from 'src/module/auth/user.guard';
-import { UserPresetsService } from '../services/user-presets.service';
 import { PresetDto } from '../dto/presets.dto';
+import { UserPresetsService } from '../services/user-presets.service';
 
 @ApiTags('User Presets')
 @Controller('user')
 export class UserPresetsController {
   constructor(private readonly userPresetsService: UserPresetsService) {}
 
-  @Post('presets/:userId')
+  @Put('presets/:userId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), UserIdGuard)
   @ApiOperation({ summary: 'Save preset to user' })
