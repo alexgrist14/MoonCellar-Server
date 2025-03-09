@@ -187,9 +187,16 @@ export class IGDBService {
             : []),
           ...(!!search
             ? [
+                // {
+                //   $text: {
+                //     $search: search,
+                //   },
+                // },
                 {
-                  $text: {
-                    $search: search,
+                  name: {
+                    $regex: search.replaceAll(' ', '\\s*'),
+
+                    $options: 'i',
                   },
                 },
               ]
