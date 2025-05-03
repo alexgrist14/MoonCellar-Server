@@ -15,7 +15,7 @@ async function bootstrap() {
   app.enableCors({
     credentials: true,
     origin: [
-      ...process.env.LOCAL_CONNECTION.split(','),
+      ...(process.env.LOCAL_CONNECTION?.split(',') || []),
       'https://mooncellar.space',
     ],
   });
@@ -25,7 +25,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('MoonCellar API')
-    .setDescription('Api for MoonCellar server')
+    .setDescription('API for MoonCellar server')
     .setVersion('1.0')
     .build();
 
