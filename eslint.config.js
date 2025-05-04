@@ -1,16 +1,20 @@
-module.exports = {
-  parser: '@typescript-eslint/parser',
+// .eslintrc.js
+import eslintPluginTs from '@typescript-eslint/eslint-plugin'
+import parser from '@typescript-eslint/parser'
+
+/** @type {import("eslint").Linter.Config} */
+export default {
+  parser,
   parserOptions: {
-    project: 'tsconfig.json',
-    tsconfigRootDir: __dirname,
+    project: './tsconfig.json',
+    tsconfigRootDir: process.cwd(),
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
+  plugins: [eslintPluginTs],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
   ],
-  root: true,
   env: {
     node: true,
     jest: true,
@@ -21,7 +25,7 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    "@typescript-eslint/no-unused-vars": "error",
-    "prettier/prettier": 0,
+    '@typescript-eslint/no-unused-vars': 'error',
+    'prettier/prettier': 'off',
   },
-};
+}
