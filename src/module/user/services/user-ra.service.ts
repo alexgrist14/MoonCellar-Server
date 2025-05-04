@@ -16,7 +16,7 @@ export class UserRAService {
   private readonly username = RA_MAIN_USER_NAME;
   private readonly webApiKey = process.env.RETROACHIEVEMENTS_API_KEY;
   private readonly authorization = buildAuthorization({
-    userName: this.username,
+    username: this.username,
     webApiKey: this.webApiKey,
   });
 
@@ -26,7 +26,7 @@ export class UserRAService {
     const achievements = await getAchievementsEarnedBetween(
       this.authorization,
       {
-        userName: raUsername,
+        username: raUsername,
         fromDate: new Date('2024-01-01'),
         toDate: new Date('2026-01-01'),
       },
@@ -49,13 +49,13 @@ export class UserRAService {
     if (!user) throw new NotFoundException('User not found');
 
     const userRAProfile = await getUserProfile(this.authorization, {
-      userName: raUsername,
+      username: raUsername,
     });
 
     if (!userRAProfile) throw new NotFoundException('RA user not found');
 
     const userAwards = await getUserAwards(this.authorization, {
-      userName: raUsername,
+      username: raUsername,
     });
 
     user.raUsername = raUsername;

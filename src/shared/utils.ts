@@ -34,7 +34,7 @@ export const getFormattedTitle = (title: string) => {
     .replaceAll('~Prototype~', '')
     .replaceAll('~Z~', '')
     .replaceAll('~Unlicensed~', '')
-    .replace(/[^a-zA-Z0-9\|]/g, '')
+    .replace(/[^a-zA-Z0-9|]/g, '')
     .toLowerCase();
 };
 

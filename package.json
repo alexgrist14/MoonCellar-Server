@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint src --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 10",
+    "lint-fix": "eslint src --ext ts,tsx,js,jsx --report-unused-disable-directives --max-warnings 10 --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -65,7 +66,9 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "typescript-eslint": "^8.31.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@automock/adapters.nestjs": "^2.1.0",

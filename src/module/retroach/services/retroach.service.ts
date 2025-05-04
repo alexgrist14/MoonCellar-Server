@@ -32,7 +32,7 @@ export class RetroachievementsService {
 
   async parse(type: 'consoles' | 'games' | 'both') {
     const authorization = buildAuthorization({
-      userName: this.userName,
+      username: this.userName,
       webApiKey: this.apiKey,
     });
     const consoles = await getConsoleIds(authorization);
@@ -51,7 +51,7 @@ export class RetroachievementsService {
 
         setTimeout(() => {
           index++;
-          index <= consoles.length - 1
+          return index <= consoles.length - 1
             ? getGames(consoles[index].id, [...games, ...res])
             : updateOrInsertValues(this.gameModel, [...games, ...res]);
         }, 400);
