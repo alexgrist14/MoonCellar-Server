@@ -30,7 +30,7 @@ export class UserProfileService {
       },
       {
         $project: {
-          logs: { $reverseArray:{$slice: ['$logs', -50] } },
+          logs: { $reverseArray: { $slice: ['$logs', -50] } },
         },
       },
       {
@@ -153,7 +153,7 @@ export class UserProfileService {
     return user;
   }
 
-  async updateProfileBackground(userId: string,link:string){
+  async updateProfileBackground(userId: string, link: string) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
@@ -177,13 +177,12 @@ export class UserProfileService {
     return user.profilePicture;
   }
 
-  async getProfileBackground(userId:string){
+  async getProfileBackground(userId: string) {
     const user = await this.userModel.findById(userId);
     if (!user || !user.background)
       throw new NotFoundException('Profile picture not found');
 
     return user.background;
-
   }
 
   async updateUserDescription(userId: string, description: string) {

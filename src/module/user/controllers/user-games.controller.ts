@@ -102,7 +102,6 @@ export class UserGamesController {
     );
   }
 
-
   @Get('/games/:userId')
   @ApiOperation({ summary: 'Get user games' })
   @ApiResponse({
