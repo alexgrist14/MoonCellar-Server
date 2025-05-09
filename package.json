@@ -73,8 +73,8 @@
   "devDependencies": {
     "@automock/adapters.nestjs": "^2.1.0",
     "@automock/jest": "^2.1.0",
-    "@commitlint/cli": "^19.8.0",
-    "@commitlint/config-conventional": "^19.8.0",
+    "@commitlint/cli": "^18.6.0",
+    "@commitlint/config-conventional": "^18.6.0",
     "@nestjs/cli": "^11.0.7",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.1.0",
