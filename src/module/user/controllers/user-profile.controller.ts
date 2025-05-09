@@ -133,6 +133,7 @@ export class UserProfileController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const prevPicture = await this.userProfileService.getProfilePicture(userId);
+    console.log(prevPicture);
 
     if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
 
@@ -160,10 +161,9 @@ export class UserProfileController {
   @Get('profile-background/:userId')
   @ApiOperation({ summary: 'Add user profile background' })
   @ApiResponse({ status: 201, description: 'background name' })
-  async getProfileBackGround(@Param('userId') userId: string){
+  async getProfileBackGround(@Param('userId') userId: string) {
     return await this.userProfileService.getProfileBackground(userId);
   }
-
 
   @Get('profile-picture/:userId')
   @ApiOperation({ summary: 'Get user profile picture' })

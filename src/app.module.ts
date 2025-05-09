@@ -22,7 +22,7 @@ import { RetroachievementsModule } from './module/retroach/retroach.module';
     IgdbModule,
     RetroachievementsModule,
     ServeStaticModule.forRoot({
-      rootPath: `${rootDir}/uploads/photos`,
+      rootPath: `/var/www/uploads/photos`,
       serveRoot: '/photos',
     }),
   ],
