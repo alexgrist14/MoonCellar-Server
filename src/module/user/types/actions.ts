@@ -15,7 +15,7 @@ export interface ILogs {
   gameId: number;
 }
 
-export interface IUserLogs{
+export interface IUserLogs {
   logs: ILogs[];
 }
 

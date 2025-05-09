@@ -54,13 +54,20 @@ export class UserGamesService {
               $cond: {
                 if: {
                   $and: [
-                    { $eq: [{ $arrayElemAt: ["$logs.gameId", -1] }, Number(gameId)] },
-                    { $eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
-                  ]
+                    {
+                      $eq: [
+                        { $arrayElemAt: ['$logs.gameId', -1] },
+                        Number(gameId),
+                      ],
+                    },
+                    { $eq: [{ $arrayElemAt: ['$logs.isAdd', -1] }, true] },
+                  ],
                 },
                 then: {
                   $concatArrays: [
-                    { $slice: ["$logs", { $subtract: [{ $size: "$logs" }, 1] }] },
+                    {
+                      $slice: ['$logs', { $subtract: [{ $size: '$logs' }, 1] }],
+                    },
                     [
                       {
                         date: new Date(Date.now()),
@@ -68,43 +75,45 @@ export class UserGamesService {
                           $cond: {
                             if: {
                               $regexMatch: {
-                                input: { $arrayElemAt: ["$logs.action", -1] },
-                                regex: /rating/
-                              }
+                                input: { $arrayElemAt: ['$logs.action', -1] },
+                                regex: /rating/,
+                              },
                             },
                             then: {
-                              $concat: [
-                                "rating and ",
-                                category
-                              ]
+                              $concat: ['rating and ', category],
                             },
-                            else: category
-                          }
+                            else: category,
+                          },
                         },
                         isAdd: true,
                         gameId: Number(gameId),
-                        rating: { $ifNull: [{ $arrayElemAt: ["$logs.rating", -1] }, null] },
-                      }
-                    ]
-                  ]
+                        rating: {
+                          $ifNull: [
+                            { $arrayElemAt: ['$logs.rating', -1] },
+                            null,
+                          ],
+                        },
+                      },
+                    ],
+                  ],
                 },
                 else: {
                   $concatArrays: [
-                    "$logs",
+                    '$logs',
                     [
                       {
                         date: new Date(Date.now()),
                         action: category,
                         isAdd: true,
                         gameId: Number(gameId),
-                      }
-                    ]
-                  ]
-                }
-              }
-            }
-          }
-        }
+                      },
+                    ],
+                  ],
+                },
+              },
+            },
+          },
+        },
       ],
       { new: true },
     );
@@ -173,89 +182,100 @@ export class UserGamesService {
       },
       [
         {
-          $set:{
-            gamesRating:{
-              $cond:{
-                if:{
-                  $in:[Number(gameId), "$gamesRating.game"]
+          $set: {
+            gamesRating: {
+              $cond: {
+                if: {
+                  $in: [Number(gameId), '$gamesRating.game'],
                 },
-                then:{
-                  $map:{
-                    input: "$gamesRating",
-                    as: "gameRating",
-                    in:{
-                      $cond:{
-                        if:{$eq:["$$gameRating.game",Number(gameId)]},
-                        then:{game:Number(gameId), rating:rating},
-                        else: "$$gameRating"
-                      }
-                    }
-                  }
-                },
-                else:{
-                  $concatArrays:["$gamesRating",[{game:Number(gameId),rating: rating}]]
-                }
-              }
-            },
-            logs:{
-              $cond:{
-                if:{
-                  $and:[
-                    {$eq: [{$arrayElemAt:["$logs.gameId",-1]}, Number(gameId)]},
-                    {$eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
-                  ]
-
-                },
-                then:{
-                  $concatArrays:[
-                    {$slice: ["$logs",{$subtract:[{$size:"$logs"},1]}]},
-                   [
-                    {
-                      date: new Date(Date.now()),
-                      action:{$cond:{
-                        if:{
-                          $not: {
-                            $regexMatch: {
-                              input: { $arrayElemAt: ["$logs.action", -1] },
-                              regex: /rating/
-                            }
-                          }
-                        },
-                        then:{
-                          $concat:[
-                            "rating and ",
-                            { $arrayElemAt: ["$logs.action", -1] }
-                          ]
-                        },
-                        else:{
-                          $arrayElemAt:["$logs.action",-1]
-                        }
-                      }
-                        
+                then: {
+                  $map: {
+                    input: '$gamesRating',
+                    as: 'gameRating',
+                    in: {
+                      $cond: {
+                        if: { $eq: ['$$gameRating.game', Number(gameId)] },
+                        then: { game: Number(gameId), rating: rating },
+                        else: '$$gameRating',
                       },
-                      isAdd: true,
-                      gameId: Number(gameId),
-                      rating: rating
-                    }
-                  ]
-                ]
+                    },
+                  },
                 },
-                else:{
-                  $concatArrays:[
-                    "$logs",
-                    [{
+                else: {
+                  $concatArrays: [
+                    '$gamesRating',
+                    [{ game: Number(gameId), rating: rating }],
+                  ],
+                },
+              },
+            },
+            logs: {
+              $cond: {
+                if: {
+                  $and: [
+                    {
+                      $eq: [
+                        { $arrayElemAt: ['$logs.gameId', -1] },
+                        Number(gameId),
+                      ],
+                    },
+                    { $eq: [{ $arrayElemAt: ['$logs.isAdd', -1] }, true] },
+                  ],
+                },
+                then: {
+                  $concatArrays: [
+                    {
+                      $slice: ['$logs', { $subtract: [{ $size: '$logs' }, 1] }],
+                    },
+                    [
+                      {
                         date: new Date(Date.now()),
-                        action: "rating",
+                        action: {
+                          $cond: {
+                            if: {
+                              $not: {
+                                $regexMatch: {
+                                  input: { $arrayElemAt: ['$logs.action', -1] },
+                                  regex: /rating/,
+                                },
+                              },
+                            },
+                            then: {
+                              $concat: [
+                                'rating and ',
+                                { $arrayElemAt: ['$logs.action', -1] },
+                              ],
+                            },
+                            else: {
+                              $arrayElemAt: ['$logs.action', -1],
+                            },
+                          },
+                        },
+                        isAdd: true,
+                        gameId: Number(gameId),
+                        rating: rating,
+                      },
+                    ],
+                  ],
+                },
+                else: {
+                  $concatArrays: [
+                    '$logs',
+                    [
+                      {
+                        date: new Date(Date.now()),
+                        action: 'rating',
                         isAdd: true,
                         rating: rating,
                         gameId: Number(gameId),
-                    }]
-                  ]
-                }
-              }
-            }
-          }
-        }
+                      },
+                    ],
+                  ],
+                },
+              },
+            },
+          },
+        },
       ],
       { new: true },
     );
@@ -279,11 +299,11 @@ export class UserGamesService {
           $set: {
             logs: {
               $concatArrays: [
-                "$logs",
+                '$logs',
                 [
                   {
                     date: new Date(Date.now()),
-                    action: "rating",
+                    action: 'rating',
                     isAdd: false,
                     gameId: Number(gameId),
                   },
@@ -295,7 +315,6 @@ export class UserGamesService {
       ],
       { new: true },
     );
-
 
     if (!user) {
       throw new BadRequestException('User not found!');
