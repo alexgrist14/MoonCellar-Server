@@ -8,6 +8,7 @@ import {
 @Injectable()
 export class UserIdGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
+    console.log(context);
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     const userId = request.params.userId;

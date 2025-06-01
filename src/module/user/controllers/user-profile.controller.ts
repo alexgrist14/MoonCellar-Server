@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCookieAuth,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -96,7 +97,7 @@ export class UserProfileController {
 
   @Patch("password/:userId")
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: "Update user password" })
   @ApiResponse({ status: 200, description: "Success" })
   async updatePassword(

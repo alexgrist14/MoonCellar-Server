@@ -121,8 +121,8 @@ export class UserGamesService {
     );
     const userLog = await this.userLogsService.createUserLog(
       userId,
-      category,
-      true,
+      "list",
+      `Add to ${category}`,
       Number(gameId)
     );
     if (!user) {

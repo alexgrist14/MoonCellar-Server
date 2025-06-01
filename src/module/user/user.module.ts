@@ -18,7 +18,7 @@ import { UserRAService } from "./services/user-ra.service";
 import { UserRAController } from "./controllers/user-ra.controller";
 import { UserPresetsService } from "./services/user-presets.service";
 import { UserPresetsController } from "./controllers/user-presets.controller";
-import { UserLogsSchema } from "./schemas/user-logs.schema";
+import { UserLogs, UserLogsSchema } from "./schemas/user-logs.schema";
 import { UserLogsService } from "./services/user-logs.service";
 import { UserLogsController } from "./controllers/user-logs.controller";
 
@@ -27,7 +27,7 @@ import { UserLogsController } from "./controllers/user-logs.controller";
     MongooseModule.forFeature([
       { name: IGDBGames.name, schema: IGDBGamesSchema },
       { name: "User", schema: UserSchema },
-      { name: "UserLogs", schema: UserLogsSchema },
+      { name: UserLogs.name, schema: UserLogsSchema },
     ]),
   ],
 
