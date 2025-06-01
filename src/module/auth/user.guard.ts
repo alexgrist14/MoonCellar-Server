@@ -13,6 +13,8 @@ export class UserIdGuard implements CanActivate {
     const userId = request.params.userId;
 
     if (!user || user._id.toString() !== userId) {
+      console.log(user._id.toString());
+      console.log(userId);
       throw new UnauthorizedException("You can only change your own account");
     }
 

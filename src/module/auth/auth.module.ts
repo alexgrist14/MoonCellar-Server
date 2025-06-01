@@ -17,12 +17,15 @@ import {
 import { UserFiltersService } from "../user/services/user-filters.service";
 import { UserFollowingsService } from "../user/services/user-followings.service";
 import { UserGamesService } from "../user/services/user-games.service";
+import { UserLogsService } from "../user/services/user-logs.service";
+import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: "User", schema: UserSchema },
       { name: IGDBGames.name, schema: IGDBGamesSchema },
+      { name: UserLogs.name, schema: UserLogsSchema },
     ]),
 
     PassportModule.register({ defaultStrategy: "jwt" }),
@@ -43,6 +46,7 @@ import { UserGamesService } from "../user/services/user-games.service";
   providers: [
     AuthService,
     UserProfileService,
+    UserLogsService,
     UserFiltersService,
     UserFollowingsService,
     UserGamesService,

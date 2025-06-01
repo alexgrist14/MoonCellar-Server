@@ -13,7 +13,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
 import {
-  ApiBearerAuth,
+  ApiCookieAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -87,7 +87,7 @@ export class AuthController {
   }
 
   @Post("/refresh-token")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
   @ApiOperation({ summary: "Refresh token" })
   @ApiResponse({ status: 200, description: "Refresh successful" })

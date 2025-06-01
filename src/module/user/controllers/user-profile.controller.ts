@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCookieAuth,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -84,7 +85,7 @@ export class UserProfileController {
 
   @Patch("email/:userId")
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: "Update user email" })
   @ApiResponse({ status: 200, description: "success" })
   async updateEmail(
@@ -96,7 +97,7 @@ export class UserProfileController {
 
   @Patch("password/:userId")
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: "Update user password" })
   @ApiResponse({ status: 200, description: "Success" })
   async updatePassword(
@@ -111,7 +112,7 @@ export class UserProfileController {
   }
 
   @Patch("profile-picture/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @UseInterceptors(FileInterceptor("file"))
   @ApiOperation({ summary: "Add user profile picture" })
@@ -144,7 +145,7 @@ export class UserProfileController {
   }
 
   @Patch("profile-background/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Add user profile background" })
   @ApiResponse({ status: 201, description: "background name" })
@@ -179,7 +180,7 @@ export class UserProfileController {
   }
 
   @Patch("description/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Update user description" })
   @ApiResponse({ status: 200, description: "Success" })

@@ -11,7 +11,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
+  ApiCookieAuth,
 } from "@nestjs/swagger";
 import { UserIdGuard } from "src/module/auth/user.guard";
 import { UserFollowingsService } from "../services/user-followings.service";
@@ -32,7 +32,7 @@ export class UserFollowingsController {
   }
 
   @Patch("/followings/:userId/:followingId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Add following to user" })
   @ApiResponse({ status: 200, description: "success" })
@@ -44,7 +44,7 @@ export class UserFollowingsController {
   }
 
   @Delete("/followings/:userId/:followingId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Remove user following" })
   @ApiResponse({ status: 200, description: "success" })
