@@ -8,12 +8,14 @@ import {
 } from "src/shared/schemas/igdb-games.schema";
 import { gamesLookup } from "src/shared/utils";
 import { categories, categoriesType } from "../types/actions";
+import { UserLogsService } from "./user-logs.service";
 
 @Injectable()
 export class UserGamesService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>
+    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>,
+    private userLogsService: UserLogsService
   ) {}
 
   async addGameToCategory(
@@ -117,7 +119,12 @@ export class UserGamesService {
       ],
       { new: true }
     );
-
+    const userLog = await this.userLogsService.createUserLog(
+      userId,
+      "list",
+      `Add to ${category}`,
+      Number(gameId)
+    );
     if (!user) {
       throw new BadRequestException("User or category not found!");
     }

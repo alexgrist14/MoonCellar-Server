@@ -23,10 +23,10 @@ async function bootstrap() {
   app.use(json({ limit: "2mb" }));
 
   const config = new DocumentBuilder()
-    .addBearerAuth()
     .setTitle("MoonCellar API")
     .setDescription("API for MoonCellar server")
     .setVersion("1.0")
+    .addCookieAuth("accessMoonToken")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -34,6 +34,8 @@ async function bootstrap() {
   SwaggerModule.setup("api", app, document, {
     swaggerOptions: {
       docExpansion: "none",
+      withCredentials: true,
+      persistAuthorization: true,
     },
   });
   await app.listen(3228);

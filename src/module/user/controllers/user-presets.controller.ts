@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import {
-  ApiBearerAuth,
+  ApiCookieAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -25,7 +25,7 @@ export class UserPresetsController {
   constructor(private readonly userPresetsService: UserPresetsService) {}
 
   @Put("presets/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Save preset to user" })
   @ApiResponse({ status: 200, description: "Success" })
@@ -41,7 +41,7 @@ export class UserPresetsController {
   }
 
   @Delete("presets/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Remove preset from user" })
   @ApiResponse({ status: 200, description: "Success" })
@@ -53,7 +53,7 @@ export class UserPresetsController {
   }
 
   @Get("presets/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Get user presets" })
   @ApiResponse({ status: 200, description: "Success" })
