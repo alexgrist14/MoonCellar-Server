@@ -18,4 +18,8 @@ export class GamesService {
   async savePlaythrough(data: SavePlaythroughDTO) {
     return this.IGamesPlaythrouhgs.create(data);
   }
+
+  async updatePlaythrough(data: SavePlaythroughDTO) {
+    return this.IGamesPlaythrouhgs.create(data);
+  }
 }
