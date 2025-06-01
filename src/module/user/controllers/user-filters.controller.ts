@@ -11,6 +11,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import {
   ApiBearerAuth,
+  ApiCookieAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -25,7 +26,7 @@ export class UserFiltersController {
   constructor(private readonly userFiltersService: UserFiltersService) {}
 
   @Put("filters/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Save filter to user" })
   @ApiResponse({ status: 200, description: "Success" })
@@ -41,7 +42,7 @@ export class UserFiltersController {
   }
 
   @Delete("filters/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Remove filter from user" })
   @ApiResponse({ status: 200, description: "Success" })
@@ -53,7 +54,7 @@ export class UserFiltersController {
   }
 
   @Get("filters/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Get user filters" })
   @ApiResponse({ status: 200, description: "Success" })

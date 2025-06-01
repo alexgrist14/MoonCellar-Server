@@ -23,7 +23,6 @@ async function bootstrap() {
   app.use(json({ limit: "2mb" }));
 
   const config = new DocumentBuilder()
-    .addBearerAuth()
     .setTitle("MoonCellar API")
     .setDescription("API for MoonCellar server")
     .setVersion("1.0")

@@ -1,5 +1,6 @@
 import {
   ApiBearerAuth,
+  ApiCookieAuth,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -31,7 +32,7 @@ import { RolesGuard } from "src/module/roles/roles.guard";
 export class UserGamesController {
   constructor(private readonly userGamesService: UserGamesService) {}
   @Patch(":userId/games/:gameId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: "Add game to category" })
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiQuery({ name: "category", enum: categories })
@@ -45,7 +46,7 @@ export class UserGamesController {
   }
 
   @Delete(":userId/games/:gameId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Remove game from category" })
   @ApiResponse({
@@ -75,7 +76,7 @@ export class UserGamesController {
   }
 
   @Delete("rating/:userId/:gameId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Remove user rating from game" })
   @ApiResponse({ status: 200, description: "Rating removed successfully" })
@@ -87,7 +88,7 @@ export class UserGamesController {
   }
 
   @Patch("rating/:userId")
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Add user rating to game" })
   @ApiResponse({ status: 200, description: "Rating added successfully" })
