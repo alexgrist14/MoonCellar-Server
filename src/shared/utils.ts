@@ -19,44 +19,44 @@ export const getRandomArray = (array: unknown[], count: number) => {
 
 export const getFormattedTitle = (title: string) => {
   return title
-    .replaceAll('The ', '')
-    .replaceAll('The,', '')
-    .replaceAll("Disney's", '')
-    .replaceAll("Dreamworks'", '')
-    .replaceAll('DreamWorks', '')
-    .replaceAll('Dreamworks', '')
-    .replaceAll('Zero', '0')
-    .replaceAll(' and ', '')
-    .replaceAll('James Bond', '')
-    .replaceAll('~Hack~', '')
-    .replaceAll('~Demo~', '')
-    .replaceAll('~Homebrew~', '')
-    .replaceAll('~Prototype~', '')
-    .replaceAll('~Z~', '')
-    .replaceAll('~Unlicensed~', '')
-    .replace(/[^a-zA-Z0-9|]/g, '')
+    .replaceAll("The ", "")
+    .replaceAll("The,", "")
+    .replaceAll("Disney's", "")
+    .replaceAll("Dreamworks'", "")
+    .replaceAll("DreamWorks", "")
+    .replaceAll("Dreamworks", "")
+    .replaceAll("Zero", "0")
+    .replaceAll(" and ", "")
+    .replaceAll("James Bond", "")
+    .replaceAll("~Hack~", "")
+    .replaceAll("~Demo~", "")
+    .replaceAll("~Homebrew~", "")
+    .replaceAll("~Prototype~", "")
+    .replaceAll("~Z~", "")
+    .replaceAll("~Unlicensed~", "")
+    .replace(/[^a-zA-Z0-9|]/g, "")
     .toLowerCase();
 };
 
 export const followersLookup = () => [
   {
     $lookup: {
-      from: 'users',
-      localField: 'followings',
-      foreignField: '_id',
-      as: 'followings',
+      from: "users",
+      localField: "followings",
+      foreignField: "_id",
+      as: "followings",
     },
   },
   {
     $project: {
       followings: {
         $map: {
-          input: '$followings',
-          as: 'following',
+          input: "$followings",
+          as: "following",
           in: {
-            _id: '$$following._id',
-            userName: '$$following.userName',
-            profilePicture: '$$following.profilePicture',
+            _id: "$$following._id",
+            userName: "$$following.userName",
+            profilePicture: "$$following.profilePicture",
           },
         },
       },
@@ -86,67 +86,67 @@ export const gamesLookup = (isBasic?: boolean) => [
     : []),
   {
     $lookup: {
-      from: 'igdbcovers',
-      localField: 'cover',
-      foreignField: '_id',
-      as: 'cover',
+      from: "igdbcovers",
+      localField: "cover",
+      foreignField: "_id",
+      as: "cover",
     },
   },
   {
     $addFields: {
       cover: {
-        $ifNull: [{ $arrayElemAt: ['$cover', 0] }, null],
+        $ifNull: [{ $arrayElemAt: ["$cover", 0] }, null],
       },
     },
   },
   {
     $lookup: {
-      from: 'ragames',
-      localField: 'raIds',
-      foreignField: '_id',
-      as: 'raIds',
+      from: "ragames",
+      localField: "raIds",
+      foreignField: "_id",
+      as: "raIds",
     },
   },
   {
     $lookup: {
-      from: 'igdbplatforms',
-      localField: 'platforms',
-      foreignField: '_id',
+      from: "igdbplatforms",
+      localField: "platforms",
+      foreignField: "_id",
       ...(!isBasic && {
         pipeline: [
           {
             $lookup: {
-              from: 'igdbfamilies',
-              localField: 'platform_family',
-              foreignField: '_id',
-              as: 'platform_family',
+              from: "igdbfamilies",
+              localField: "platform_family",
+              foreignField: "_id",
+              as: "platform_family",
             },
           },
           {
             $lookup: {
-              from: 'igdbplatformlogos',
-              localField: 'platform_logo',
-              foreignField: '_id',
-              as: 'platform_logo',
+              from: "igdbplatformlogos",
+              localField: "platform_logo",
+              foreignField: "_id",
+              as: "platform_logo",
             },
           },
           {
             $addFields: {
               platform_family: {
-                $ifNull: [{ $arrayElemAt: ['$platform_family', 0] }, null],
+                $ifNull: [{ $arrayElemAt: ["$platform_family", 0] }, null],
               },
             },
           },
           {
             $addFields: {
               platform_logo: {
-                $ifNull: [{ $arrayElemAt: ['$platform_logo', 0] }, null],
+                $ifNull: [{ $arrayElemAt: ["$platform_logo", 0] }, null],
               },
             },
           },
         ],
       }),
-      as: 'platforms',
+      as: "platforms",
     },
   },
   ...(!isBasic
@@ -155,7 +155,7 @@ export const gamesLookup = (isBasic?: boolean) => [
           $set: {
             release_dates: {
               $sortArray: {
-                input: '$release_dates',
+                input: "$release_dates",
                 sortBy: { date: 1 },
               },
             },
@@ -163,108 +163,108 @@ export const gamesLookup = (isBasic?: boolean) => [
         },
         {
           $lookup: {
-            from: 'igdbreleasedates',
-            localField: 'release_dates',
-            foreignField: '_id',
+            from: "igdbreleasedates",
+            localField: "release_dates",
+            foreignField: "_id",
             pipeline: [
               {
                 $lookup: {
-                  from: 'igdbplatforms',
-                  localField: 'platform',
-                  foreignField: '_id',
-                  as: 'platform',
+                  from: "igdbplatforms",
+                  localField: "platform",
+                  foreignField: "_id",
+                  as: "platform",
                 },
               },
               {
                 $addFields: {
                   platform: {
-                    $ifNull: [{ $arrayElemAt: ['$platform', 0] }, null],
+                    $ifNull: [{ $arrayElemAt: ["$platform", 0] }, null],
                   },
                 },
               },
             ],
-            as: 'release_dates',
+            as: "release_dates",
           },
         },
         {
           $lookup: {
-            from: 'igdbgenres',
-            localField: 'genres',
-            foreignField: '_id',
-            as: 'genres',
+            from: "igdbgenres",
+            localField: "genres",
+            foreignField: "_id",
+            as: "genres",
           },
         },
         {
           $lookup: {
-            from: 'igdbmodes',
-            localField: 'game_modes',
-            foreignField: '_id',
-            as: 'game_modes',
+            from: "igdbmodes",
+            localField: "game_modes",
+            foreignField: "_id",
+            as: "game_modes",
           },
         },
         {
           $lookup: {
-            from: 'igdbscreenshots',
-            localField: 'screenshots',
-            foreignField: '_id',
-            as: 'screenshots',
+            from: "igdbscreenshots",
+            localField: "screenshots",
+            foreignField: "_id",
+            as: "screenshots",
           },
         },
         {
           $lookup: {
-            from: 'igdbartworks',
-            localField: 'artworks',
-            foreignField: '_id',
-            as: 'artworks',
+            from: "igdbartworks",
+            localField: "artworks",
+            foreignField: "_id",
+            as: "artworks",
           },
         },
         {
           $lookup: {
-            from: 'igdbkeywords',
-            localField: 'keywords',
-            foreignField: '_id',
-            as: 'keywords',
+            from: "igdbkeywords",
+            localField: "keywords",
+            foreignField: "_id",
+            as: "keywords",
           },
         },
         {
           $lookup: {
-            from: 'igdbthemes',
-            localField: 'themes',
-            foreignField: '_id',
-            as: 'themes',
+            from: "igdbthemes",
+            localField: "themes",
+            foreignField: "_id",
+            as: "themes",
           },
         },
         {
           $lookup: {
-            from: 'igdbwebsites',
-            localField: 'websites',
-            foreignField: '_id',
-            as: 'websites',
+            from: "igdbwebsites",
+            localField: "websites",
+            foreignField: "_id",
+            as: "websites",
           },
         },
         {
           $lookup: {
-            from: 'igdbinvolvedcompanies',
-            localField: 'involved_companies',
-            foreignField: '_id',
+            from: "igdbinvolvedcompanies",
+            localField: "involved_companies",
+            foreignField: "_id",
             pipeline: [
               {
                 $lookup: {
-                  from: 'igdbcompanies',
-                  localField: 'company',
-                  foreignField: '_id',
-                  as: 'company',
+                  from: "igdbcompanies",
+                  localField: "company",
+                  foreignField: "_id",
+                  as: "company",
                 },
               },
               {
                 $addFields: {
                   company: {
-                    $ifNull: [{ $arrayElemAt: ['$company', 0] }, null],
+                    $ifNull: [{ $arrayElemAt: ["$company", 0] }, null],
                   },
                 },
               },
             ],
-            as: 'involved_companies',
+            as: "involved_companies",
           },
         },
       ]

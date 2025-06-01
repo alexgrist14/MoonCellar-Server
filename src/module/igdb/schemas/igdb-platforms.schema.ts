@@ -1,7 +1,7 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-import { IGDBFamilies } from './igdb-families.schema';
-import { IGDBPlatformLogos } from './igdb-platform-logos.schema';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument } from "mongoose";
+import { IGDBFamilies } from "./igdb-families.schema";
+import { IGDBPlatformLogos } from "./igdb-platform-logos.schema";
 
 export type IGDBPlatformsDocument = HydratedDocument<IGDBPlatforms>;
 

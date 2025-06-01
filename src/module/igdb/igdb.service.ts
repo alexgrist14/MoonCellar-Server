@@ -1,59 +1,59 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { igdbAuth, igdbParser } from './utils/igdb';
-import { IGDBCoverDocument, IGDBCovers } from './schemas/igdb-covers.schema';
-import { IGDBGenres, IGDBGenresDocument } from './schemas/igdb-genres.schema';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { igdbAuth, igdbParser } from "./utils/igdb";
+import { IGDBCoverDocument, IGDBCovers } from "./schemas/igdb-covers.schema";
+import { IGDBGenres, IGDBGenresDocument } from "./schemas/igdb-genres.schema";
 import {
   IGDBFamilies,
   IGDBFamiliesDocument,
-} from './schemas/igdb-families.schema';
+} from "./schemas/igdb-families.schema";
 import {
   IGDBPlatforms,
   IGDBPlatformsDocument,
-} from './schemas/igdb-platforms.schema';
-import { IGDBModes, IGDBModesDocument } from './schemas/igdb-modes.schema';
-import { IGDBFilters, ParserType } from './interface/common.interface';
+} from "./schemas/igdb-platforms.schema";
+import { IGDBModes, IGDBModesDocument } from "./schemas/igdb-modes.schema";
+import { IGDBFilters, ParserType } from "./interface/common.interface";
 import {
   IGDBKeywords,
   IGDBKeywordsDocument,
-} from './schemas/igdb-keywords.schema';
+} from "./schemas/igdb-keywords.schema";
 import {
   IGDBScreenshots,
   IGDBScreenshotsDocument,
-} from './schemas/igdb-screenshots.schema';
+} from "./schemas/igdb-screenshots.schema";
 import {
   IGDBArtworks,
   IGDBArtworksDocument,
-} from './schemas/igdb-artworks.schema';
-import { IGDBThemes, IGDBThemesDocument } from './schemas/igdb-themes.schema';
+} from "./schemas/igdb-artworks.schema";
+import { IGDBThemes, IGDBThemesDocument } from "./schemas/igdb-themes.schema";
 import {
   IGDBPlatformLogos,
   IGDBPlatformLogosDocument,
-} from './schemas/igdb-platform-logos.schema';
+} from "./schemas/igdb-platform-logos.schema";
 import {
   IGDBGames,
   IGDBGamesDocument,
-} from 'src/shared/schemas/igdb-games.schema';
-import { categories as gameCategories } from './constants/common';
-import { updateOrInsertValues } from 'src/shared/db';
+} from "src/shared/schemas/igdb-games.schema";
+import { categories as gameCategories } from "./constants/common";
+import { updateOrInsertValues } from "src/shared/db";
 import {
   IGDBWebsites,
   IGDBWebsitesDocument,
-} from './schemas/igdb-websites.schema';
+} from "./schemas/igdb-websites.schema";
 import {
   IGDBInvolvedCompanies,
   IGDBInvolvedCompaniesDocument,
-} from './schemas/igdb-involved-companies.schema';
+} from "./schemas/igdb-involved-companies.schema";
 import {
   IGDBCompanies,
   IGDBCompaniesDocument,
-} from './schemas/igdb-companies.schema';
+} from "./schemas/igdb-companies.schema";
 import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
-} from './schemas/igdb-release-dates.schema';
-import { gamesLookup } from 'src/shared/utils';
+} from "./schemas/igdb-release-dates.schema";
+import { gamesLookup } from "src/shared/utils";
 
 @Injectable()
 export class IGDBService {
@@ -87,7 +87,7 @@ export class IGDBService {
     @InjectModel(IGDBCompanies.name)
     private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
     @InjectModel(IGDBReleaseDates.name)
-    private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
+    private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -132,7 +132,7 @@ export class IGDBService {
     excluded,
     rating,
     search,
-    mode = 'any',
+    mode = "any",
     company,
     categories,
     years,
@@ -151,15 +151,15 @@ export class IGDBService {
     company?: string;
     years?: [number, number];
     categories?: (keyof typeof gameCategories)[];
-    mode?: 'any' | 'all';
+    mode?: "any" | "all";
     excludeGames?: number[];
   }) {
     const companies = !!company
       ? (
           await this.IGDBCompaniesModel.find({
             name: {
-              $regex: `${company.replaceAll(' ', '\\s*')}`,
-              $options: 'i',
+              $regex: `${company.replaceAll(" ", "\\s*")}`,
+              $options: "i",
             },
           })
         )?.map((company) => company._id)
@@ -173,13 +173,13 @@ export class IGDBService {
           { themes: { $exists: true } },
           { platforms: { $exists: true } },
           { game_modes: { $exists: true } },
-          ...(isOnlyWithAchievements === 'true' ||
+          ...(isOnlyWithAchievements === "true" ||
           isOnlyWithAchievements === true
             ? [
                 {
                   raIds: {
                     $exists: true,
-                    $type: 'array',
+                    $type: "array",
                     $ne: [],
                   },
                 },
@@ -194,9 +194,9 @@ export class IGDBService {
                 // },
                 {
                   name: {
-                    $regex: search.replaceAll(' ', '\\s*'),
+                    $regex: search.replaceAll(" ", "\\s*"),
 
-                    $options: 'i',
+                    $options: "i",
                   },
                 },
               ]
@@ -262,7 +262,7 @@ export class IGDBService {
             ? [
                 {
                   keywords:
-                    mode === 'any'
+                    mode === "any"
                       ? {
                           $in: Array.isArray(selected?.keywords)
                             ? selected?.keywords
@@ -280,7 +280,7 @@ export class IGDBService {
             ? [
                 {
                   themes:
-                    mode === 'any'
+                    mode === "any"
                       ? {
                           $in: Array.isArray(selected?.themes)
                             ? selected?.themes.map((theme) => theme)
@@ -309,7 +309,7 @@ export class IGDBService {
             ? [
                 {
                   genres:
-                    mode === 'any'
+                    mode === "any"
                       ? {
                           $in: Array.isArray(selected?.genres)
                             ? selected?.genres.map((genre) => genre)
@@ -338,7 +338,7 @@ export class IGDBService {
             ? [
                 {
                   platforms:
-                    mode === 'any'
+                    mode === "any"
                       ? {
                           $in: Array.isArray(selected?.platforms)
                             ? selected?.platforms.map((item) => item)
@@ -367,7 +367,7 @@ export class IGDBService {
             ? [
                 {
                   game_modes:
-                    mode === 'any'
+                    mode === "any"
                       ? {
                           $in: Array.isArray(selected?.modes)
                             ? selected?.modes.map((item) => item)
@@ -410,13 +410,13 @@ export class IGDBService {
             ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
             ...gamesLookup(true),
           ],
-          totalCount: [{ $count: 'count' }],
+          totalCount: [{ $count: "count" }],
         },
       },
       {
         $addFields: {
           total: {
-            $ifNull: [{ $arrayElemAt: ['$totalCount.count', 0] }, 0],
+            $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
           },
         },
       },
@@ -449,7 +449,7 @@ export class IGDBService {
 
   async getPlatforms() {
     return this.IGDBPlatformsModel.find()
-      .populate('platform_logo')
+      .populate("platform_logo")
       .sort({ name: 1 });
   }
 
@@ -461,10 +461,10 @@ export class IGDBService {
     return this.IGDBKeywordsModel.find(
       !!query && {
         name: {
-          $regex: `${query.replaceAll(' ', '\\s*')}`,
-          $options: 'i',
+          $regex: `${query.replaceAll(" ", "\\s*")}`,
+          $options: "i",
         },
-      },
+      }
     ).sort({ name: 1 });
   }
 
@@ -482,99 +482,99 @@ export class IGDBService {
 
   async parseAll() {
     await this.parser<IGDBCompaniesDocument>(
-      'companies',
-      this.IGDBCompaniesModel,
+      "companies",
+      this.IGDBCompaniesModel
     );
-    await this.parser<IGDBWebsitesDocument>('websites', this.IGDBWebsitesModel);
+    await this.parser<IGDBWebsitesDocument>("websites", this.IGDBWebsitesModel);
     await this.parser<IGDBInvolvedCompaniesDocument>(
-      'involved_companies',
-      this.IGDBInvolvedCompaniesModel,
+      "involved_companies",
+      this.IGDBInvolvedCompaniesModel
     );
-    await this.parser<IGDBThemesDocument>('themes', this.IGDBThemesModel);
-    await this.parser<IGDBKeywordsDocument>('keywords', this.IGDBKeywordsModel);
-    await this.parser<IGDBModesDocument>('modes', this.IGDBModesModel);
+    await this.parser<IGDBThemesDocument>("themes", this.IGDBThemesModel);
+    await this.parser<IGDBKeywordsDocument>("keywords", this.IGDBKeywordsModel);
+    await this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
     await this.parser<IGDBPlatformLogosDocument>(
-      'platform_logos',
-      this.IGDBPlatformLogosModel,
+      "platform_logos",
+      this.IGDBPlatformLogosModel
     );
-    await this.parser<IGDBFamiliesDocument>('families', this.IGDBFamiliesModel);
+    await this.parser<IGDBFamiliesDocument>("families", this.IGDBFamiliesModel);
     await this.parser<IGDBPlatformsDocument>(
-      'platforms',
-      this.IGDBPlatformsModel,
+      "platforms",
+      this.IGDBPlatformsModel
     );
-    await this.parser<IGDBGenresDocument>('genres', this.IGDBGenresModel);
+    await this.parser<IGDBGenresDocument>("genres", this.IGDBGenresModel);
     await this.parser<IGDBScreenshotsDocument>(
-      'screenshots',
-      this.IGDBScreenshotsModel,
+      "screenshots",
+      this.IGDBScreenshotsModel
     );
-    await this.parser<IGDBArtworksDocument>('artworks', this.IGDBArtworksModel);
-    await this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
+    await this.parser<IGDBArtworksDocument>("artworks", this.IGDBArtworksModel);
+    await this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
     await this.parser<IGDBReleaseDatesDocument>(
-      'release_dates',
-      this.IGDBReleaseDatesModel,
+      "release_dates",
+      this.IGDBReleaseDatesModel
     );
 
-    return this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
+    return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
   }
 
   async parseSelected(type: ParserType) {
     switch (type) {
-      case 'games':
-        return this.parser<IGDBGamesDocument>('games', this.IGDBGamesModel);
-      case 'covers':
-        return this.parser<IGDBCoverDocument>('covers', this.IGDBCoversModel);
-      case 'genres':
-        return this.parser<IGDBGenresDocument>('genres', this.IGDBGenresModel);
-      case 'modes':
-        return this.parser<IGDBModesDocument>('modes', this.IGDBModesModel);
-      case 'families':
+      case "games":
+        return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
+      case "covers":
+        return this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
+      case "genres":
+        return this.parser<IGDBGenresDocument>("genres", this.IGDBGenresModel);
+      case "modes":
+        return this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
+      case "families":
         return this.parser<IGDBFamiliesDocument>(type, this.IGDBFamiliesModel);
-      case 'platforms':
+      case "platforms":
         return this.parser<IGDBPlatformsDocument>(
-          'platforms',
-          this.IGDBPlatformsModel,
+          "platforms",
+          this.IGDBPlatformsModel
         );
-      case 'keywords':
+      case "keywords":
         return this.parser<IGDBKeywordsDocument>(
-          'keywords',
-          this.IGDBKeywordsModel,
+          "keywords",
+          this.IGDBKeywordsModel
         );
-      case 'themes':
-        return this.parser<IGDBThemesDocument>('themes', this.IGDBThemesModel);
-      case 'screenshots':
+      case "themes":
+        return this.parser<IGDBThemesDocument>("themes", this.IGDBThemesModel);
+      case "screenshots":
         return this.parser<IGDBScreenshotsDocument>(
-          'screenshots',
-          this.IGDBScreenshotsModel,
+          "screenshots",
+          this.IGDBScreenshotsModel
         );
-      case 'artworks':
+      case "artworks":
         return this.parser<IGDBArtworksDocument>(
-          'artworks',
-          this.IGDBArtworksModel,
+          "artworks",
+          this.IGDBArtworksModel
         );
-      case 'platform_logos':
+      case "platform_logos":
         return this.parser<IGDBPlatformLogosDocument>(
-          'platform_logos',
-          this.IGDBPlatformLogosModel,
+          "platform_logos",
+          this.IGDBPlatformLogosModel
         );
-      case 'websites':
+      case "websites":
         return this.parser<IGDBWebsitesDocument>(
-          'websites',
-          this.IGDBWebsitesModel,
+          "websites",
+          this.IGDBWebsitesModel
         );
-      case 'involved_companies':
+      case "involved_companies":
         return this.parser<IGDBInvolvedCompaniesDocument>(
-          'involved_companies',
-          this.IGDBInvolvedCompaniesModel,
+          "involved_companies",
+          this.IGDBInvolvedCompaniesModel
         );
-      case 'companies':
+      case "companies":
         return this.parser<IGDBCompaniesDocument>(
-          'companies',
-          this.IGDBCompaniesModel,
+          "companies",
+          this.IGDBCompaniesModel
         );
-      case 'release_dates':
+      case "release_dates":
         return this.parser<IGDBReleaseDatesDocument>(
-          'release_dates',
-          this.IGDBReleaseDatesModel,
+          "release_dates",
+          this.IGDBReleaseDatesModel
         );
     }
   }

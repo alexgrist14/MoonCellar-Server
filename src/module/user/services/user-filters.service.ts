@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
-import { Model } from 'mongoose';
-import { User } from 'src/module/user/schemas/user.schema';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import mongoose from "mongoose";
+import { Model } from "mongoose";
+import { User } from "src/module/user/schemas/user.schema";
 
 @Injectable()
 export class UserFiltersService {
@@ -13,24 +13,24 @@ export class UserFiltersService {
       .findOneAndUpdate(
         {
           _id: new mongoose.Types.ObjectId(userId),
-          'filters.name': { $ne: name },
+          "filters.name": { $ne: name },
         },
         [
           {
             $set: {
               filters: {
                 $concatArrays: [
-                  '$filters',
+                  "$filters",
                   [
                     {
                       $cond: {
                         if: {
                           $not: {
-                            $in: [{ name, filter }, '$filters'],
+                            $in: [{ name, filter }, "$filters"],
                           },
                         },
                         then: { name, filter },
-                        else: '$$REMOVE',
+                        else: "$$REMOVE",
                       },
                     },
                   ],
@@ -39,12 +39,12 @@ export class UserFiltersService {
             },
           },
         ],
-        { new: true },
+        { new: true }
       )
-      .select('filters');
+      .select("filters");
 
     if (!user) {
-      throw new BadRequestException('Filter already Exists!');
+      throw new BadRequestException("Filter already Exists!");
     }
 
     return user;
@@ -59,21 +59,21 @@ export class UserFiltersService {
             $set: {
               filters: {
                 $filter: {
-                  input: '$filters',
-                  cond: { $ne: ['$$this.name', name] },
+                  input: "$filters",
+                  cond: { $ne: ["$$this.name", name] },
                 },
               },
             },
           },
         ],
-        { new: true },
+        { new: true }
       )
-      .select('filters');
+      .select("filters");
   }
 
   async getFilters(userId: string) {
     return this.userModel
       .findOne({ _id: new mongoose.Types.ObjectId(userId) })
-      .select('filters');
+      .select("filters");
   }
 }

@@ -1,19 +1,19 @@
 export type ParserType =
-  | 'games'
-  | 'genres'
-  | 'covers'
-  | 'modes'
-  | 'platforms'
-  | 'families'
-  | 'screenshots'
-  | 'keywords'
-  | 'themes'
-  | 'artworks'
-  | 'websites'
-  | 'involved_companies'
-  | 'companies'
-  | 'release_dates'
-  | 'platform_logos';
+  | "games"
+  | "genres"
+  | "covers"
+  | "modes"
+  | "platforms"
+  | "families"
+  | "screenshots"
+  | "keywords"
+  | "themes"
+  | "artworks"
+  | "websites"
+  | "involved_companies"
+  | "companies"
+  | "release_dates"
+  | "platform_logos";
 
 export interface IGDBFilters {
   genres?: string[] | string;

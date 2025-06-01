@@ -1,17 +1,17 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-import { IGDBArtworks } from 'src/module/igdb/schemas/igdb-artworks.schema';
-import { IGDBCovers } from 'src/module/igdb/schemas/igdb-covers.schema';
-import { IGDBGenres } from 'src/module/igdb/schemas/igdb-genres.schema';
-import { IGDBInvolvedCompanies } from 'src/module/igdb/schemas/igdb-involved-companies.schema';
-import { IGDBKeywords } from 'src/module/igdb/schemas/igdb-keywords.schema';
-import { IGDBModes } from 'src/module/igdb/schemas/igdb-modes.schema';
-import { IGDBPlatforms } from 'src/module/igdb/schemas/igdb-platforms.schema';
-import { IGDBReleaseDates } from 'src/module/igdb/schemas/igdb-release-dates.schema';
-import { IGDBScreenshots } from 'src/module/igdb/schemas/igdb-screenshots.schema';
-import { IGDBThemes } from 'src/module/igdb/schemas/igdb-themes.schema';
-import { IGDBWebsites } from 'src/module/igdb/schemas/igdb-websites.schema';
-import { RAGame, RASchema } from 'src/module/retroach/schemas/retroach.schema';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument } from "mongoose";
+import { IGDBArtworks } from "src/module/igdb/schemas/igdb-artworks.schema";
+import { IGDBCovers } from "src/module/igdb/schemas/igdb-covers.schema";
+import { IGDBGenres } from "src/module/igdb/schemas/igdb-genres.schema";
+import { IGDBInvolvedCompanies } from "src/module/igdb/schemas/igdb-involved-companies.schema";
+import { IGDBKeywords } from "src/module/igdb/schemas/igdb-keywords.schema";
+import { IGDBModes } from "src/module/igdb/schemas/igdb-modes.schema";
+import { IGDBPlatforms } from "src/module/igdb/schemas/igdb-platforms.schema";
+import { IGDBReleaseDates } from "src/module/igdb/schemas/igdb-release-dates.schema";
+import { IGDBScreenshots } from "src/module/igdb/schemas/igdb-screenshots.schema";
+import { IGDBThemes } from "src/module/igdb/schemas/igdb-themes.schema";
+import { IGDBWebsites } from "src/module/igdb/schemas/igdb-websites.schema";
+import { RAGame, RASchema } from "src/module/retroach/schemas/retroach.schema";
 
 export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 

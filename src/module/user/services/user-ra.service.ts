@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
 import {
   buildAuthorization,
   getAchievementsEarnedBetween,
   getUserAwards,
   getUserProfile,
-} from '@retroachievements/api';
-import { Model } from 'mongoose';
-import { User } from 'src/module/user/schemas/user.schema';
-import { RA_MAIN_USER_NAME } from 'src/shared/constants';
+} from "@retroachievements/api";
+import { Model } from "mongoose";
+import { User } from "src/module/user/schemas/user.schema";
+import { RA_MAIN_USER_NAME } from "src/shared/constants";
 
 @Injectable()
 export class UserRAService {
@@ -27,9 +27,9 @@ export class UserRAService {
       this.authorization,
       {
         username: raUsername,
-        fromDate: new Date('2024-01-01'),
-        toDate: new Date('2026-01-01'),
-      },
+        fromDate: new Date("2024-01-01"),
+        toDate: new Date("2026-01-01"),
+      }
     );
 
     return achievements;
@@ -46,13 +46,13 @@ export class UserRAService {
 
   async setUserRAInfo(userId: string, raUsername: string) {
     const user = await this.userModel.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException("User not found");
 
     const userRAProfile = await getUserProfile(this.authorization, {
       username: raUsername,
     });
 
-    if (!userRAProfile) throw new NotFoundException('RA user not found');
+    if (!userRAProfile) throw new NotFoundException("RA user not found");
 
     const userAwards = await getUserAwards(this.authorization, {
       username: raUsername,

@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
-import { Model } from 'mongoose';
-import { User } from 'src/module/user/schemas/user.schema';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import mongoose from "mongoose";
+import { Model } from "mongoose";
+import { User } from "src/module/user/schemas/user.schema";
 
 @Injectable()
 export class UserPresetsService {
@@ -13,24 +13,24 @@ export class UserPresetsService {
       .findOneAndUpdate(
         {
           _id: new mongoose.Types.ObjectId(userId),
-          'presets.name': { $ne: name },
+          "presets.name": { $ne: name },
         },
         [
           {
             $set: {
               presets: {
                 $concatArrays: [
-                  '$presets',
+                  "$presets",
                   [
                     {
                       $cond: {
                         if: {
                           $not: {
-                            $in: [{ name, preset }, '$presets'],
+                            $in: [{ name, preset }, "$presets"],
                           },
                         },
                         then: { name, preset },
-                        else: '$$REMOVE',
+                        else: "$$REMOVE",
                       },
                     },
                   ],
@@ -39,12 +39,12 @@ export class UserPresetsService {
             },
           },
         ],
-        { new: true },
+        { new: true }
       )
-      .select('presets');
+      .select("presets");
 
     if (!user) {
-      throw new BadRequestException('Preset already Exists!');
+      throw new BadRequestException("Preset already Exists!");
     }
 
     return user;
@@ -59,21 +59,21 @@ export class UserPresetsService {
             $set: {
               presets: {
                 $filter: {
-                  input: '$presets',
-                  cond: { $ne: ['$$this.name', name] },
+                  input: "$presets",
+                  cond: { $ne: ["$$this.name", name] },
                 },
               },
             },
           },
         ],
-        { new: true },
+        { new: true }
       )
-      .select('presets');
+      .select("presets");
   }
 
   async getPresets(userId: string) {
     return this.userModel
       .findOne({ _id: new mongoose.Types.ObjectId(userId) })
-      .select('presets');
+      .select("presets");
   }
 }

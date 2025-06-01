@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
 @Schema()
 export class RAGame {
@@ -6,7 +6,7 @@ export class RAGame {
   _id: number;
   @Prop()
   title: string;
-  @Prop({ ref: 'RAConsoles' })
+  @Prop({ ref: "RAConsoles" })
   consoleId: number;
   @Prop()
   consoleName: string;

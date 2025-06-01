@@ -1,9 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { MaxLength } from 'class-validator';
-import mongoose, { Document } from 'mongoose';
-import { Role } from 'src/module/roles/enums/role.enum';
-import { IGDBGames } from 'src/shared/schemas/igdb-games.schema';
-import { IRAAward } from '../types/award';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { MaxLength } from "class-validator";
+import mongoose, { Document } from "mongoose";
+import { Role } from "src/module/roles/enums/role.enum";
+import { IGDBGames } from "src/shared/schemas/igdb-games.schema";
+import { IRAAward } from "../types/award";
 
 @Schema({
   timestamps: true,
@@ -12,13 +12,13 @@ export class User extends Document {
   @Prop({ unique: true, required: true })
   userName: string;
 
-  @Prop({ unique: [true, 'Duplicate email entered'] })
+  @Prop({ unique: [true, "Duplicate email entered"] })
   email: string;
 
   @Prop({ required: true })
   password: string;
 
-  @Prop({ default: '' })
+  @Prop({ default: "" })
   profilePicture?: string;
   @Prop()
   background?: string;
@@ -26,7 +26,7 @@ export class User extends Document {
   @Prop({ type: String })
   refreshToken?: string;
 
-  @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: 'User' }], default: [] })
+  @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
   followings: mongoose.Types.ObjectId[];
 
   @Prop({

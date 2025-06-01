@@ -3,7 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
 @Injectable()
 export class UserIdGuard implements CanActivate {
@@ -13,7 +13,7 @@ export class UserIdGuard implements CanActivate {
     const userId = request.params.userId;
 
     if (!user || user._id.toString() !== userId) {
-      throw new UnauthorizedException('You can only change your own account');
+      throw new UnauthorizedException("You can only change your own account");
     }
 
     return true;

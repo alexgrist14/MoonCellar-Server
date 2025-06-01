@@ -1,11 +1,11 @@
 export type categoriesType =
-  | 'completed'
-  | 'wishlist'
-  | 'dropped'
-  | 'playing'
-  | 'backlog'
-  | 'mastered'
-  | 'played';
+  | "completed"
+  | "wishlist"
+  | "dropped"
+  | "playing"
+  | "backlog"
+  | "mastered"
+  | "played";
 
 export interface ILogs {
   date: Date;
@@ -20,11 +20,11 @@ export interface IUserLogs {
 }
 
 export const categories: categoriesType[] = [
-  'completed',
-  'wishlist',
-  'dropped',
-  'playing',
-  'backlog',
-  'mastered',
-  'played',
+  "completed",
+  "wishlist",
+  "dropped",
+  "playing",
+  "backlog",
+  "mastered",
+  "played",
 ];

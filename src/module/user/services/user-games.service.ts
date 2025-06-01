@@ -1,25 +1,25 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
-import { User } from 'src/module/user/schemas/user.schema';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import mongoose, { Model } from "mongoose";
+import { User } from "src/module/user/schemas/user.schema";
 import {
   IGDBGames,
   IGDBGamesDocument,
-} from 'src/shared/schemas/igdb-games.schema';
-import { gamesLookup } from 'src/shared/utils';
-import { categories, categoriesType } from '../types/actions';
+} from "src/shared/schemas/igdb-games.schema";
+import { gamesLookup } from "src/shared/utils";
+import { categories, categoriesType } from "../types/actions";
 
 @Injectable()
 export class UserGamesService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>,
+    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>
   ) {}
 
   async addGameToCategory(
     userId: string,
     gameId: number,
-    category: categoriesType,
+    category: categoriesType
   ): Promise<User> {
     const filterCategories = categories
       .filter((cat) => cat !== category)
@@ -27,15 +27,15 @@ export class UserGamesService {
         res[`games.${category}`] = {
           $filter: {
             input: `$games.${category}`,
-            as: 'gameId',
-            cond: { $ne: ['$$gameId', Number(gameId)] },
+            as: "gameId",
+            cond: { $ne: ["$$gameId", Number(gameId)] },
           },
         };
         return res;
       }, {});
 
     if (!this.gamesModel.exists({ _id: gameId })) {
-      throw new BadRequestException('Game not found!');
+      throw new BadRequestException("Game not found!");
     }
 
     const user = await this.userModel.findOneAndUpdate(
@@ -56,17 +56,17 @@ export class UserGamesService {
                   $and: [
                     {
                       $eq: [
-                        { $arrayElemAt: ['$logs.gameId', -1] },
+                        { $arrayElemAt: ["$logs.gameId", -1] },
                         Number(gameId),
                       ],
                     },
-                    { $eq: [{ $arrayElemAt: ['$logs.isAdd', -1] }, true] },
+                    { $eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
                   ],
                 },
                 then: {
                   $concatArrays: [
                     {
-                      $slice: ['$logs', { $subtract: [{ $size: '$logs' }, 1] }],
+                      $slice: ["$logs", { $subtract: [{ $size: "$logs" }, 1] }],
                     },
                     [
                       {
@@ -75,12 +75,12 @@ export class UserGamesService {
                           $cond: {
                             if: {
                               $regexMatch: {
-                                input: { $arrayElemAt: ['$logs.action', -1] },
+                                input: { $arrayElemAt: ["$logs.action", -1] },
                                 regex: /rating/,
                               },
                             },
                             then: {
-                              $concat: ['rating and ', category],
+                              $concat: ["rating and ", category],
                             },
                             else: category,
                           },
@@ -89,7 +89,7 @@ export class UserGamesService {
                         gameId: Number(gameId),
                         rating: {
                           $ifNull: [
-                            { $arrayElemAt: ['$logs.rating', -1] },
+                            { $arrayElemAt: ["$logs.rating", -1] },
                             null,
                           ],
                         },
@@ -99,7 +99,7 @@ export class UserGamesService {
                 },
                 else: {
                   $concatArrays: [
-                    '$logs',
+                    "$logs",
                     [
                       {
                         date: new Date(Date.now()),
@@ -115,11 +115,11 @@ export class UserGamesService {
           },
         },
       ],
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
-      throw new BadRequestException('User or category not found!');
+      throw new BadRequestException("User or category not found!");
     }
 
     return user;
@@ -128,7 +128,7 @@ export class UserGamesService {
   async removeGameFromCategory(
     userId: string,
     gameId: number,
-    category: categoriesType,
+    category: categoriesType
   ): Promise<User> {
     const user = this.userModel.findOneAndUpdate(
       {
@@ -141,8 +141,8 @@ export class UserGamesService {
             [`games.${category}`]: {
               $filter: {
                 input: `$games.${category}`,
-                as: 'gameId',
-                cond: { $ne: ['$$gameId', Number(gameId)] },
+                as: "gameId",
+                cond: { $ne: ["$$gameId", Number(gameId)] },
               },
             },
             logs: {
@@ -161,11 +161,11 @@ export class UserGamesService {
           },
         },
       ],
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
-      throw new BadRequestException('User or category not found!');
+      throw new BadRequestException("User or category not found!");
     }
 
     return user;
@@ -174,7 +174,7 @@ export class UserGamesService {
   async addGameRating(
     userId: string,
     gameId: number,
-    rating: number,
+    rating: number
   ): Promise<User> {
     const user = await this.userModel.findOneAndUpdate(
       {
@@ -186,24 +186,24 @@ export class UserGamesService {
             gamesRating: {
               $cond: {
                 if: {
-                  $in: [Number(gameId), '$gamesRating.game'],
+                  $in: [Number(gameId), "$gamesRating.game"],
                 },
                 then: {
                   $map: {
-                    input: '$gamesRating',
-                    as: 'gameRating',
+                    input: "$gamesRating",
+                    as: "gameRating",
                     in: {
                       $cond: {
-                        if: { $eq: ['$$gameRating.game', Number(gameId)] },
+                        if: { $eq: ["$$gameRating.game", Number(gameId)] },
                         then: { game: Number(gameId), rating: rating },
-                        else: '$$gameRating',
+                        else: "$$gameRating",
                       },
                     },
                   },
                 },
                 else: {
                   $concatArrays: [
-                    '$gamesRating',
+                    "$gamesRating",
                     [{ game: Number(gameId), rating: rating }],
                   ],
                 },
@@ -215,17 +215,17 @@ export class UserGamesService {
                   $and: [
                     {
                       $eq: [
-                        { $arrayElemAt: ['$logs.gameId', -1] },
+                        { $arrayElemAt: ["$logs.gameId", -1] },
                         Number(gameId),
                       ],
                     },
-                    { $eq: [{ $arrayElemAt: ['$logs.isAdd', -1] }, true] },
+                    { $eq: [{ $arrayElemAt: ["$logs.isAdd", -1] }, true] },
                   ],
                 },
                 then: {
                   $concatArrays: [
                     {
-                      $slice: ['$logs', { $subtract: [{ $size: '$logs' }, 1] }],
+                      $slice: ["$logs", { $subtract: [{ $size: "$logs" }, 1] }],
                     },
                     [
                       {
@@ -235,19 +235,19 @@ export class UserGamesService {
                             if: {
                               $not: {
                                 $regexMatch: {
-                                  input: { $arrayElemAt: ['$logs.action', -1] },
+                                  input: { $arrayElemAt: ["$logs.action", -1] },
                                   regex: /rating/,
                                 },
                               },
                             },
                             then: {
                               $concat: [
-                                'rating and ',
-                                { $arrayElemAt: ['$logs.action', -1] },
+                                "rating and ",
+                                { $arrayElemAt: ["$logs.action", -1] },
                               ],
                             },
                             else: {
-                              $arrayElemAt: ['$logs.action', -1],
+                              $arrayElemAt: ["$logs.action", -1],
                             },
                           },
                         },
@@ -260,11 +260,11 @@ export class UserGamesService {
                 },
                 else: {
                   $concatArrays: [
-                    '$logs',
+                    "$logs",
                     [
                       {
                         date: new Date(Date.now()),
-                        action: 'rating',
+                        action: "rating",
                         isAdd: true,
                         rating: rating,
                         gameId: Number(gameId),
@@ -277,11 +277,11 @@ export class UserGamesService {
           },
         },
       ],
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
-      throw new BadRequestException('User not found!');
+      throw new BadRequestException("User not found!");
     }
 
     return user;
@@ -290,7 +290,7 @@ export class UserGamesService {
   async removeGameRating(userId: string, gameId: number): Promise<User> {
     await this.userModel.updateOne(
       { _id: new mongoose.Types.ObjectId(userId) },
-      { $pull: { gamesRating: { game: Number(gameId) } } },
+      { $pull: { gamesRating: { game: Number(gameId) } } }
     );
     const user = await this.userModel.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(userId) },
@@ -299,11 +299,11 @@ export class UserGamesService {
           $set: {
             logs: {
               $concatArrays: [
-                '$logs',
+                "$logs",
                 [
                   {
                     date: new Date(Date.now()),
-                    action: 'rating',
+                    action: "rating",
                     isAdd: false,
                     gameId: Number(gameId),
                   },
@@ -313,11 +313,11 @@ export class UserGamesService {
           },
         },
       ],
-      { new: true },
+      { new: true }
     );
 
     if (!user) {
-      throw new BadRequestException('User not found!');
+      throw new BadRequestException("User not found!");
     }
 
     return user;
@@ -342,25 +342,25 @@ export class UserGamesService {
         },
         {
           $lookup: {
-            from: 'igdbgames',
+            from: "igdbgames",
             localField: `games.${category}`,
-            foreignField: '_id',
+            foreignField: "_id",
             let: { ids: `$games.${category}` },
             pipeline: [
               {
                 $match: {
-                  $expr: { $in: ['$_id', '$$ids'] },
+                  $expr: { $in: ["$_id", "$$ids"] },
                 },
               },
               {
                 $addFields: {
                   sort: {
-                    $indexOfArray: ['$$ids', '$_id'],
+                    $indexOfArray: ["$$ids", "$_id"],
                   },
                 },
               },
               { $sort: { sort: -1 } },
-              { $addFields: { sort: '$$REMOVE' } },
+              { $addFields: { sort: "$$REMOVE" } },
               ...gamesLookup(true),
             ],
             as: `games.${category}`,

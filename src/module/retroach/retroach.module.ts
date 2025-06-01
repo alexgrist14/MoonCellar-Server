@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { RetroachievementsService } from './services/retroach.service';
-import { RetroachievementsController } from './controllers/retroach.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { RAGame, RASchema } from './schemas/retroach.schema';
-import { RAConsole, RAConsoleSchema } from './schemas/console.schema';
+import { Module } from "@nestjs/common";
+import { RetroachievementsService } from "./services/retroach.service";
+import { RetroachievementsController } from "./controllers/retroach.controller";
+import { MongooseModule } from "@nestjs/mongoose";
+import { RAGame, RASchema } from "./schemas/retroach.schema";
+import { RAConsole, RAConsoleSchema } from "./schemas/console.schema";
 import {
   IGDBGames,
   IGDBGamesSchema,
-} from 'src/shared/schemas/igdb-games.schema';
+} from "src/shared/schemas/igdb-games.schema";
 
 @Module({
   imports: [

@@ -1,8 +1,8 @@
-import { Model } from 'mongoose';
+import { Model } from "mongoose";
 
 export const getCount = async <T>(model: Model<T>) => {
   console.log(`${model.modelName}: ${await model.countDocuments({})}`);
-  console.log('');
+  console.log("");
 };
 
 export const updateOrInsertValues = <T>(model: Model<T>, items: unknown) => {
@@ -13,6 +13,6 @@ export const updateOrInsertValues = <T>(model: Model<T>, items: unknown) => {
         update: { $set: { ...item, id: undefined, _id: item.id } },
         upsert: true,
       },
-    })),
+    }))
   );
 };

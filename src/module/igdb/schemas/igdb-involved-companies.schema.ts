@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-import { IGDBCompanies } from './igdb-companies.schema';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument } from "mongoose";
+import { IGDBCompanies } from "./igdb-companies.schema";
 
 export type IGDBInvolvedCompaniesDocument =
   HydratedDocument<IGDBInvolvedCompanies>;
@@ -22,5 +22,5 @@ export class IGDBInvolvedCompanies {
 }
 
 export const IGDBInvolvedCompaniesSchema = SchemaFactory.createForClass(
-  IGDBInvolvedCompanies,
+  IGDBInvolvedCompanies
 );

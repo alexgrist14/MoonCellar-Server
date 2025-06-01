@@ -1,19 +1,19 @@
-import { Controller, Get, Param, Patch } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UserRAService } from '../services/user-ra.service';
+import { Controller, Get, Param, Patch } from "@nestjs/common";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { UserRAService } from "../services/user-ra.service";
 
-@ApiTags('User RA')
-@Controller('user')
+@ApiTags("User RA")
+@Controller("user")
 export class UserRAController {
   constructor(private readonly userRAService: UserRAService) {}
 
-  @Get('/ra/:raUsername')
-  @ApiOperation({ summary: 'Get RA user achievements' })
+  @Get("/ra/:raUsername")
+  @ApiOperation({ summary: "Get RA user achievements" })
   @ApiResponse({
     status: 200,
-    description: 'Success',
+    description: "Success",
   })
-  async getAchievements(@Param('raUsername') raUsername: string) {
+  async getAchievements(@Param("raUsername") raUsername: string) {
     return this.userRAService.getUserAchievements(raUsername);
   }
 
@@ -26,15 +26,15 @@ export class UserRAController {
   // async getAwards(@Param('raUsername') raUsername: string){
   //     return this.userRAService.getUserAwards(raUsername);
   // }
-  @Patch('/ra/:userId/:raUserName')
-  @ApiOperation({ summary: 'Set RA user info' })
+  @Patch("/ra/:userId/:raUserName")
+  @ApiOperation({ summary: "Set RA user info" })
   @ApiResponse({
     status: 201,
-    description: 'Success',
+    description: "Success",
   })
   async setUserInfo(
-    @Param('userId') userId: string,
-    @Param('raUserName') raUserName: string,
+    @Param("userId") userId: string,
+    @Param("raUserName") raUserName: string
   ) {
     return this.userRAService.setUserRAInfo(userId, raUserName);
   }

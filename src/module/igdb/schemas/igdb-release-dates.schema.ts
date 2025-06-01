@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-import { IGDBPlatforms } from './igdb-platforms.schema';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument } from "mongoose";
+import { IGDBPlatforms } from "./igdb-platforms.schema";
 
 export type IGDBReleaseDatesDocument = HydratedDocument<IGDBReleaseDates>;
 

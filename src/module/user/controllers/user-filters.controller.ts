@@ -7,57 +7,57 @@ import {
   Put,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+} from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
-} from '@nestjs/swagger';
-import { UserIdGuard } from 'src/module/auth/user.guard';
-import { FilterDto } from '../dto/filters.dto';
-import { UserFiltersService } from '../services/user-filters.service';
+} from "@nestjs/swagger";
+import { UserIdGuard } from "src/module/auth/user.guard";
+import { FilterDto } from "../dto/filters.dto";
+import { UserFiltersService } from "../services/user-filters.service";
 
-@ApiTags('User Filters')
-@Controller('user')
+@ApiTags("User Filters")
+@Controller("user")
 export class UserFiltersController {
   constructor(private readonly userFiltersService: UserFiltersService) {}
 
-  @Put('filters/:userId')
+  @Put("filters/:userId")
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), UserIdGuard)
-  @ApiOperation({ summary: 'Save filter to user' })
-  @ApiResponse({ status: 200, description: 'Success' })
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Save filter to user" })
+  @ApiResponse({ status: 200, description: "Success" })
   async addFilter(
-    @Param('userId') userId: string,
-    @Body() filterDto: FilterDto,
+    @Param("userId") userId: string,
+    @Body() filterDto: FilterDto
   ) {
     return await this.userFiltersService.addFilter(
       userId,
       filterDto.name,
-      filterDto.filter,
+      filterDto.filter
     );
   }
 
-  @Delete('filters/:userId')
+  @Delete("filters/:userId")
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), UserIdGuard)
-  @ApiOperation({ summary: 'Remove filter from user' })
-  @ApiResponse({ status: 200, description: 'Success' })
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Remove filter from user" })
+  @ApiResponse({ status: 200, description: "Success" })
   async deleteFilter(
-    @Param('userId') userId: string,
-    @Query('name') name: string,
+    @Param("userId") userId: string,
+    @Query("name") name: string
   ) {
     return await this.userFiltersService.removeFilter(userId, name);
   }
 
-  @Get('filters/:userId')
+  @Get("filters/:userId")
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), UserIdGuard)
-  @ApiOperation({ summary: 'Get user filters' })
-  @ApiResponse({ status: 200, description: 'Success' })
-  async getFilters(@Param('userId') userId: string) {
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Get user filters" })
+  @ApiResponse({ status: 200, description: "Success" })
+  async getFilters(@Param("userId") userId: string) {
     return await this.userFiltersService.getFilters(userId);
   }
 }
