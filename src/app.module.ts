@@ -9,6 +9,7 @@ import { IgdbModule } from "./module/igdb/igdb.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { rootDir } from "./shared/constants";
 import { RetroachievementsModule } from "./module/retroach/retroach.module";
+import { GamesModule } from "./module/games/games.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { RetroachievementsModule } from "./module/retroach/retroach.module";
     }),
     AuthModule,
     UserModule,
+    GamesModule,
     IgdbModule,
     RetroachievementsModule,
     ServeStaticModule.forRoot({
