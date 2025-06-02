@@ -1,8 +1,11 @@
-import { Prop, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { Document } from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 import { ILogType } from "../types/logs";
 
-export class UserLogs extends Document {
+export type UserLogsDocument = HydratedDocument<UserLogs>;
+
+@Schema()
+export class UserLogs {
   @Prop({
     type: {
       date: { type: Date, default: Date.now, required: false },
