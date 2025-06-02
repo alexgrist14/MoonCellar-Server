@@ -21,7 +21,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { UserIdGuard } from "src/module/auth/user.guard";
-import { categories, categoriesType } from "../types/actions";
+import { categories, CategoriesType } from "../types/actions";
 import { AddGameRatingDto } from "../dto/add-game-rating.dto";
 import { Role } from "src/module/roles/enums/role.enum";
 import { Roles } from "src/module/roles/roles.decorator";
@@ -40,7 +40,7 @@ export class UserGamesController {
   async addGameToCategory(
     @Param("userId") userId: string,
     @Param("gameId") gameId: number,
-    @Query("category") category: categoriesType
+    @Query("category") category: CategoriesType
   ) {
     return this.userGamesService.addGameToCategory(userId, gameId, category);
   }
@@ -66,7 +66,7 @@ export class UserGamesController {
   async removeGameFromCategory(
     @Param("userId") userId: string,
     @Param("gameId") gameId: number,
-    @Query("category") category: categoriesType
+    @Query("category") category: CategoriesType
   ) {
     return this.userGamesService.removeGameFromCategory(
       userId,
@@ -112,7 +112,7 @@ export class UserGamesController {
   @ApiQuery({ name: "category", enum: categories })
   async getUserGames(
     @Param("userId") userId: string,
-    @Query("category") category: categoriesType
+    @Query("category") category: CategoriesType
   ) {
     return this.userGamesService.getUserGames(userId, category);
   }

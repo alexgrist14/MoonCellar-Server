@@ -7,7 +7,7 @@ import {
   IGDBGamesDocument,
 } from "src/shared/schemas/igdb-games.schema";
 import { gamesLookup } from "src/shared/utils";
-import { categories, categoriesType } from "../types/actions";
+import { categories, CategoriesType } from "../types/actions";
 import { UserLogsService } from "./user-logs.service";
 
 @Injectable()
@@ -21,7 +21,7 @@ export class UserGamesService {
   async addGameToCategory(
     userId: string,
     gameId: number,
-    category: categoriesType
+    category: CategoriesType
   ): Promise<User> {
     const filterCategories = categories
       .filter((cat) => cat !== category)
@@ -135,7 +135,7 @@ export class UserGamesService {
   async removeGameFromCategory(
     userId: string,
     gameId: number,
-    category: categoriesType
+    category: CategoriesType
   ): Promise<User> {
     const user = this.userModel.findOneAndUpdate(
       {
@@ -341,7 +341,7 @@ export class UserGamesService {
     return gamesLength;
   }
 
-  async getUserGames(userId: string, category: categoriesType) {
+  async getUserGames(userId: string, category: CategoriesType) {
     return (
       await this.userModel.aggregate([
         {

@@ -1,10 +1,9 @@
-export type categoriesType =
+export type CategoriesType =
   | "completed"
   | "wishlist"
   | "dropped"
   | "playing"
   | "backlog"
-  | "mastered"
   | "played";
 
 export interface ILogs {
@@ -19,12 +18,11 @@ export interface IUserLogs {
   logs: ILogs[];
 }
 
-export const categories: categoriesType[] = [
+export const categories: CategoriesType[] = [
   "completed",
   "wishlist",
   "dropped",
   "playing",
   "backlog",
-  "mastered",
   "played",
 ];
