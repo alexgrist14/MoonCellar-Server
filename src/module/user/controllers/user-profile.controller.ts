@@ -15,7 +15,6 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
-  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCookieAuth,
@@ -32,6 +31,9 @@ import { User } from "../schemas/user.schema";
 import { FileUploadService } from "../services/file-upload.service";
 import { UserProfileService } from "../services/user-profile.service";
 import { BackgroundDto } from "../dto/background.dto";
+import { RolesGuard } from "src/module/roles/roles.guard";
+import { Role } from "src/module/roles/enums/role.enum";
+import { Roles } from "src/module/roles/roles.decorator";
 
 @ApiTags("User Profile")
 @Controller("user")
@@ -180,6 +182,8 @@ export class UserProfileController {
   }
 
   @Patch("description/:userId")
+  @UseGuards(RolesGuard)
+  @Roles(Role.Moderator, Role.Admin)
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Update user description" })

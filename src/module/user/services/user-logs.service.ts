@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { ILogType, UserLogs } from "../schemas/user-logs.schema";
+import { UserLogs } from "../schemas/user-logs.schema";
+import { ILogType } from "../types/logs";
 
 @Injectable()
 export class UserLogsService {
@@ -27,7 +28,8 @@ export class UserLogsService {
       throw new BadRequestException("Something went wrong");
     }
 
-    await userLog.save();
-    return userLog;
+    return userLog.save();
   }
+
+  async getUserLogs(userId: string, take: number) {}
 }

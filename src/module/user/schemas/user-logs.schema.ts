@@ -1,7 +1,6 @@
 import { Prop, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { Document } from "mongoose";
-
-export type ILogType = "list" | "custom" | "rating";
+import { ILogType } from "../types/logs";
 
 export class UserLogs extends Document {
   @Prop({
@@ -10,11 +9,11 @@ export class UserLogs extends Document {
     },
   })
   date: Date;
+  @Prop()
   type: ILogType;
+  @Prop()
   text: string;
-  // action: string;
-  // isAdd: boolean;
-  // rating?: number | undefined;
+  @Prop()
   gameId: number;
   @Prop({ ref: "User" })
   userId: mongoose.Types.ObjectId;

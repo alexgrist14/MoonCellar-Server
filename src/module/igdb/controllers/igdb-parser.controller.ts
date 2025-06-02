@@ -13,6 +13,7 @@ import { AuthGuard } from "@nestjs/passport";
 import { UserIdGuard } from "src/module/auth/user.guard";
 import { Roles } from "src/module/roles/roles.decorator";
 import { Role } from "src/module/roles/enums/role.enum";
+import { RolesGuard } from "src/module/roles/roles.guard";
 
 @ApiTags("IGDB Parser")
 @Controller("igdb-parser")
@@ -20,7 +21,9 @@ export class IgdbParserController {
   constructor(private readonly service: IGDBService) {}
 
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  //@UseGuards(AuthGuard("jwt"))
+  // @UseGuards(RolesGuard)
+  // @Roles(Role.Admin)
   @Get("/token")
   @ApiOperation({ summary: "Get IGDB token" })
   @ApiResponse({ status: 200, description: "Successfully started" })

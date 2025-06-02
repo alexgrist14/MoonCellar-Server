@@ -119,7 +119,7 @@ export class UserGamesService {
       ],
       { new: true }
     );
-    const userLog = await this.userLogsService.createUserLog(
+    await this.userLogsService.createUserLog(
       userId,
       "list",
       `Add to ${category}`,
