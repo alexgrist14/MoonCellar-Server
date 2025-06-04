@@ -87,8 +87,7 @@ export class AuthController {
   }
 
   @Post("/refresh-token")
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt-refresh"))
   @ApiOperation({ summary: "Refresh token" })
   @ApiResponse({ status: 200, description: "Refresh successful" })
   async refreshToken(
@@ -97,6 +96,7 @@ export class AuthController {
     @Headers() headers?: any
   ): Promise<Response> {
     const oldRefreshToken = req.cookies.refreshMoonToken;
+    console.log(oldRefreshToken, req.cookies);
 
     if (oldRefreshToken) {
       const payload = this.jwtService.verify(oldRefreshToken, {

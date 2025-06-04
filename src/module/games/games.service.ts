@@ -34,10 +34,17 @@ export class GamesService {
     id: mongoose.Types.ObjectId,
     data: UpdatePlaythroughDTO
   ) {
-    return await this.GamesPlaythrouhgs.findOneAndUpdate({ _id: id }, data);
+    return await this.GamesPlaythrouhgs.findOneAndUpdate({ _id: id }, data, {
+      new: true,
+    });
   }
 
   async deletePlaythrough(id: mongoose.Types.ObjectId) {
-    return await this.GamesPlaythrouhgs.findOneAndDelete({ _id: id });
+    return await this.GamesPlaythrouhgs.findOneAndDelete(
+      { _id: id },
+      {
+        new: true,
+      }
+    );
   }
 }
