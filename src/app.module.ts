@@ -9,6 +9,8 @@ import { IgdbModule } from "./module/igdb/igdb.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { RetroachievementsModule } from "./module/retroach/retroach.module";
 import { GamesModule } from "./module/games/games.module";
+import { APP_PIPE } from "@nestjs/core";
+import { ZodValidationPipe } from "@anatine/zod-nestjs";
 
 @Module({
   imports: [
@@ -26,6 +28,12 @@ import { GamesModule } from "./module/games/games.module";
       rootPath: `/var/www/uploads/photos`,
       serveRoot: "/photos",
     }),
+  ],
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ZodValidationPipe,
+    },
   ],
 })
 export class AppModule {}

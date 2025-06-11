@@ -6,9 +6,12 @@ import { ValidationPipe } from "@nestjs/common";
 import * as cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { rootDir } from "./shared/constants";
+import { patchNestjsSwagger } from "@anatine/zod-nestjs";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  patchNestjsSwagger();
 
   app.useStaticAssets(`${rootDir}/uploads/photos`);
   app.use(cookieParser());

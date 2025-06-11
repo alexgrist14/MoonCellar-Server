@@ -35,6 +35,8 @@
     ]
   },
   "dependencies": {
+    "@anatine/zod-nestjs": "^2.0.12",
+    "@anatine/zod-openapi": "^2.2.8",
     "@nestjs/common": "^11.1.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.0",
@@ -63,13 +65,15 @@
     "lint-staged": "^15.5.1",
     "mongoose": "^8.14.1",
     "multer": "^1.4.5-lts.2",
+    "openapi3-ts": "^4.4.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typescript-eslint": "^8.31.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^3.25.58"
   },
   "devDependencies": {
     "@automock/adapters.nestjs": "^2.1.0",

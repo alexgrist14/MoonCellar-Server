@@ -28,6 +28,8 @@ export class GamesPlaythroughs {
   IGDBReleaseDateId: number;
   @Prop()
   isMastered: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const IGamesPlaythroughsSchema =

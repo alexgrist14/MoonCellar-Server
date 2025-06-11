@@ -7,6 +7,7 @@ import {
 } from "./schemas/games-playthroughs.schema";
 import { GamesController } from "./games.controller";
 import { GamesService } from "./games.service";
+import { User, UserSchema } from "../user/schemas/user.schema";
 
 @Module({
   controllers: [GamesController],
@@ -14,6 +15,7 @@ import { GamesService } from "./games.service";
   imports: [
     MongooseModule.forFeature([
       { name: GamesPlaythroughs.name, schema: IGamesPlaythroughsSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
 })
