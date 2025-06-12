@@ -29,16 +29,12 @@ export class GamesController {
 
   @Get("/playthroughs")
   @ApiOperation({ summary: "Get playthroughs" })
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
   async getPlaythroughsController(@Query() dto: GetPlaythroughsRequestDto) {
     return this.service.getPlaythroughs(dto);
   }
 
   @Get("/playthroughs/minimal")
   @ApiOperation({ summary: "Get playthroughs (minimal)" })
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
   async getPlaythroughsMinimalController(
     @Query() dto: GetPlaythroughsRequestDto
   ) {
