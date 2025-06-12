@@ -28,7 +28,9 @@ export class GamesPlaythroughs {
   IGDBReleaseDateId: number;
   @Prop()
   isMastered: boolean;
+  @Prop()
   createdAt: string;
+  @Prop()
   updatedAt: string;
 }
 

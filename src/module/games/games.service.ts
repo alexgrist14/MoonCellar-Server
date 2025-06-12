@@ -10,15 +10,14 @@ import {
   ISavePlaythroughRequest,
   IUpdatePlaythroughRequest,
 } from "src/shared/zod/schemas/playthroughs.schema";
-import { User } from "../user/schemas/user.schema";
-import { categories, CategoriesType } from "../user/types/actions";
+import { UserLogsService } from "../user/services/user-logs.service";
 
 @Injectable()
 export class GamesService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(GamesPlaythroughs.name)
-    private GamesPlaythrouhgs: Model<IGamesPlaythroughsDocument>
+    private GamesPlaythrouhgs: Model<IGamesPlaythroughsDocument>,
+    private readonly logsService: UserLogsService
   ) {}
 
   async getPlaythroughs(data: IGetPlaythroughsRequest) {
@@ -32,62 +31,63 @@ export class GamesService {
     return await this.GamesPlaythrouhgs.find({
       ...data,
       userId: new mongoose.Types.ObjectId(data.userId),
-    }).select("_id category gameId isMastered");
+    }).select("_id category gameId isMastered updatedAt");
   }
 
   async savePlaythrough(data: ISavePlaythroughRequest) {
-    return await this.GamesPlaythrouhgs.create({
+    const play = await this.GamesPlaythrouhgs.create({
       ...data,
       createdAt: new Date().toISOString(),
-      updateAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
+
+    await this.logsService.createUserLog(
+      play.userId.toString(),
+      "list",
+      `Added to ${play.isMastered ? "mastered" : play.category}`,
+      play.gameId
+    );
+
+    return play;
   }
 
   async updatePlaythrough(
     id: mongoose.Types.ObjectId,
     data: IUpdatePlaythroughRequest
   ) {
-    return await this.GamesPlaythrouhgs.findOneAndUpdate(
+    const play = await this.GamesPlaythrouhgs.findOneAndUpdate(
       { _id: id },
-      { ...data, updateAt: new Date().toISOString() },
+      { ...data, updatedAt: new Date().toISOString() },
       {
         new: true,
       }
     );
+
+    await this.logsService.createUserLog(
+      play.userId.toString(),
+      "list",
+      `Added to ${play.isMastered ? "mastered" : play.category}`,
+      play.gameId
+    );
+
+    return play;
   }
 
   async deletePlaythrough(id: mongoose.Types.ObjectId) {
-    return await this.GamesPlaythrouhgs.findOneAndDelete(
+    const play = await this.GamesPlaythrouhgs.findOneAndDelete(
       { _id: id },
       {
         new: true,
       }
     );
-  }
 
-  async parsePlaythroughs() {
-    const users = await this.userModel.find();
+    await this.logsService.createUserLog(
+      play.userId.toString(),
+      "list",
+      `Removed from ${play.isMastered ? "mastered" : play.category}`,
+      play.gameId
+    );
 
-    for (const user of users) {
-      console.log(user.userName);
-      for (const key in user.games) {
-        if (
-          !!user.games?.[key]?.length &&
-          categories.includes(key as CategoriesType)
-        ) {
-          console.log(key);
-          for (const gameId of user.games[key]) {
-            await this.GamesPlaythrouhgs.create({
-              userId: user._id,
-              gameId,
-              category: key === "mastered" ? "completed" : key,
-              isMastered: key === "mastered",
-            });
-          }
-        }
-      }
-    }
-
-    return;
+    return play;
   }
 }

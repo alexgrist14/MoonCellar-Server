@@ -10,16 +10,9 @@ import {
   Put,
   Query,
   UseGuards,
-  UsePipes,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import {
-  ApiCookieAuth,
-  ApiExtraModels,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from "@nestjs/swagger";
+import { ApiCookieAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserIdGuard } from "../auth/user.guard";
 import { GamesService } from "./games.service";
 import mongoose from "mongoose";
@@ -27,7 +20,7 @@ import {
   GetPlaythroughsRequestDto,
   SavePlaythroughRequestDto,
   UpdatePlaythroughsRequestDto,
-} from "src/shared/zod/dto/playthroughs.schema";
+} from "src/shared/zod/dto/playthroughs.dto";
 
 @ApiTags("Games")
 @Controller("games")
@@ -81,11 +74,4 @@ export class GamesController {
   async deletePlaythroughController(@Param("id") id: string) {
     return this.service.deletePlaythrough(new mongoose.Types.ObjectId(id));
   }
-
-  // @Post("/parse-playthroughs")
-  // @ApiOperation({ summary: "Parse playthroughs" })
-  // @HttpCode(HttpStatus.OK)
-  // async parsePlaythroughsController() {
-  //   return this.service.parsePlaythroughs();
-  // }
 }

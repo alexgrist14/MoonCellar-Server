@@ -4,8 +4,7 @@ export type CategoriesType =
   | "dropped"
   | "playing"
   | "backlog"
-  | "played"
-  | "mastered";
+  | "played";
 
 export interface ILogs {
   date: Date;
@@ -26,5 +25,4 @@ export const categories: CategoriesType[] = [
   "playing",
   "backlog",
   "played",
-  "mastered",
 ];

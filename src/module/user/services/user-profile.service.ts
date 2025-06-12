@@ -11,18 +11,11 @@ import mongoose, { Model } from "mongoose";
 import { UpdateEmailDto } from "src/module/auth/dto/update-email.dto";
 import { UpdatePasswordDto } from "src/module/auth/dto/update-password.dto";
 import { User } from "src/module/user/schemas/user.schema";
-import {
-  IGDBGames,
-  IGDBGamesDocument,
-} from "src/shared/schemas/igdb-games.schema";
 import { IUserLogs } from "../types/actions";
 
 @Injectable()
 export class UserProfileService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(IGDBGames.name) private gamesModel: Model<IGDBGamesDocument>
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
   async getUserLogs(userId: string) {
     return (await this.userModel.aggregate([
       {
@@ -90,6 +83,7 @@ export class UserProfileService {
         "-updatedAt",
         "-refreshToken",
         "-__v",
+        "-games",
       ]);
   }
   async findByString(
@@ -98,7 +92,7 @@ export class UserProfileService {
   ): Promise<User> {
     return await this.userModel
       .findOne({ [searchType]: searchString })
-      .select(["-password", "-createdAt", "-refreshToken", "-__v"]);
+      .select(["-password", "-createdAt", "-refreshToken", "-__v", "-games"]);
   }
 
   async findAll(query: ExpressQuery): Promise<User[]> {
