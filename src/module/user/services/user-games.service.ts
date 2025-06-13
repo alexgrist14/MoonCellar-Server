@@ -119,12 +119,20 @@ export class UserGamesService {
       ],
       { new: true }
     );
-    await this.userLogsService.createUserLog(
-      userId,
-      "list",
-      `Add to ${category}`,
-      Number(gameId)
-    );
+    const lastLog = await this.userLogsService.getUserLogs(userId, 1);
+    console.log(lastLog[0].gameId, gameId);
+    if (lastLog[0].gameId === +gameId) {
+      console.log("inner");
+      lastLog[0].text = `Added to ${category}`;
+    } else {
+      await this.userLogsService.createUserLog(
+        userId,
+        "list",
+        `Added to ${category}`,
+        Number(gameId)
+      );
+    }
+
     if (!user) {
       throw new BadRequestException("User or category not found!");
     }

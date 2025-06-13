@@ -54,6 +54,7 @@ import {
   IGDBReleaseDatesDocument,
 } from "./schemas/igdb-release-dates.schema";
 import { gamesLookup } from "src/shared/utils";
+import { setPagination } from "src/shared/pagination";
 
 @Injectable()
 export class IGDBService {
@@ -399,7 +400,7 @@ export class IGDBService {
       },
     };
 
-    const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
+    const pagination = setPagination(page, take);
 
     const games = await this.IGDBGamesModel.aggregate([
       filters,

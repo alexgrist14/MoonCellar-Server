@@ -6,11 +6,7 @@ export type UserLogsDocument = HydratedDocument<UserLogs>;
 
 @Schema()
 export class UserLogs {
-  @Prop({
-    type: {
-      date: { type: Date, default: Date.now, required: false },
-    },
-  })
+  @Prop()
   date: Date;
   @Prop()
   type: ILogType;

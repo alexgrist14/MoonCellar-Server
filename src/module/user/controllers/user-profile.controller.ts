@@ -75,15 +75,15 @@ export class UserProfileController {
     return this.userProfileService.findById(userId);
   }
 
-  @Get("/logs/:userId")
-  @ApiOperation({ summary: "Get user logs" })
-  @ApiResponse({
-    status: 200,
-    description: "Success",
-  })
-  async getUserLogs(@Param("userId") userId: string) {
-    return this.userProfileService.getUserLogs(userId);
-  }
+  // @Get("/logs/:userId")
+  // @ApiOperation({ summary: "Get user logs" })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: "Success",
+  // })
+  // async getUserLogs(@Param("userId") userId: string) {
+  //   return this.userProfileService.getUserLogs(userId);
+  // }
 
   @Patch("email/:userId")
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
