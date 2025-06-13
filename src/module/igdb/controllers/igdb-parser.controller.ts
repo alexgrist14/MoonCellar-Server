@@ -21,7 +21,7 @@ export class IgdbParserController {
   constructor(private readonly service: IGDBService) {}
 
   @ApiCookieAuth()
-  //@UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"))
   // @UseGuards(RolesGuard)
   // @Roles(Role.Admin)
   @Get("/token")
@@ -32,8 +32,7 @@ export class IgdbParserController {
   }
 
   @ApiCookieAuth()
-  @Roles(Role.Admin)
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @UseGuards(AuthGuard("jwt"))
   @Post("/")
   @ApiOperation({ summary: "Parse all IGDB databases" })
   @ApiResponse({ status: 200, description: "Successfully started" })
@@ -42,8 +41,7 @@ export class IgdbParserController {
   }
 
   @ApiCookieAuth()
-  @Roles(Role.Admin)
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @UseGuards(AuthGuard("jwt"))
   @Post("/:type")
   @ApiOperation({ summary: "Parse Selected IGDB database" })
   @ApiResponse({ status: 200, description: "Successfully started" })

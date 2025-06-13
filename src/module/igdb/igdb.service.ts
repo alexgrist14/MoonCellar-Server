@@ -54,6 +54,7 @@ import {
   IGDBReleaseDatesDocument,
 } from "./schemas/igdb-release-dates.schema";
 import { gamesLookup } from "src/shared/utils";
+import { IGetGamesByIdsRequest } from "src/shared/zod/schemas/games.schema";
 import { setPagination } from "src/shared/pagination";
 
 @Injectable()
@@ -113,6 +114,13 @@ export class IGDBService {
     ]);
 
     return (await game).pop();
+  }
+
+  async getGamesByIds(dto: IGetGamesByIdsRequest) {
+    return await this.IGDBGamesModel.aggregate([
+      { $match: { _id: { $in: dto._ids } } },
+      ...gamesLookup(true),
+    ]);
   }
 
   async getGameBySlug(slug: string) {

@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { IGDBService } from "../igdb.service";
 import { categories as gameCategories } from "../constants/common";
+import { GetGamesByIdsDto } from "src/shared/zod/dto/games.dto";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -127,6 +128,13 @@ export class IgdbController {
   @ApiResponse({ status: 200, description: "Get over here!" })
   getGameById(@Param("id") id: string) {
     return this.service.getGameById(id);
+  }
+
+  @Post("/by-ids")
+  @ApiOperation({ summary: "Get game by id" })
+  @ApiResponse({ status: 200, description: "Get over here!" })
+  getGamesByIds(@Body() dto: GetGamesByIdsDto) {
+    return this.service.getGamesByIds(dto);
   }
 
   @Get("/by-slug/:slug")

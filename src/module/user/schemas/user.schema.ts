@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { MaxLength } from "class-validator";
 import mongoose, { Document } from "mongoose";
 import { Role } from "src/module/roles/enums/role.enum";
-import { IGDBGames } from "src/shared/schemas/igdb-games.schema";
 import { IRAAward } from "../types/award";
 
 @Schema({
@@ -28,37 +27,6 @@ export class User extends Document {
 
   @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
   followings: mongoose.Types.ObjectId[];
-
-  @Prop({
-    type: {
-      completed: [{ type: Number, ref: IGDBGames.name }],
-      wishlist: [{ type: Number, ref: IGDBGames.name }],
-      playing: [{ type: Number, ref: IGDBGames.name }],
-      dropped: [{ type: Number, ref: IGDBGames.name }],
-      backlog: [{ type: Number, ref: IGDBGames.name }],
-      mastered: [{ type: Number, ref: IGDBGames.name }],
-      played: [{ type: Number, ref: IGDBGames.name }],
-    },
-    ref: IGDBGames.name,
-    default: {
-      completed: [],
-      wishlist: [],
-      playing: [],
-      dropped: [],
-      backlog: [],
-      played: [],
-      mastered: [],
-    },
-  })
-  games: {
-    completed: number[];
-    wishlist: number[];
-    playing: number[];
-    dropped: number[];
-    backlog: number[];
-    mastered: number[];
-    played: number[];
-  };
 
   @Prop({
     type: [

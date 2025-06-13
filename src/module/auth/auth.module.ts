@@ -19,6 +19,7 @@ import { UserFollowingsService } from "../user/services/user-followings.service"
 import { UserGamesService } from "../user/services/user-games.service";
 import { UserLogsService } from "../user/services/user-logs.service";
 import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
+import { JwtRefreshStrategy } from "./jwt-refresh.strategy";
 
 @Module({
   imports: [
@@ -51,8 +52,9 @@ import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
     UserFollowingsService,
     UserGamesService,
     JwtStrategy,
+    JwtRefreshStrategy,
     FileUploadService,
   ],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, JwtRefreshStrategy, PassportModule],
 })
 export class AuthModule {}
