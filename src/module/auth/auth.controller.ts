@@ -96,7 +96,6 @@ export class AuthController {
     @Headers() headers?: any
   ): Promise<Response> {
     const oldRefreshToken = req.cookies.refreshMoonToken;
-    console.log(oldRefreshToken, req.cookies);
 
     if (oldRefreshToken) {
       const payload = this.jwtService.verify(oldRefreshToken, {

@@ -136,7 +136,6 @@ export class UserProfileController {
     @UploadedFile() file: Express.Multer.File
   ) {
     const prevPicture = await this.userProfileService.getProfilePicture(userId);
-    console.log(prevPicture);
 
     if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
 

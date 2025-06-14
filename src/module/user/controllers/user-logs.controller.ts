@@ -14,7 +14,11 @@ export class UserLogsController {
     status: 200,
     description: "Success",
   })
-  getLogs(@Param("userId") userId: string, @Query("take") take: number) {
-    return this.userLogsService.getUserLogs(userId, +take);
+  getLogs(
+    @Param("userId") userId: string,
+    @Query("take") take: number,
+    @Query("page") page: number
+  ) {
+    return this.userLogsService.getUserLogs(userId, take, page);
   }
 }

@@ -10,6 +10,8 @@ export interface ILog {
   game: Game[];
 }
 
+export type UserLog = Omit<ILog, "_id" | "game" | "date">;
+
 export interface Game {
   cover: Cover;
   name: string;

@@ -1,9 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import {
-  GamesPlaythroughs,
-  IGamesPlaythroughsDocument,
-} from "./schemas/games-playthroughs.schema";
 import mongoose, { Model } from "mongoose";
 import {
   IGetPlaythroughsRequest,
@@ -11,6 +7,10 @@ import {
   IUpdatePlaythroughRequest,
 } from "src/shared/zod/schemas/playthroughs.schema";
 import { UserLogsService } from "../user/services/user-logs.service";
+import {
+  GamesPlaythroughs,
+  IGamesPlaythroughsDocument,
+} from "./schemas/games-playthroughs.schema";
 
 @Injectable()
 export class GamesService {
@@ -41,12 +41,12 @@ export class GamesService {
       updatedAt: new Date().toISOString(),
     });
 
-    await this.logsService.createUserLog(
-      play.userId.toString(),
-      "list",
-      `Added to ${play.isMastered ? "mastered" : play.category}`,
-      play.gameId
-    );
+    await this.logsService.createUserLog({
+      userId: play.userId.toString(),
+      type: "list",
+      text: `Added to ${play.isMastered ? "mastered" : play.category}`,
+      gameId: play.gameId,
+    });
 
     return play;
   }
@@ -63,12 +63,12 @@ export class GamesService {
       }
     );
 
-    await this.logsService.createUserLog(
-      play.userId.toString(),
-      "list",
-      `Added to ${play.isMastered ? "mastered" : play.category}`,
-      play.gameId
-    );
+    await this.logsService.createUserLog({
+      userId: play.userId.toString(),
+      type: "list",
+      text: `Added to ${play.isMastered ? "mastered" : play.category}`,
+      gameId: play.gameId,
+    });
 
     return play;
   }
@@ -81,12 +81,12 @@ export class GamesService {
       }
     );
 
-    await this.logsService.createUserLog(
-      play.userId.toString(),
-      "list",
-      `Removed from ${play.isMastered ? "mastered" : play.category}`,
-      play.gameId
-    );
+    await this.logsService.createUserLog({
+      userId: play.userId.toString(),
+      type: "list",
+      text: `Removed from ${play.isMastered ? "mastered" : play.category}`,
+      gameId: play.gameId,
+    });
 
     return play;
   }

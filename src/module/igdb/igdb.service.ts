@@ -55,7 +55,6 @@ import {
 } from "./schemas/igdb-release-dates.schema";
 import { gamesLookup } from "src/shared/utils";
 import { IGetGamesByIdsRequest } from "src/shared/zod/schemas/games.schema";
-import { setPagination } from "src/shared/pagination";
 
 @Injectable()
 export class IGDBService {
@@ -408,7 +407,7 @@ export class IGDBService {
       },
     };
 
-    const pagination = setPagination(page, take);
+    const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
     const games = await this.IGDBGamesModel.aggregate([
       filters,
@@ -592,14 +591,4 @@ export class IGDBService {
     const { data: authData } = await igdbAuth();
     return authData;
   }
-
-  // async testFunction() {
-  //   console.time('Test');
-  //   console.log();
-  //   console.timeEnd('Test');
-  //
-  //   console.time('Test 2');
-  //   console.log();
-  //   console.timeEnd('Test 2');
-  // }
 }
