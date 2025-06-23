@@ -11,14 +11,35 @@ import {
   GamesPlaythroughs,
   IGamesPlaythroughsDocument,
 } from "./schemas/games-playthroughs.schema";
+import {
+  IGDBPlatforms,
+  IGDBPlatformsDocument,
+} from "../igdb/schemas/igdb-platforms.schema";
 
 @Injectable()
 export class GamesService {
   constructor(
     @InjectModel(GamesPlaythroughs.name)
     private GamesPlaythrouhgs: Model<IGamesPlaythroughsDocument>,
+    @InjectModel(IGDBPlatforms.name)
+    private Platforms: Model<IGDBPlatformsDocument>,
     private readonly logsService: UserLogsService
   ) {}
+
+  private async getAdditionalInfo({
+    stringStart,
+    play,
+  }: {
+    stringStart: "Added to" | "Removed from";
+    play: IGamesPlaythroughsDocument;
+  }) {
+    const platform = await this.Platforms.findById(play.platformId);
+    const text =
+      `${stringStart} ${play.isMastered ? "mastered" : play.category}` +
+      (!!platform ? `<br/><i>${platform.name}</i>` : "");
+
+    return { platform, text };
+  }
 
   async getPlaythroughs(data: IGetPlaythroughsRequest) {
     return await this.GamesPlaythrouhgs.find({
@@ -41,10 +62,15 @@ export class GamesService {
       updatedAt: new Date().toISOString(),
     });
 
+    const { text } = await this.getAdditionalInfo({
+      play,
+      stringStart: "Added to",
+    });
+
     await this.logsService.createUserLog({
       userId: play.userId.toString(),
       type: "list",
-      text: `Added to ${play.isMastered ? "mastered" : play.category}`,
+      text,
       gameId: play.gameId,
     });
 
@@ -63,10 +89,15 @@ export class GamesService {
       }
     );
 
+    const { text } = await this.getAdditionalInfo({
+      play,
+      stringStart: "Added to",
+    });
+
     await this.logsService.createUserLog({
       userId: play.userId.toString(),
       type: "list",
-      text: `Added to ${play.isMastered ? "mastered" : play.category}`,
+      text,
       gameId: play.gameId,
     });
 
@@ -81,10 +112,15 @@ export class GamesService {
       }
     );
 
+    const { text } = await this.getAdditionalInfo({
+      play,
+      stringStart: "Removed from",
+    });
+
     await this.logsService.createUserLog({
       userId: play.userId.toString(),
       type: "list",
-      text: `Removed from ${play.isMastered ? "mastered" : play.category}`,
+      text,
       gameId: play.gameId,
     });
 

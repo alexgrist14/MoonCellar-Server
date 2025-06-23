@@ -12,12 +12,20 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { ApiCookieAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiTags,
+} from "@nestjs/swagger";
 import { UserIdGuard } from "../auth/user.guard";
 import { GamesService } from "./games.service";
 import mongoose from "mongoose";
 import {
+  GetPlaythroughFullResponseDto,
+  GetPlaythroughsMinimalResponseDto,
   GetPlaythroughsRequestDto,
+  GetPlaythroughsResponseDto,
   SavePlaythroughRequestDto,
   UpdatePlaythroughsRequestDto,
 } from "src/shared/zod/dto/playthroughs.dto";
@@ -29,12 +37,14 @@ export class GamesController {
 
   @Get("/playthroughs")
   @ApiOperation({ summary: "Get playthroughs" })
+  @ApiCreatedResponse({ type: GetPlaythroughsResponseDto })
   async getPlaythroughsController(@Query() dto: GetPlaythroughsRequestDto) {
     return this.service.getPlaythroughs(dto);
   }
 
   @Get("/playthroughs/minimal")
   @ApiOperation({ summary: "Get playthroughs (minimal)" })
+  @ApiCreatedResponse({ type: GetPlaythroughsMinimalResponseDto })
   async getPlaythroughsMinimalController(
     @Query() dto: GetPlaythroughsRequestDto
   ) {
@@ -43,6 +53,7 @@ export class GamesController {
 
   @Post("/save-playthrough")
   @ApiOperation({ summary: "Save playthrough" })
+  @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @HttpCode(HttpStatus.OK)
@@ -52,6 +63,7 @@ export class GamesController {
 
   @Put("/update-playthrough/:userId/:id")
   @ApiOperation({ summary: "Update playthrough" })
+  @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @HttpCode(HttpStatus.OK)
@@ -64,6 +76,7 @@ export class GamesController {
 
   @Delete("/delete-playthrough/:userId/:id")
   @ApiOperation({ summary: "Delete playthrough" })
+  @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @HttpCode(HttpStatus.OK)
