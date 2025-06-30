@@ -35,7 +35,6 @@ import {
   IGDBGames,
   IGDBGamesDocument,
 } from "src/shared/schemas/igdb-games.schema";
-import { categories as gameCategories } from "./constants/common";
 import { updateOrInsertValues } from "src/shared/db";
 import {
   IGDBWebsites,
@@ -55,6 +54,10 @@ import {
 } from "./schemas/igdb-release-dates.schema";
 import { gamesLookup } from "src/shared/utils";
 import { IGetGamesByIdsRequest } from "src/shared/zod/schemas/games.schema";
+import {
+  IGDBGameTypes,
+  IGDBGameTypesDocument,
+} from "./schemas/igdb-game-types.schema";
 
 @Injectable()
 export class IGDBService {
@@ -88,7 +91,9 @@ export class IGDBService {
     @InjectModel(IGDBCompanies.name)
     private IGDBCompaniesModel: Model<IGDBCompaniesDocument>,
     @InjectModel(IGDBReleaseDates.name)
-    private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>
+    private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
+    @InjectModel(IGDBGameTypes.name)
+    private IGDBGameTypesModel: Model<IGDBGameTypesDocument>
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -142,7 +147,6 @@ export class IGDBService {
     search,
     mode = "any",
     company,
-    categories,
     years,
     votes,
     excludeGames,
@@ -158,7 +162,6 @@ export class IGDBService {
     search?: string;
     company?: string;
     years?: [number, number];
-    categories?: (keyof typeof gameCategories)[];
     mode?: "any" | "all";
     excludeGames?: number[];
   }) {
@@ -209,29 +212,35 @@ export class IGDBService {
                 },
               ]
             : []),
-          {
-            category: !!categories
-              ? { $in: categories.map((category) => gameCategories[category]) }
-              : {
-                  $in: [
-                    gameCategories.main_game,
-                    gameCategories.expansion,
-                    gameCategories.standalone_expansion,
-                    gameCategories.remake,
-                    gameCategories.remaster,
-                    gameCategories.expanded_game,
-                    gameCategories.port,
-                    gameCategories.bundle,
-                    gameCategories.mod,
-                    gameCategories.dlc_addon,
-                  ],
+          ...(!!selected?.gameTypes?.length
+            ? [
+                {
+                  game_type:
+                    mode === "any"
+                      ? {
+                          $in: Array.isArray(selected?.gameTypes)
+                            ? selected?.gameTypes.map((gameType) => gameType)
+                            : [selected?.gameTypes],
+                        }
+                      : {
+                          $all: Array.isArray(selected?.gameTypes)
+                            ? selected?.gameTypes.map((gameType) => gameType)
+                            : [selected?.gameTypes],
+                        },
                 },
-          },
-          // ...(!!search
-          //   ? [
-          //
-          //     ]
-          //   : []),
+              ]
+            : []),
+          ...(!!excluded?.gameTypes?.length
+            ? [
+                {
+                  game_type: {
+                    $nin: Array.isArray(excluded?.gameTypes)
+                      ? excluded?.gameTypes.map((gameType) => gameType)
+                      : [excluded?.gameTypes],
+                  },
+                },
+              ]
+            : []),
           ...(!!years
             ? [
                 {
@@ -455,6 +464,10 @@ export class IGDBService {
     return this.IGDBGenresModel.find().sort({ name: 1 });
   }
 
+  async getGameTypes() {
+    return this.IGDBGameTypesModel.find().sort({ _id: 1 });
+  }
+
   async getPlatforms() {
     return this.IGDBPlatformsModel.find()
       .populate("platform_logo")
@@ -521,6 +534,10 @@ export class IGDBService {
       "release_dates",
       this.IGDBReleaseDatesModel
     );
+    await this.parser<IGDBGameTypesDocument>(
+      "game_types",
+      this.IGDBGameTypesModel
+    );
 
     return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
   }
@@ -583,6 +600,11 @@ export class IGDBService {
         return this.parser<IGDBReleaseDatesDocument>(
           "release_dates",
           this.IGDBReleaseDatesModel
+        );
+      case "game_types":
+        return this.parser<IGDBGameTypesDocument>(
+          "game_types",
+          this.IGDBGameTypesModel
         );
     }
   }

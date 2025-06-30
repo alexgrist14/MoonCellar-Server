@@ -46,6 +46,8 @@ export class IGDBGames {
   @Prop()
   aggregated_rating: number;
   @Prop()
+  game_type: number;
+  @Prop()
   category: number;
   @Prop({ ref: IGDBArtworks.name })
   artworks: number[];

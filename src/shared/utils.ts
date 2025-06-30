@@ -80,10 +80,19 @@ export const gamesLookup = (isBasic?: boolean) => [
             artworks: 1,
             url: 1,
             raIds: 1,
+            game_type: 1,
           },
         },
       ]
     : []),
+  {
+    $lookup: {
+      from: "igdbgametypes",
+      localField: "game_type",
+      foreignField: "_id",
+      as: "game_type",
+    },
+  },
   {
     $lookup: {
       from: "igdbcovers",
@@ -96,6 +105,9 @@ export const gamesLookup = (isBasic?: boolean) => [
     $addFields: {
       cover: {
         $ifNull: [{ $arrayElemAt: ["$cover", 0] }, null],
+      },
+      game_type: {
+        $ifNull: [{ $arrayElemAt: ["$game_type", 0] }, null],
       },
     },
   },

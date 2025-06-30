@@ -16,6 +16,7 @@ export const parserTypes: ParserType[] = [
   "artworks",
   "release_dates",
   "games",
+  "game_types",
 ];
 
 export const categories = {

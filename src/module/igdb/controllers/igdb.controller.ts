@@ -42,7 +42,6 @@ export class IgdbController {
     @Query("company") company: string,
     @Query("excludeGames") excludeGames: number[],
     @Query("years") years: [number, number],
-    @Query("categories") categories: (keyof typeof gameCategories)[],
     @Query("mode") mode: "any" | "all"
   ) {
     const games = this.service.getGames({
@@ -54,7 +53,6 @@ export class IgdbController {
       rating,
       search,
       mode,
-      categories,
       company,
       years,
       excludeGames,
@@ -107,6 +105,13 @@ export class IgdbController {
   @ApiResponse({ status: 200, description: "Get over here!" })
   modes() {
     return this.service.getGameModes();
+  }
+
+  @Get("/game-types")
+  @ApiOperation({ summary: "Get game types" })
+  @ApiResponse({ status: 200, description: "Get over here!" })
+  gameTypes() {
+    return this.service.getGameTypes();
   }
 
   @Get("/screenshot/:id")

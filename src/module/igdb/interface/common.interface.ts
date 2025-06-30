@@ -13,7 +13,8 @@ export type ParserType =
   | "involved_companies"
   | "companies"
   | "release_dates"
-  | "platform_logos";
+  | "platform_logos"
+  | "game_types";
 
 export interface IGDBFilters {
   genres?: string[] | string;
@@ -21,4 +22,5 @@ export interface IGDBFilters {
   modes?: string[] | string;
   keywords?: string[] | string;
   themes?: string[] | string;
+  gameTypes?: string[] | string;
 }
