@@ -85,38 +85,6 @@ export class UserLogsService {
         $sort: { date: -1 },
       },
       ...pagination,
-      {
-        $lookup: {
-          from: "igdbgames",
-          localField: "gameId",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                _id: 0,
-                name: 1,
-                slug: 1,
-                cover: 1,
-              },
-            },
-            {
-              $lookup: {
-                from: "igdbcovers",
-                localField: "cover",
-                foreignField: "_id",
-                pipeline: [
-                  {
-                    $project: { url: 1, _id: 0 },
-                  },
-                ],
-                as: "cover",
-              },
-            },
-            { $unwind: "$cover" },
-          ],
-          as: "game",
-        },
-      },
     ]);
   }
 }
