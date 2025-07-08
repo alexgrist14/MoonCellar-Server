@@ -187,4 +187,15 @@ export class UserProfileService {
     await user.save();
     return user;
   }
+
+  async updateUserTime(userId: string) {
+    const user = await this.userModel.findById(userId);
+    const now = new Date();
+    const isoString = now.toISOString();
+    const formattedDate = isoString.replace("Z", "+00:00");
+
+    user.updatedAt = new Date(formattedDate);
+    await user.save();
+    return user;
+  }
 }

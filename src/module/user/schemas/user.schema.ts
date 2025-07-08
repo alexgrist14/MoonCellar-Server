@@ -74,6 +74,8 @@ export class User extends Document {
   raAwards: IRAAward[];
   @Prop({ type: [{ type: String, enum: Role }], default: [Role.User] })
   roles: Role[];
+  @Prop()
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

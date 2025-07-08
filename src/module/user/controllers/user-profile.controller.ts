@@ -196,4 +196,13 @@ export class UserProfileController {
       descriptionDto.description
     );
   }
+
+  @Patch("profile-time/:userId")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Update user updateAt field" })
+  @ApiResponse({ status: 201, description: "date" })
+  async updateUserTime(@Param("userId") userId: string) {
+    return await this.userProfileService.updateUserTime(userId);
+  }
 }
