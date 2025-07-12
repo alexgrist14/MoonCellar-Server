@@ -182,7 +182,6 @@ export class UserProfileController {
 
   @Patch("description/:userId")
   @UseGuards(RolesGuard)
-  @Roles(Role.Moderator, Role.Admin)
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiOperation({ summary: "Update user description" })
