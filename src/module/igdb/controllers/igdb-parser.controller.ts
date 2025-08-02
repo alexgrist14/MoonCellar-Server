@@ -10,10 +10,6 @@ import { IGDBService } from "../igdb.service";
 import { ParserType } from "../interface/common.interface";
 import { parserTypes } from "../constants/common";
 import { AuthGuard } from "@nestjs/passport";
-import { UserIdGuard } from "src/module/auth/user.guard";
-import { Roles } from "src/module/roles/roles.decorator";
-import { Role } from "src/module/roles/enums/role.enum";
-import { RolesGuard } from "src/module/roles/roles.guard";
 
 @ApiTags("IGDB Parser")
 @Controller("igdb-parser")
@@ -22,8 +18,24 @@ export class IgdbParserController {
 
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
-  // @UseGuards(RolesGuard)
-  // @Roles(Role.Admin)
+  @Post("/to-platforms")
+  @ApiOperation({ summary: "Parse platforms" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  async parsePlatforms() {
+    return this.service.igdbToPlatforms();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/to-games")
+  @ApiOperation({ summary: "Parse games" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  async parseGames() {
+    return this.service.igdbToGames();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
   @Get("/token")
   @ApiOperation({ summary: "Get IGDB token" })
   @ApiResponse({ status: 200, description: "Successfully started" })

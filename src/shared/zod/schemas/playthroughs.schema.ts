@@ -36,17 +36,17 @@ export const PlaythroughEditSchema = PlaythroughSchema.omit({
   updatedAt: true,
 });
 
-export const PlaythoughFullResponseSchema = PlaythroughSchema;
-export const PlaythoughMinimalResponseSchema = PlaythroughSchema.pick({
+export const PlaythroughFullResponseSchema = PlaythroughSchema;
+export const PlaythroughMinimalResponseSchema = PlaythroughSchema.pick({
   _id: true,
   category: true,
   gameId: true,
   isMastered: true,
   updatedAt: true,
 });
-export const PlaythoughsResponseSchema = PlaythoughFullResponseSchema.array();
-export const PlaythoughsMinimalResponseSchema =
-  PlaythoughMinimalResponseSchema.array();
+export const PlaythroughsResponseSchema = PlaythroughFullResponseSchema.array();
+export const PlaythroughsMinimalResponseSchema =
+  PlaythroughMinimalResponseSchema.array();
 export const GetPlaythroughsRequestSchema = PlaythroughEditSchema.partial();
 export const SavePlaythroughRequestSchema = PlaythroughEditSchema.omit({});
 export const UpdatePlaythroughRequestSchema = PlaythroughEditSchema.omit({
@@ -54,15 +54,15 @@ export const UpdatePlaythroughRequestSchema = PlaythroughEditSchema.omit({
   userId: true,
 });
 
-export type IPlaythrough = z.infer<typeof PlaythoughFullResponseSchema>;
+export type IPlaythrough = z.infer<typeof PlaythroughFullResponseSchema>;
 export type IPlaythroughMinimal = z.infer<
-  typeof PlaythoughMinimalResponseSchema
+  typeof PlaythroughMinimalResponseSchema
 >;
 export type IGetPlaythroughsResponse = z.infer<
-  typeof PlaythoughsResponseSchema
+  typeof PlaythroughsResponseSchema
 >;
 export type IGetPlaythroughsMinimalResponse = z.infer<
-  typeof PlaythoughsMinimalResponseSchema
+  typeof PlaythroughsMinimalResponseSchema
 >;
 
 export type IGetPlaythroughsRequest = z.infer<

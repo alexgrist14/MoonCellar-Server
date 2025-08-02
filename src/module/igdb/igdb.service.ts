@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { igdbAuth, igdbParser } from "./utils/igdb";
 import { IGDBCoverDocument, IGDBCovers } from "./schemas/igdb-covers.schema";
 import { IGDBGenres, IGDBGenresDocument } from "./schemas/igdb-genres.schema";
@@ -13,7 +13,7 @@ import {
   IGDBPlatformsDocument,
 } from "./schemas/igdb-platforms.schema";
 import { IGDBModes, IGDBModesDocument } from "./schemas/igdb-modes.schema";
-import { IGDBFilters, ParserType } from "./interface/common.interface";
+import { ParserType } from "./interface/common.interface";
 import {
   IGDBKeywords,
   IGDBKeywordsDocument,
@@ -52,12 +52,16 @@ import {
   IGDBReleaseDates,
   IGDBReleaseDatesDocument,
 } from "./schemas/igdb-release-dates.schema";
-import { gamesLookup } from "src/shared/utils";
-import { IGetGamesByIdsRequest } from "src/shared/zod/schemas/games.schema";
+import { getImageLink } from "src/shared/utils";
 import {
   IGDBGameTypes,
   IGDBGameTypesDocument,
 } from "./schemas/igdb-game-types.schema";
+import { Game, GameDocument } from "../games/schemas/game.schema";
+import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
+import { RAConsole } from "../retroach/schemas/console.schema";
+import { FileService } from "../user/services/file-upload.service";
+import { HttpService } from "@nestjs/axios";
 
 @Injectable()
 export class IGDBService {
@@ -93,7 +97,15 @@ export class IGDBService {
     @InjectModel(IGDBReleaseDates.name)
     private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
     @InjectModel(IGDBGameTypes.name)
-    private IGDBGameTypesModel: Model<IGDBGameTypesDocument>
+    private IGDBGameTypesModel: Model<IGDBGameTypesDocument>,
+    @InjectModel(Game.name)
+    private Games: Model<GameDocument>,
+    @InjectModel(Platform.name)
+    private Platforms: Model<PlatformDocument>,
+    @InjectModel(RAConsole.name)
+    private RAPlatforms: Model<RAConsole>,
+    private fileService: FileService,
+    private httpService: HttpService
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
@@ -109,396 +121,6 @@ export class IGDBService {
         return updateOrInsertValues<T>(model, items);
       },
     });
-  }
-
-  async getGameById(id: string) {
-    const game = this.IGDBGamesModel.aggregate([
-      { $match: { _id: id } },
-      ...gamesLookup(),
-    ]);
-
-    return (await game).pop();
-  }
-
-  async getGamesByIds(dto: IGetGamesByIdsRequest) {
-    return await this.IGDBGamesModel.aggregate([
-      { $match: { _id: { $in: dto._ids } } },
-      ...gamesLookup(true),
-    ]);
-  }
-
-  async getGameBySlug(slug: string) {
-    const game = this.IGDBGamesModel.aggregate([
-      { $match: { slug: slug } },
-      ...gamesLookup(),
-    ]);
-
-    return (await game).pop();
-  }
-
-  async getGames({
-    take = 50,
-    isRandom = false,
-    isOnlyWithAchievements = false,
-    page = 1,
-    selected,
-    excluded,
-    rating,
-    search,
-    mode = "any",
-    company,
-    years,
-    votes,
-    excludeGames,
-  }: {
-    take?: number | string;
-    isRandom?: boolean | string;
-    isOnlyWithAchievements?: boolean | string;
-    page?: number | string;
-    selected?: IGDBFilters;
-    excluded?: IGDBFilters;
-    rating?: number | string;
-    votes?: string;
-    search?: string;
-    company?: string;
-    years?: [number, number];
-    mode?: "any" | "all";
-    excludeGames?: number[];
-  }) {
-    const companies = !!company
-      ? (
-          await this.IGDBCompaniesModel.find({
-            name: {
-              $regex: `${company.replaceAll(" ", "\\s*")}`,
-              $options: "i",
-            },
-          })
-        )?.map((company) => company._id)
-      : [];
-
-    const filters = {
-      $match: {
-        $and: [
-          { genres: { $exists: true } },
-          { keywords: { $exists: true } },
-          { themes: { $exists: true } },
-          { platforms: { $exists: true } },
-          { game_modes: { $exists: true } },
-          ...(isOnlyWithAchievements === "true" ||
-          isOnlyWithAchievements === true
-            ? [
-                {
-                  raIds: {
-                    $exists: true,
-                    $type: "array",
-                    $ne: [],
-                  },
-                },
-              ]
-            : []),
-          ...(!!search
-            ? [
-                // {
-                //   $text: {
-                //     $search: search,
-                //   },
-                // },
-                {
-                  name: {
-                    $regex: search.replaceAll(" ", "\\s*"),
-
-                    $options: "i",
-                  },
-                },
-              ]
-            : []),
-          ...(!!selected?.gameTypes?.length
-            ? [
-                {
-                  game_type:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.gameTypes)
-                            ? selected?.gameTypes.map((gameType) => gameType)
-                            : [selected?.gameTypes],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.gameTypes)
-                            ? selected?.gameTypes.map((gameType) => gameType)
-                            : [selected?.gameTypes],
-                        },
-                },
-              ]
-            : []),
-          ...(!!excluded?.gameTypes?.length
-            ? [
-                {
-                  game_type: {
-                    $nin: Array.isArray(excluded?.gameTypes)
-                      ? excluded?.gameTypes.map((gameType) => gameType)
-                      : [excluded?.gameTypes],
-                  },
-                },
-              ]
-            : []),
-          ...(!!years
-            ? [
-                {
-                  first_release_date: {
-                    $gte: new Date(years[0]).getTime() / 1000,
-                    $lte:
-                      (new Date((+years[1] + 1).toString()).getTime() -
-                        24 * 60 * 60 * 1000) /
-                      1000,
-                  },
-                },
-              ]
-            : []),
-          ...(!!company
-            ? [
-                {
-                  involved_companies: {
-                    $in: (
-                      await this.IGDBInvolvedCompaniesModel.find({
-                        company: {
-                          $in: companies,
-                        },
-                      })
-                    )?.map((company) => company._id),
-                  },
-                },
-              ]
-            : []),
-          ...(rating !== undefined
-            ? [{ total_rating: { $gte: +rating } }]
-            : []),
-          ...(votes !== undefined
-            ? [{ total_rating_count: { $gte: +votes } }]
-            : []),
-          ...(!!selected?.keywords?.length
-            ? [
-                {
-                  keywords:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.keywords)
-                            ? selected?.keywords
-                            : [selected?.keywords],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.keywords)
-                            ? selected?.keywords
-                            : [selected?.keywords],
-                        },
-                },
-              ]
-            : []),
-          ...(!!selected?.themes?.length
-            ? [
-                {
-                  themes:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.themes)
-                            ? selected?.themes.map((theme) => theme)
-                            : [selected?.themes],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.themes)
-                            ? selected?.themes.map((theme) => theme)
-                            : [selected?.themes],
-                        },
-                },
-              ]
-            : []),
-          ...(!!excluded?.themes?.length
-            ? [
-                {
-                  themes: {
-                    $nin: Array.isArray(excluded?.themes)
-                      ? excluded?.themes.map((theme) => theme)
-                      : [excluded?.themes],
-                  },
-                },
-              ]
-            : []),
-          ...(!!selected?.genres?.length
-            ? [
-                {
-                  genres:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.genres)
-                            ? selected?.genres.map((genre) => genre)
-                            : [selected?.genres],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.genres)
-                            ? selected?.genres.map((genre) => genre)
-                            : [selected?.genres],
-                        },
-                },
-              ]
-            : []),
-          ...(!!excluded?.genres?.length
-            ? [
-                {
-                  genres: {
-                    $nin: Array.isArray(excluded?.genres)
-                      ? excluded?.genres.map((genre) => genre)
-                      : [excluded?.genres],
-                  },
-                },
-              ]
-            : []),
-          ...(!!selected?.platforms?.length
-            ? [
-                {
-                  platforms:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.platforms)
-                            ? selected?.platforms.map((item) => item)
-                            : [selected?.platforms],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.platforms)
-                            ? selected?.platforms.map((item) => item)
-                            : [selected?.platforms],
-                        },
-                },
-              ]
-            : []),
-          ...(!!excluded?.platforms?.length
-            ? [
-                {
-                  platforms: {
-                    $nin: Array.isArray(excluded?.platforms)
-                      ? excluded?.platforms.map((platform) => platform)
-                      : [excluded?.platforms],
-                  },
-                },
-              ]
-            : []),
-          ...(!!selected?.modes?.length
-            ? [
-                {
-                  game_modes:
-                    mode === "any"
-                      ? {
-                          $in: Array.isArray(selected?.modes)
-                            ? selected?.modes.map((item) => item)
-                            : [selected?.modes],
-                        }
-                      : {
-                          $all: Array.isArray(selected?.modes)
-                            ? selected?.modes.map((item) => item)
-                            : [selected?.modes],
-                        },
-                },
-              ]
-            : []),
-          ...(!!excluded?.modes?.length
-            ? [
-                {
-                  game_modes: {
-                    $nin: Array.isArray(excluded?.modes)
-                      ? excluded?.modes.map((mode) => mode)
-                      : [excluded?.modes],
-                  },
-                },
-              ]
-            : []),
-          ...(!!excludeGames?.length
-            ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
-            : []),
-        ],
-      },
-    };
-
-    const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
-
-    const games = await this.IGDBGamesModel.aggregate([
-      filters,
-      { $sort: { total_rating_count: -1 } },
-      {
-        $facet: {
-          results: [
-            ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
-            ...gamesLookup(true),
-          ],
-          totalCount: [{ $count: "count" }],
-        },
-      },
-      {
-        $addFields: {
-          total: {
-            $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
-          },
-        },
-      },
-      {
-        $project: {
-          results: 1,
-          total: 1,
-        },
-      },
-    ]);
-
-    return games.pop();
-  }
-
-  async getScreenshot(id: number) {
-    const screenshot = await this.IGDBScreenshotsModel.findById(id);
-
-    return screenshot || null;
-  }
-
-  async getArtwork(id: number) {
-    const artwork = await this.IGDBArtworksModel.findById(id);
-
-    return artwork || null;
-  }
-
-  async getGenres() {
-    return this.IGDBGenresModel.find().sort({ name: 1 });
-  }
-
-  async getGameTypes() {
-    return this.IGDBGameTypesModel.find().sort({ _id: 1 });
-  }
-
-  async getPlatforms() {
-    return this.IGDBPlatformsModel.find()
-      .populate("platform_logo")
-      .sort({ name: 1 });
-  }
-
-  async getThemes() {
-    return this.IGDBThemesModel.find().sort({ name: 1 });
-  }
-
-  async getKeywords(query?: string) {
-    return this.IGDBKeywordsModel.find(
-      !!query && {
-        name: {
-          $regex: `${query.replaceAll(" ", "\\s*")}`,
-          $options: "i",
-        },
-      }
-    ).sort({ name: 1 });
-  }
-
-  async getKeywordsByIds(ids: number[]) {
-    return this.IGDBKeywordsModel.find({
-      _id: {
-        $in: ids,
-      },
-    }).sort({ name: 1 });
-  }
-
-  async getGameModes() {
-    return this.IGDBModesModel.find().sort({ name: 1 });
   }
 
   async parseAll() {
@@ -612,5 +234,237 @@ export class IGDBService {
   async getToken() {
     const { data: authData } = await igdbAuth();
     return authData;
+  }
+
+  async igdbToGames(threads: number = 4) {
+    console.log("Loading games...");
+
+    const parsedGames = await this.Games.find().select("igdbIds");
+
+    console.log("Games loaded");
+
+    const parsedIgdbIds = parsedGames.reduce((res, game) => {
+      if (!game.igdbIds?.length) return res;
+      game.igdbIds.forEach((id) => {
+        res.push(id);
+      });
+      return res;
+    }, []);
+    const games = await this.IGDBGamesModel.find({
+      _id: { $nin: parsedIgdbIds },
+    });
+
+    console.log("Games array created");
+
+    const gamesLength = games.length;
+    const gamesPartLength = Math.ceil(games.length / threads);
+
+    let step = 0;
+    const splittedGames = [];
+
+    while (splittedGames.length !== threads) {
+      splittedGames[step] = games.slice(
+        step * gamesPartLength,
+        (step + 1) * gamesPartLength
+      );
+      step++;
+    }
+
+    let count = 0;
+
+    splittedGames.forEach(async (games) => {
+      for (const game of games) {
+        if (!game) return;
+
+        const _id = new mongoose.Types.ObjectId();
+
+        const existed = await this.Games.exists({ igdbIds: game._id });
+
+        count++;
+
+        if (!!existed) continue;
+
+        const category = await this.IGDBGameTypesModel.findOne({
+          _id: game.game_type || game.category,
+        });
+
+        const cover = await this.IGDBCoversModel.findOne({
+          _id: { $in: game.cover },
+        });
+
+        const modes = await this.IGDBModesModel.find({
+          _id: { $in: game.game_modes },
+        });
+
+        const genres = await this.IGDBGenresModel.find({
+          _id: { $in: game.genres },
+        });
+
+        const keywords = await this.IGDBKeywordsModel.find({
+          _id: { $in: game.keywords },
+        });
+
+        const themes = await this.IGDBThemesModel.find({
+          _id: { $in: game.themes },
+        });
+
+        const screenshots = await this.IGDBScreenshotsModel.find({
+          _id: { $in: game.screenshots },
+        });
+
+        const artworks = await this.IGDBArtworksModel.find({
+          _id: { $in: game.artworks },
+        });
+
+        const involved_companies = await this.IGDBInvolvedCompaniesModel.find({
+          _id: { $in: game.involved_companies },
+        });
+
+        const companies = await this.IGDBCompaniesModel.find({
+          _id: { $in: involved_companies },
+        });
+
+        const websites = await this.IGDBWebsitesModel.find({
+          _id: { $in: game.websites },
+        });
+
+        const dates = await this.IGDBReleaseDatesModel.find({
+          _id: { $in: game.release_dates },
+        });
+
+        const platformIds = await this.Platforms.find({
+          igdbId: { $in: game.platforms },
+        }).select("_id");
+
+        const parsedScreenshots = await this.parseImagesToS3(
+          screenshots,
+          _id.toString(),
+          "mooncellar-screenshots"
+        );
+
+        const parsedArtworks = await this.parseImagesToS3(
+          artworks,
+          _id.toString(),
+          "mooncellar-artworks"
+        );
+
+        const parsedCovers = await this.parseImagesToS3(
+          [cover],
+          _id.toString(),
+          "mooncellar-covers",
+          true
+        );
+
+        const newGame = await this.Games.create({
+          _id,
+          slug: game.slug,
+          name: game.name,
+          type: category?.type || null,
+          cover: parsedCovers?.[0],
+          storyline: game.storyline,
+          summary: game.summary,
+          modes: modes.map((mode) => mode.name),
+          genres: genres.map((genre) => genre.name),
+          keywords: keywords.map((keyword) => keyword.name),
+          themes: themes.map((theme) => theme.name),
+          screenshots: parsedScreenshots,
+          artworks: parsedArtworks,
+          companies: companies.map((comp) => comp.name),
+          websites: websites.map((site) => site.url),
+          first_release:
+            dates?.reduce(
+              (res, date) => (date.date < res ? (res = date.date) : res),
+              dates[0]?.date
+            ) || null,
+          release_dates: dates?.map((date) => ({
+            date: date.date,
+            human: date.human,
+            month: date.m,
+            year: date.y,
+            platformId: date.platform,
+            region: date.region,
+          })),
+          platformIds: platformIds.map((plat) => plat._id),
+          raIds: game.raIds,
+          igdbIds: [game._id],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        console.log(`${count} of ${gamesLength}`);
+        console.log(newGame._id);
+      }
+    });
+
+    return "Completed";
+  }
+
+  async parseImagesToS3(
+    images: IGDBScreenshotsDocument[],
+    gameId: string,
+    bucketName: string,
+    isCover?: boolean
+  ) {
+    const result: string[] = [];
+
+    for (const i in images) {
+      if (!images?.[i]?.url) continue;
+
+      const url = getImageLink(
+        images[i]?.url,
+        isCover ? "cover_big" : "1080p",
+        isCover ? 2 : undefined
+      );
+      try {
+        const response = await this.httpService.axiosRef({
+          url,
+          method: "GET",
+          responseType: "arraybuffer",
+        });
+
+        const key = `${gameId}_${i}`;
+
+        result.push(`https://${bucketName}.s3.regru.cloud/${key}`);
+
+        await this.fileService.uploadFile(response.data, key, bucketName);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return result;
+  }
+
+  async igdbToPlatforms() {
+    const platforms: any[] = await this.IGDBPlatformsModel.find()
+      .populate("platform_logo")
+      .populate("platform_family");
+
+    for (const platform of platforms) {
+      const ra = await this.RAPlatforms.findOne({ igdbIds: platform._id });
+
+      if (!platform) return;
+
+      await this.Platforms.create({
+        name: platform.name,
+        slug: platform.slug,
+        generation: platform?.generation || null,
+        ...(!!platform.platform_family && {
+          family: {
+            name: platform.platform_family.name,
+            slug: platform.platform_family.slug,
+          },
+        }),
+        ...(!!platform.platform_logo && {
+          logo: getImageLink(platform.platform_logo.url, "thumb"),
+        }),
+        igdbId: platform._id,
+        raId: ra?._id || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return "Completed";
   }
 }

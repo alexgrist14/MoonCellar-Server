@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { IgdbController } from "./controllers/igdb.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { IGDBCovers, IGDBCoversSchema } from "./schemas/igdb-covers.schema";
 import { IGDBGenres, IGDBGenresSchema } from "./schemas/igdb-genres.schema";
@@ -57,11 +56,19 @@ import {
   IGDBGameTypes,
   IGDBGameTypesSchema,
 } from "./schemas/igdb-game-types.schema";
+import { Game, GameDatabaseSchema } from "../games/schemas/game.schema";
+import {
+  Platform,
+  PlatformDatabaseSchema,
+} from "../games/schemas/platform.schema";
+import { FileService } from "../user/services/file-upload.service";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
-  controllers: [IgdbController, IgdbParserController],
-  providers: [IGDBService],
+  controllers: [IgdbParserController],
+  providers: [IGDBService, FileService],
   imports: [
+    HttpModule,
     MongooseModule.forFeature([
       { name: IGDBGames.name, schema: IGDBGamesSchema },
       { name: IGDBCovers.name, schema: IGDBCoversSchema },
@@ -81,6 +88,8 @@ import {
       { name: IGDBGameTypes.name, schema: IGDBGameTypesSchema },
       { name: RAGame.name, schema: RASchema },
       { name: RAConsole.name, schema: RAConsoleSchema },
+      { name: Game.name, schema: GameDatabaseSchema },
+      { name: Platform.name, schema: PlatformDatabaseSchema },
     ]),
   ],
 })

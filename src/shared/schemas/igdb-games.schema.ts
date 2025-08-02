@@ -11,7 +11,7 @@ import { IGDBReleaseDates } from "src/module/igdb/schemas/igdb-release-dates.sch
 import { IGDBScreenshots } from "src/module/igdb/schemas/igdb-screenshots.schema";
 import { IGDBThemes } from "src/module/igdb/schemas/igdb-themes.schema";
 import { IGDBWebsites } from "src/module/igdb/schemas/igdb-websites.schema";
-import { RAGame, RASchema } from "src/module/retroach/schemas/retroach.schema";
+import { RAGame } from "src/module/retroach/schemas/retroach.schema";
 
 export type IGDBGamesDocument = HydratedDocument<IGDBGames>;
 
@@ -65,6 +65,8 @@ export class IGDBGames {
   release_dates: number[];
   @Prop({ ref: RAGame.name })
   raIds: number[];
+  @Prop()
+  isCustom: boolean;
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);

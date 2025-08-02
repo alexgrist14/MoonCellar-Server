@@ -1,35 +1,100 @@
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsCommand,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListBucketsCommand,
+  S3Client,
+  PutObjectCommandInput,
+} from "@aws-sdk/client-s3";
 import { Injectable } from "@nestjs/common";
-import { promises as fs } from "fs";
-import { join } from "path";
-import { v4 as uuidv4 } from "uuid";
+import { getS3Config } from "src/shared/constants";
 
 @Injectable()
-export class FileUploadService {
-  private readonly uploadPath = `/var/www/uploads/photos`;
+export class FileService {
+  async uploadObject(
+    Body: PutObjectCommandInput["Body"],
+    key: string,
+    bucketName: string
+  ) {
+    const s3Client = new S3Client(getS3Config());
 
-  async uploadFile(
-    file: Express.Multer.File,
-    uploadFolder: string
-  ): Promise<string> {
-    const fileName = `${uuidv4()}-${file?.originalname}`;
-    const filePath = join(this.uploadPath, fileName);
-
-    await fs.mkdir(this.uploadPath, { recursive: true });
-    await fs.writeFile(filePath, file.buffer);
-
-    return fileName;
-  }
-
-  async deleteFile(file: string) {
-    const filePath = join(this.uploadPath, file);
-    fs.access(filePath)
-      .then(async () => {
-        await fs.unlink(filePath);
+    return await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body,
       })
-      .catch(() => {});
+    );
   }
 
-  getFilePath(fileName: string): string {
-    return join(this.uploadPath, fileName);
+  async uploadFile(file: Express.Multer.File, key: string, bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: file.buffer,
+      })
+    );
+  }
+
+  async getBuckets() {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(new ListBucketsCommand());
+  }
+
+  async getBucketKeys(bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(new ListObjectsCommand({ Bucket: bucketName }));
+  }
+
+  async clearBucket(bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    const keys = await s3Client.send(
+      new ListObjectsCommand({ Bucket: bucketName })
+    );
+
+    return !!keys.Contents
+      ? this.deleteFiles(
+          keys.Contents?.map((key) => key.Key),
+          bucketName
+        )
+      : "Empty";
+  }
+
+  async getFile(key: string, bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(
+      new GetObjectCommand({ Bucket: bucketName, Key: key })
+    );
+  }
+
+  async deleteFile(key: string, bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      })
+    );
+  }
+
+  async deleteFiles(keys: string[], bucketName: string) {
+    const s3Client = new S3Client(getS3Config());
+
+    return await s3Client.send(
+      new DeleteObjectsCommand({
+        Bucket: bucketName,
+        Delete: { Objects: keys.map((key) => ({ Key: key })) },
+      })
+    );
   }
 }

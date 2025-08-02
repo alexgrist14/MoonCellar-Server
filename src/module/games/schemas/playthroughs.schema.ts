@@ -6,10 +6,10 @@ import { User } from "src/module/user/schemas/user.schema";
 import { CategoriesType } from "src/module/user/types/actions";
 import { IGDBGames } from "src/shared/schemas/igdb-games.schema";
 
-export type IGamesPlaythroughsDocument = HydratedDocument<GamesPlaythroughs>;
+export type IPlaythroughDocument = HydratedDocument<Playthrough>;
 
 @Schema()
-export class GamesPlaythroughs {
+export class Playthrough {
   @Prop({ ref: User.name })
   userId: mongoose.Schema.Types.ObjectId;
   @Prop()
@@ -34,5 +34,5 @@ export class GamesPlaythroughs {
   updatedAt: string;
 }
 
-export const IGamesPlaythroughsSchema =
-  SchemaFactory.createForClass(GamesPlaythroughs);
+export const PlaythroughDatabaseSchema =
+  SchemaFactory.createForClass(Playthrough);

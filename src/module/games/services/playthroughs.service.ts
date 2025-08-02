@@ -6,23 +6,20 @@ import {
   ISavePlaythroughRequest,
   IUpdatePlaythroughRequest,
 } from "src/shared/zod/schemas/playthroughs.schema";
-import { UserLogsService } from "../user/services/user-logs.service";
+import { UserLogsService } from "src/module/user/services/user-logs.service";
+import { Platform, PlatformDocument } from "../schemas/platform.schema";
 import {
-  GamesPlaythroughs,
-  IGamesPlaythroughsDocument,
-} from "./schemas/games-playthroughs.schema";
-import {
-  IGDBPlatforms,
-  IGDBPlatformsDocument,
-} from "../igdb/schemas/igdb-platforms.schema";
+  IPlaythroughDocument,
+  Playthrough,
+} from "../schemas/playthroughs.schema";
 
 @Injectable()
-export class GamesService {
+export class PlaythroughsService {
   constructor(
-    @InjectModel(GamesPlaythroughs.name)
-    private GamesPlaythrouhgs: Model<IGamesPlaythroughsDocument>,
-    @InjectModel(IGDBPlatforms.name)
-    private Platforms: Model<IGDBPlatformsDocument>,
+    @InjectModel(Playthrough.name)
+    private GamesPlaythrouhgs: Model<IPlaythroughDocument>,
+    @InjectModel(Platform.name)
+    private Platforms: Model<PlatformDocument>,
     private readonly logsService: UserLogsService
   ) {}
 
@@ -31,7 +28,7 @@ export class GamesService {
     play,
   }: {
     stringStart: "Added to" | "Removed from";
-    play: IGamesPlaythroughsDocument;
+    play: IPlaythroughDocument;
   }) {
     const platform = await this.Platforms.findById(play.platformId);
     const text =

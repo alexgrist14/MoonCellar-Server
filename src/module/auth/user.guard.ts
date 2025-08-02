@@ -15,7 +15,7 @@ export class UserIdGuard implements CanActivate {
       request.params?.userId || request.body?.userId || request.query?.userId;
 
     if (!token || !userId || token.id !== userId) {
-      throw new UnauthorizedException("You can only change your own account");
+      throw new UnauthorizedException("Wrong user");
     }
 
     return true;

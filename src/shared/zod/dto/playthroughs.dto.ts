@@ -1,10 +1,10 @@
 import { createZodDto } from "@anatine/zod-nestjs";
 import {
   GetPlaythroughsRequestSchema,
-  PlaythoughFullResponseSchema,
-  PlaythoughMinimalResponseSchema,
-  PlaythoughsMinimalResponseSchema,
-  PlaythoughsResponseSchema,
+  PlaythroughFullResponseSchema,
+  PlaythroughMinimalResponseSchema,
+  PlaythroughsMinimalResponseSchema,
+  PlaythroughsResponseSchema,
   SavePlaythroughRequestSchema,
   UpdatePlaythroughRequestSchema,
 } from "../schemas/playthroughs.schema";
@@ -22,17 +22,17 @@ export class UpdatePlaythroughsRequestDto extends createZodDto(
 ) {}
 
 export class GetPlaythroughsResponseDto extends createZodDto(
-  PlaythoughsResponseSchema
+  PlaythroughsResponseSchema
 ) {}
 
 export class GetPlaythroughsMinimalResponseDto extends createZodDto(
-  PlaythoughsMinimalResponseSchema
+  PlaythroughsMinimalResponseSchema
 ) {}
 
 export class GetPlaythroughFullResponseDto extends createZodDto(
-  PlaythoughFullResponseSchema
+  PlaythroughFullResponseSchema
 ) {}
 
 export class GetPlaythroughMinimalResponseDto extends createZodDto(
-  PlaythoughMinimalResponseSchema
+  PlaythroughMinimalResponseSchema
 ) {}

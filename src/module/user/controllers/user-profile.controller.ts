@@ -28,7 +28,7 @@ import { UpdatePasswordDto } from "../../auth/dto/update-password.dto";
 import { UserIdGuard } from "../../auth/user.guard";
 import { UpdateDescriptionDto } from "../dto/update-description.dto";
 import { User } from "../schemas/user.schema";
-import { FileUploadService } from "../services/file-upload.service";
+import { FileService } from "../services/file-upload.service";
 import { UserProfileService } from "../services/user-profile.service";
 import { BackgroundDto } from "../dto/background.dto";
 import { RolesGuard } from "src/module/roles/roles.guard";
@@ -40,7 +40,7 @@ import { Roles } from "src/module/roles/roles.decorator";
 export class UserProfileController {
   constructor(
     private readonly userProfileService: UserProfileService,
-    private readonly fileUploadService: FileUploadService
+    private readonly fileService: FileService
   ) {}
 
   @Get("name")
@@ -113,9 +113,9 @@ export class UserProfileController {
     return this.userProfileService.updatePassword(userId, updatePasswordDto);
   }
 
-  @Patch("profile-picture/:userId")
+  @Patch("profile-picture")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @UseGuards(AuthGuard("jwt"))
   @UseInterceptors(FileInterceptor("file"))
   @ApiOperation({ summary: "Add user profile picture" })
   @ApiResponse({ status: 201, description: "picture name" })
@@ -132,17 +132,12 @@ export class UserProfileController {
     },
   })
   async uploadProfilePicture(
-    @Param("userId") userId: string,
+    @Query("userId") userId: string,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const prevPicture = await this.userProfileService.getProfilePicture(userId);
+    if (!userId) return;
 
-    if (prevPicture) await this.fileUploadService.deleteFile(prevPicture);
-
-    const fileName = await this.fileUploadService.uploadFile(file, "photos");
-    await this.userProfileService.updateProfilePicture(userId, fileName);
-
-    return { profilePicture: fileName };
+    return this.fileService.uploadFile(file, `${userId}`, "mooncellar-avatars");
   }
 
   @Patch("profile-background/:userId")
@@ -165,19 +160,6 @@ export class UserProfileController {
   @ApiResponse({ status: 201, description: "background name" })
   async getProfileBackGround(@Param("userId") userId: string) {
     return await this.userProfileService.getProfileBackground(userId);
-  }
-
-  @Get("profile-picture/:userId")
-  @ApiOperation({ summary: "Get user profile picture" })
-  @ApiResponse({ status: 200, description: "Success" })
-  async getProfilePicture(@Param("userId") userId: string) {
-    const fileName = await this.userProfileService.getProfilePicture(userId);
-
-    if (!fileName) {
-      throw new NotFoundException("Profile picture not found");
-    }
-
-    return { fileName };
   }
 
   @Patch("description/:userId")

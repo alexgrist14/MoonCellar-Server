@@ -282,3 +282,41 @@ export const gamesLookup = (isBasic?: boolean) => [
       ]
     : []),
 ];
+
+export const getImageLink = (
+  url: string,
+  size:
+    | "thumb"
+    | "micro"
+    | "cover_big"
+    | "cover_small"
+    | "screenshot_big"
+    | "screenshot_med"
+    | "screenshot_huge"
+    | "logo_med"
+    | "720p"
+    | "1080p",
+  multiply?: number
+) => {
+  return (
+    (url.includes("http") ? "" : "https:") +
+    url.replace("thumb", !!multiply ? `${size}_${multiply}x` : size)
+  );
+};
+
+export const shuffle = <T>(arr: T[]) => {
+  let count = arr.length,
+    temp,
+    index;
+
+  while (count > 0) {
+    index = Math.floor(Math.random() * count);
+    count--;
+
+    temp = arr[count];
+    arr[count] = arr[index];
+    arr[index] = temp;
+  }
+
+  return arr;
+};

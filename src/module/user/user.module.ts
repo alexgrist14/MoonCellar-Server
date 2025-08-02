@@ -3,7 +3,6 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { UserSchema } from "./schemas/user.schema";
 import { UserProfileController } from "./controllers/user-profile.controller";
 import { UserProfileService } from "./services/user-profile.service";
-import { FileUploadService } from "./services/file-upload.service";
 import {
   IGDBGames,
   IGDBGamesSchema,
@@ -21,6 +20,8 @@ import { UserPresetsController } from "./controllers/user-presets.controller";
 import { UserLogs, UserLogsSchema } from "./schemas/user-logs.schema";
 import { UserLogsService } from "./services/user-logs.service";
 import { UserLogsController } from "./controllers/user-logs.controller";
+import { FileService } from "./services/file-upload.service";
+import { FilesController } from "./controllers/files.controller";
 
 @Module({
   imports: [
@@ -39,13 +40,14 @@ import { UserLogsController } from "./controllers/user-logs.controller";
     UserGamesController,
     UserRAController,
     UserLogsController,
+    FilesController,
   ],
   providers: [
     UserProfileService,
     UserFiltersService,
     UserLogsService,
     UserPresetsService,
-    FileUploadService,
+    FileService,
     UserGamesService,
     UserFollowingsService,
     UserRAService,

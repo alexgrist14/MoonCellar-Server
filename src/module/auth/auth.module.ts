@@ -9,7 +9,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtStrategy } from "./jwt.strategy";
 import { UserProfileController } from "../user/controllers/user-profile.controller";
 import { UserProfileService } from "../user/services/user-profile.service";
-import { FileUploadService } from "../user/services/file-upload.service";
 import {
   IGDBGames,
   IGDBGamesSchema,
@@ -20,6 +19,7 @@ import { UserGamesService } from "../user/services/user-games.service";
 import { UserLogsService } from "../user/services/user-logs.service";
 import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
 import { JwtRefreshStrategy } from "./jwt-refresh.strategy";
+import { FileService } from "../user/services/file-upload.service";
 
 @Module({
   imports: [
@@ -53,7 +53,7 @@ import { JwtRefreshStrategy } from "./jwt-refresh.strategy";
     UserGamesService,
     JwtStrategy,
     JwtRefreshStrategy,
-    FileUploadService,
+    FileService,
   ],
   exports: [JwtStrategy, JwtRefreshStrategy, PassportModule],
 })

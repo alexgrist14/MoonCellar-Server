@@ -18,8 +18,6 @@ import {
   ApiOperation,
   ApiTags,
 } from "@nestjs/swagger";
-import { UserIdGuard } from "../auth/user.guard";
-import { GamesService } from "./games.service";
 import mongoose from "mongoose";
 import {
   GetPlaythroughFullResponseDto,
@@ -29,39 +27,41 @@ import {
   SavePlaythroughRequestDto,
   UpdatePlaythroughsRequestDto,
 } from "src/shared/zod/dto/playthroughs.dto";
+import { PlaythroughsService } from "../services/playthroughs.service";
+import { UserIdGuard } from "src/module/auth/user.guard";
 
-@ApiTags("Games")
-@Controller("games")
-export class GamesController {
-  constructor(private readonly service: GamesService) {}
+@ApiTags("Playthroughs")
+@Controller("playthroughs")
+export class PlaythroughsController {
+  constructor(private readonly playthroughs: PlaythroughsService) {}
 
-  @Get("/playthroughs")
+  @Get("/")
   @ApiOperation({ summary: "Get playthroughs" })
   @ApiCreatedResponse({ type: GetPlaythroughsResponseDto })
   async getPlaythroughsController(@Query() dto: GetPlaythroughsRequestDto) {
-    return this.service.getPlaythroughs(dto);
+    return this.playthroughs.getPlaythroughs(dto);
   }
 
-  @Get("/playthroughs/minimal")
+  @Get("/minimal")
   @ApiOperation({ summary: "Get playthroughs (minimal)" })
   @ApiCreatedResponse({ type: GetPlaythroughsMinimalResponseDto })
   async getPlaythroughsMinimalController(
     @Query() dto: GetPlaythroughsRequestDto
   ) {
-    return this.service.getPlaythroughsMinimal(dto);
+    return this.playthroughs.getPlaythroughsMinimal(dto);
   }
 
-  @Post("/save-playthrough")
+  @Post("/save")
   @ApiOperation({ summary: "Save playthrough" })
   @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @HttpCode(HttpStatus.OK)
   async savePlaythroughController(@Body() dto: SavePlaythroughRequestDto) {
-    return this.service.savePlaythrough(dto);
+    return this.playthroughs.savePlaythrough(dto);
   }
 
-  @Put("/update-playthrough/:userId/:id")
+  @Put("/update/:userId/:id")
   @ApiOperation({ summary: "Update playthrough" })
   @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
@@ -71,16 +71,19 @@ export class GamesController {
     @Param("id") id: string,
     @Body() dto: UpdatePlaythroughsRequestDto
   ) {
-    return this.service.updatePlaythrough(new mongoose.Types.ObjectId(id), dto);
+    return this.playthroughs.updatePlaythrough(
+      new mongoose.Types.ObjectId(id),
+      dto
+    );
   }
 
-  @Delete("/delete-playthrough/:userId/:id")
+  @Delete("/delete/:userId/:id")
   @ApiOperation({ summary: "Delete playthrough" })
   @ApiCreatedResponse({ type: GetPlaythroughFullResponseDto })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @HttpCode(HttpStatus.OK)
   async deletePlaythroughController(@Param("id") id: string) {
-    return this.service.deletePlaythrough(new mongoose.Types.ObjectId(id));
+    return this.playthroughs.deletePlaythrough(new mongoose.Types.ObjectId(id));
   }
 }
