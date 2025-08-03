@@ -5,7 +5,7 @@ export interface ILog {
   date: string;
   type: string;
   text: string;
-  gameId: number;
+  gameId: string;
   userId: string;
   game: Game[];
 }

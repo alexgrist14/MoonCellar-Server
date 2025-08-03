@@ -147,38 +147,38 @@ export class UserProfileService {
     return user;
   }
 
-  async updateProfileBackground(userId: string, link: string) {
-    const user = await this.userModel.findById(userId);
-    if (!user) throw new NotFoundException("User not found");
+  // async updateProfileBackground(userId: string, link: string) {
+  //   const user = await this.userModel.findById(userId);
+  //   if (!user) throw new NotFoundException("User not found");
+  //
+  //   user.background = link;
+  //   return user.save();
+  // }
+  //
+  // async updateProfilePicture(userId: string, fileName: string): Promise<User> {
+  //   const user = await this.userModel.findById(userId);
+  //   if (!user) throw new NotFoundException("User not found");
+  //
+  //   user.profilePicture = fileName;
+  //   return user.save();
+  // }
 
-    user.background = link;
-    return user.save();
-  }
+  // async getProfilePicture(userId: string): Promise<string> {
+  //   const user = await this.userModel.findById(userId);
+  //   console.log(user.profilePicture);
+  //   // if (!user || !user.profilePicture)
+  //   //   throw new NotFoundException('Profile picture not found');
+  //
+  //   return user.profilePicture;
+  // }
 
-  async updateProfilePicture(userId: string, fileName: string): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    if (!user) throw new NotFoundException("User not found");
-
-    user.profilePicture = fileName;
-    return user.save();
-  }
-
-  async getProfilePicture(userId: string): Promise<string> {
-    const user = await this.userModel.findById(userId);
-    console.log(user.profilePicture);
-    // if (!user || !user.profilePicture)
-    //   throw new NotFoundException('Profile picture not found');
-
-    return user.profilePicture;
-  }
-
-  async getProfileBackground(userId: string) {
-    const user = await this.userModel.findById(userId);
-    if (!user || !user.background)
-      throw new NotFoundException("Profile picture not found");
-
-    return user.background;
-  }
+  // async getProfileBackground(userId: string) {
+  //   const user = await this.userModel.findById(userId);
+  //   if (!user || !user.background)
+  //     throw new NotFoundException("Profile picture not found");
+  //
+  //   return user.background;
+  // }
 
   async updateUserDescription(userId: string, description: string) {
     const user = await this.userModel.findById(userId);

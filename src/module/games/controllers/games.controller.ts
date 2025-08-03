@@ -22,6 +22,10 @@ import mongoose from "mongoose";
 import {
   AddGameDto,
   GameResponseDto,
+  GetGameByIdDto,
+  GetGameBySlugDto,
+  GetGameResponseDto,
+  GetGamesByIdsDto,
   GetGamesDto,
   GetGamesResponseDto,
   UpdateGameDto,
@@ -33,11 +37,31 @@ import { GamesService } from "../services/games.service";
 export class GamesController {
   constructor(private readonly games: GamesService) {}
 
+  @Get("/by-id/:id")
+  @ApiOperation({ summary: "Get games" })
+  @ApiCreatedResponse({ type: GetGameResponseDto })
+  async getGameById(@Query() dto: GetGameByIdDto) {
+    return this.games.getGameById(dto);
+  }
+
+  @Get("/by-ids")
+  @ApiOperation({ summary: "Get games" })
+  @ApiCreatedResponse({ type: GetGamesResponseDto })
+  async getGameByIds(@Query() dto: GetGamesByIdsDto) {
+    return this.games.getGamesByIds(dto);
+  }
+
+  @Get("/by-slug/:slug")
+  @ApiOperation({ summary: "Get games" })
+  @ApiCreatedResponse({ type: GetGameResponseDto })
+  async getGameBySlug(@Query() dto: GetGameBySlugDto) {
+    return this.games.getGameBySlug(dto);
+  }
+
   @Get("/")
   @ApiOperation({ summary: "Get games" })
   @ApiCreatedResponse({ type: GetGamesResponseDto })
   async getGames(@Query() dto: GetGamesDto) {
-    console.log(dto);
     return this.games.getGames(dto);
   }
 

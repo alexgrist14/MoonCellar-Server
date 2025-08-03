@@ -140,27 +140,27 @@ export class UserProfileController {
     return this.fileService.uploadFile(file, `${userId}`, "mooncellar-avatars");
   }
 
-  @Patch("profile-background/:userId")
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
-  @ApiOperation({ summary: "Add user profile background" })
-  @ApiResponse({ status: 201, description: "background name" })
-  async uploadProfileBackground(
-    @Param("userId") userId: string,
-    @Body() background: BackgroundDto
-  ) {
-    return await this.userProfileService.updateProfileBackground(
-      userId,
-      background.url
-    );
-  }
+  // @Patch("profile-background/:userId")
+  // @ApiCookieAuth()
+  // @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  // @ApiOperation({ summary: "Add user profile background" })
+  // @ApiResponse({ status: 201, description: "background name" })
+  // async uploadProfileBackground(
+  //   @Param("userId") userId: string,
+  //   @Body() background: BackgroundDto
+  // ) {
+  //   return await this.userProfileService.updateProfileBackground(
+  //     userId,
+  //     background.url
+  //   );
+  // }
 
-  @Get("profile-background/:userId")
-  @ApiOperation({ summary: "Add user profile background" })
-  @ApiResponse({ status: 201, description: "background name" })
-  async getProfileBackGround(@Param("userId") userId: string) {
-    return await this.userProfileService.getProfileBackground(userId);
-  }
+  // @Get("profile-background/:userId")
+  // @ApiOperation({ summary: "Add user profile background" })
+  // @ApiResponse({ status: 201, description: "background name" })
+  // async getProfileBackGround(@Param("userId") userId: string) {
+  //   return await this.userProfileService.getProfileBackground(userId);
+  // }
 
   @Patch("description/:userId")
   @UseGuards(RolesGuard)

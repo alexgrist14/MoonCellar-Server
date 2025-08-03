@@ -14,10 +14,18 @@ import {
   PlaythroughDatabaseSchema,
 } from "./schemas/playthroughs.schema";
 import { FileService } from "../user/services/file-upload.service";
+import { PlatformsController } from "./controllers/platforms.controller";
+import { PlatformsService } from "./services/platforms.service";
 
 @Module({
-  controllers: [GamesController, PlaythroughsController],
-  providers: [GamesService, PlaythroughsService, UserLogsService, FileService],
+  controllers: [GamesController, PlaythroughsController, PlatformsController],
+  providers: [
+    GamesService,
+    PlaythroughsService,
+    UserLogsService,
+    FileService,
+    PlatformsService,
+  ],
   imports: [
     MongooseModule.forFeature([
       { name: Game.name, schema: GameDatabaseSchema },

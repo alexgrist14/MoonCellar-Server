@@ -17,11 +17,6 @@ export class User extends Document {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ default: "" })
-  profilePicture?: string;
-  @Prop()
-  background?: string;
-
   @Prop({ type: String })
   refreshToken?: string;
 
@@ -31,35 +26,15 @@ export class User extends Document {
   @Prop({
     type: [
       {
-        game: { type: Number, required: true },
+        game: { type: mongoose.Types.ObjectId, required: true },
         rating: { type: Number, required: true },
       },
     ],
     default: [],
   })
   gamesRating: {
-    game: number;
+    game: mongoose.Types.ObjectId;
     rating: number;
-  }[];
-
-  @Prop({
-    type: [
-      {
-        date: { type: Date, default: Date.now, required: false },
-        action: { type: String, required: true },
-        isAdd: { type: Boolean, required: true },
-        rating: { type: Number, required: false },
-        gameId: { type: Number, required: true },
-      },
-    ],
-    default: [],
-  })
-  logs: {
-    date: Date;
-    action: string;
-    isAdd: boolean;
-    rating?: number | undefined;
-    gameId: number;
   }[];
   @Prop()
   filters: { name: string; filter: string }[];

@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
-import { IReleaseDate } from "src/shared/zod/schemas/games.schema";
+import {
+  IReleaseDate,
+  IRetroachievementsField,
+} from "src/shared/zod/schemas/games.schema";
 import { Platform } from "./platform.schema";
 
 export type GameDocument = HydratedDocument<Game>;
@@ -42,7 +45,7 @@ export class Game {
   @Prop({ ref: Platform.name })
   platformIds: mongoose.Types.ObjectId[];
   @Prop()
-  raIds: number[];
+  retroachievements: IRetroachievementsField[];
   @Prop()
   igdbIds: number[];
   @Prop()

@@ -19,7 +19,7 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
         ...(isOnlyWithAchievements === true
           ? [
               {
-                raIds: {
+                retroachievements: {
                   $exists: true,
                   $type: "array",
                   $ne: [],
