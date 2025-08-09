@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { MaxLength } from "class-validator";
 import mongoose, { Document } from "mongoose";
-import { Role } from "src/module/roles/enums/role.enum";
 import { IRAAward } from "../types/award";
+import { IRole, RoleSchema } from "src/shared/zod/schemas/role.schema";
 
 @Schema({
   timestamps: true,
@@ -72,8 +72,8 @@ export class User extends Document {
   raUsername: string;
   @Prop()
   raAwards: IRAAward[];
-  @Prop({ type: [{ type: String, enum: Role }], default: [Role.User] })
-  roles: Role[];
+  @Prop({ default: ["user"] })
+  roles: IRole[];
   @Prop()
   updatedAt: Date;
 }

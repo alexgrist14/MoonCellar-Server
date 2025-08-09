@@ -11,6 +11,7 @@ import { RetroachievementsModule } from "./module/retroach/retroach.module";
 import { GamesModule } from "./module/games/games.module";
 import { APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "@anatine/zod-nestjs";
+import { AdminModule } from "./module/admin/admin.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ZodValidationPipe } from "@anatine/zod-nestjs";
     UserModule,
     GamesModule,
     IgdbModule,
+    AdminModule,
     RetroachievementsModule,
     ServeStaticModule.forRoot({
       rootPath: `/var/www/uploads/photos`,

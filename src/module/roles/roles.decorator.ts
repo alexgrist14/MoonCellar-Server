@@ -1,5 +1,5 @@
 import { SetMetadata } from "@nestjs/common";
-import { Role } from "./enums/role.enum";
+import { IRole } from "src/shared/zod/schemas/role.schema";
 
 export const ROLES_KEY = "roles";
-export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+export const Roles = (...roles: IRole[]) => SetMetadata(ROLES_KEY, roles);

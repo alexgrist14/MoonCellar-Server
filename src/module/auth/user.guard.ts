@@ -13,7 +13,6 @@ export class UserIdGuard implements CanActivate {
     const token: { id: string } = jwtDecode(request.cookies.accessMoonToken);
     const userId =
       request.params?.userId || request.body?.userId || request.query?.userId;
-
     if (!token || !userId || token.id !== userId) {
       throw new UnauthorizedException("Wrong user");
     }

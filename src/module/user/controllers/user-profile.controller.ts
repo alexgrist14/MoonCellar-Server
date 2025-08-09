@@ -32,7 +32,6 @@ import { FileService } from "../services/file-upload.service";
 import { UserProfileService } from "../services/user-profile.service";
 import { BackgroundDto } from "../dto/background.dto";
 import { RolesGuard } from "src/module/roles/roles.guard";
-import { Role } from "src/module/roles/enums/role.enum";
 import { Roles } from "src/module/roles/roles.decorator";
 
 @ApiTags("User Profile")

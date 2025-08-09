@@ -25,13 +25,12 @@
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "pre-push": "npm run lint && npm run format"
+      "pre-push": "npm run lint"
     }
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js,jsx}": [
-      "npm run lint",
-      "npm run format"
+      "npm run lint"
     ]
   },
   "dependencies": {
