@@ -22,6 +22,12 @@ import { UserLogsService } from "./services/user-logs.service";
 import { UserLogsController } from "./controllers/user-logs.controller";
 import { FileService } from "./services/file-upload.service";
 import { FilesController } from "./controllers/files.controller";
+import {
+  Rating,
+  UserRatingsDatabaseSchema,
+} from "./schemas/user-ratings.schema";
+import { UserRatingsController } from "./controllers/user-ratings.controller";
+import { UserRatingsService } from "./services/user-ratings.service";
 
 @Module({
   imports: [
@@ -29,6 +35,7 @@ import { FilesController } from "./controllers/files.controller";
       { name: IGDBGames.name, schema: IGDBGamesSchema },
       { name: "User", schema: UserSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
+      { name: Rating.name, schema: UserRatingsDatabaseSchema },
     ]),
   ],
 
@@ -40,16 +47,18 @@ import { FilesController } from "./controllers/files.controller";
     UserGamesController,
     UserRAController,
     UserLogsController,
+    UserRatingsController,
     FilesController,
   ],
   providers: [
     UserProfileService,
     UserFiltersService,
-    UserLogsService,
     UserPresetsService,
     FileService,
     UserGamesService,
     UserFollowingsService,
+    UserLogsService,
+    UserRatingsService,
     UserRAService,
   ],
 })

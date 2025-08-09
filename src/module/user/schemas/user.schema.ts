@@ -10,32 +10,14 @@ import { IRAAward } from "../types/award";
 export class User extends Document {
   @Prop({ unique: true, required: true })
   userName: string;
-
   @Prop({ unique: [true, "Duplicate email entered"] })
   email: string;
-
   @Prop({ required: true })
   password: string;
-
   @Prop({ type: String })
   refreshToken?: string;
-
   @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
   followings: mongoose.Types.ObjectId[];
-
-  @Prop({
-    type: [
-      {
-        game: { type: mongoose.Types.ObjectId, required: true },
-        rating: { type: Number, required: true },
-      },
-    ],
-    default: [],
-  })
-  gamesRating: {
-    game: mongoose.Types.ObjectId;
-    rating: number;
-  }[];
   @Prop()
   filters: { name: string; filter: string }[];
   @Prop()
@@ -49,6 +31,10 @@ export class User extends Document {
   raAwards: IRAAward[];
   @Prop({ type: [{ type: String, enum: Role }], default: [Role.User] })
   roles: Role[];
+  @Prop()
+  avatar: string;
+  @Prop()
+  background: string;
   @Prop()
   updatedAt: Date;
 }

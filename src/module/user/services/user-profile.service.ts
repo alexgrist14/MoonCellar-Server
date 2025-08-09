@@ -11,67 +11,14 @@ import mongoose, { Model } from "mongoose";
 import { UpdateEmailDto } from "src/module/auth/dto/update-email.dto";
 import { UpdatePasswordDto } from "src/module/auth/dto/update-password.dto";
 import { User } from "src/module/user/schemas/user.schema";
-import { IUserLogs } from "../types/actions";
+import { FileService } from "./file-upload.service";
 
 @Injectable()
 export class UserProfileService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
-  async getUserLogs(userId: string) {
-    return (await this.userModel.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(userId) },
-      },
-      {
-        $project: {
-          logs: { $reverseArray: { $slice: ["$logs", -50] } },
-        },
-      },
-      {
-        $unwind: "$logs",
-      },
-      {
-        $lookup: {
-          from: "igdbgames",
-          localField: "logs.gameId",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $project: {
-                _id: 0,
-                name: 1,
-                slug: 1,
-                cover: 1,
-              },
-            },
-            {
-              $lookup: {
-                from: "igdbcovers",
-                localField: "cover",
-                foreignField: "_id",
-                pipeline: [
-                  {
-                    $project: { url: 1, _id: 0 },
-                  },
-                ],
-                as: "cover",
-              },
-            },
-            { $unwind: "$cover" },
-          ],
-          as: "logs.game",
-        },
-      },
-      {
-        $unwind: "$logs.game",
-      },
-      {
-        $group: {
-          _id: "$_id",
-          logs: { $push: "$logs" },
-        },
-      },
-    ])) as IUserLogs[];
-  }
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private fileService: FileService
+  ) {}
 
   async findById(userId: string): Promise<User> {
     return await this.userModel
@@ -147,38 +94,38 @@ export class UserProfileService {
     return user;
   }
 
-  // async updateProfileBackground(userId: string, link: string) {
-  //   const user = await this.userModel.findById(userId);
-  //   if (!user) throw new NotFoundException("User not found");
-  //
-  //   user.background = link;
-  //   return user.save();
-  // }
-  //
-  // async updateProfilePicture(userId: string, fileName: string): Promise<User> {
-  //   const user = await this.userModel.findById(userId);
-  //   if (!user) throw new NotFoundException("User not found");
-  //
-  //   user.profilePicture = fileName;
-  //   return user.save();
-  // }
+  async updateAvatar(userId: string, file: Express.Multer.File): Promise<User> {
+    const user = await this.userModel.findById(userId);
+    const avatarId = new mongoose.Types.ObjectId().toString();
 
-  // async getProfilePicture(userId: string): Promise<string> {
-  //   const user = await this.userModel.findById(userId);
-  //   console.log(user.profilePicture);
-  //   // if (!user || !user.profilePicture)
-  //   //   throw new NotFoundException('Profile picture not found');
-  //
-  //   return user.profilePicture;
-  // }
+    if (!user) throw new NotFoundException("User not found");
 
-  // async getProfileBackground(userId: string) {
-  //   const user = await this.userModel.findById(userId);
-  //   if (!user || !user.background)
-  //     throw new NotFoundException("Profile picture not found");
-  //
-  //   return user.background;
-  // }
+    await this.fileService.uploadFile(file, avatarId, "mooncellar-avatars");
+
+    user.avatar = `https://mooncellar-avatars.s3.regru.cloud/${avatarId}`;
+
+    return user.save();
+  }
+
+  async updateBackground(
+    userId: string,
+    file: Express.Multer.File
+  ): Promise<User> {
+    const user = await this.userModel.findById(userId);
+    const backgroundId = new mongoose.Types.ObjectId().toString();
+
+    if (!user) throw new NotFoundException("User not found");
+
+    await this.fileService.uploadFile(
+      file,
+      backgroundId,
+      "mooncellar-backgrounds"
+    );
+
+    user.background = `https://mooncellar-backgrounds.s3.regru.cloud/${backgroundId}`;
+
+    return user.save();
+  }
 
   async updateUserDescription(userId: string, description: string) {
     const user = await this.userModel.findById(userId);

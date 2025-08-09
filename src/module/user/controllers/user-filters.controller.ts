@@ -10,7 +10,6 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import {
-  ApiBearerAuth,
   ApiCookieAuth,
   ApiOperation,
   ApiResponse,

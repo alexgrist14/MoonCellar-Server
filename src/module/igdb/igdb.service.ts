@@ -62,6 +62,7 @@ import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
 import { RAConsole } from "../retroach/schemas/console.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpService } from "@nestjs/axios";
+import { User } from "../user/schemas/user.schema";
 
 @Injectable()
 export class IGDBService {

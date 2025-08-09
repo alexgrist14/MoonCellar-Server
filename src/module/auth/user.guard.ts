@@ -1,10 +1,6 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
 import { jwtDecode } from "jwt-decode";
+import { Error } from "mongoose";
 
 @Injectable()
 export class UserIdGuard implements CanActivate {
@@ -15,7 +11,7 @@ export class UserIdGuard implements CanActivate {
       request.params?.userId || request.body?.userId || request.query?.userId;
 
     if (!token || !userId || token.id !== userId) {
-      throw new UnauthorizedException("Wrong user");
+      throw new Error("Wrong user");
     }
 
     return true;
