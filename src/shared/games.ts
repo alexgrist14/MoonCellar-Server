@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { IGetGamesRequest } from "./zod/schemas/games.schema";
 
 export const gamesFilters = (filters: IGetGamesRequest) => {
@@ -177,17 +178,23 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
         ...(!!selected?.platforms?.length
           ? [
               {
-                platforms:
+                platformIds:
                   mode === "any"
                     ? {
                         $in: Array.isArray(selected.platforms)
-                          ? selected.platforms
-                          : [selected.platforms],
+                          ? selected.platforms.map(
+                              (platform) =>
+                                new mongoose.Types.ObjectId(platform)
+                            )
+                          : [new mongoose.Types.ObjectId(selected.platforms)],
                       }
                     : {
                         $all: Array.isArray(selected.platforms)
-                          ? selected.platforms
-                          : [selected.platforms],
+                          ? selected.platforms.map(
+                              (platform) =>
+                                new mongoose.Types.ObjectId(platform)
+                            )
+                          : [new mongoose.Types.ObjectId(selected.platforms)],
                       },
               },
             ]
@@ -197,8 +204,10 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
               {
                 platforms: {
                   $nin: Array.isArray(excluded.platforms)
-                    ? excluded.platforms
-                    : [excluded.platforms],
+                    ? excluded.platforms.map(
+                        (platform) => new mongoose.Types.ObjectId(platform)
+                      )
+                    : [new mongoose.Types.ObjectId(excluded.platforms)],
                 },
               },
             ]

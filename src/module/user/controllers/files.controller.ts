@@ -25,8 +25,6 @@ export class FilesController {
   constructor(private readonly fileService: FileService) {}
 
   @Get("/")
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
   @ApiResponse({ status: 200, description: "Success" })
   async getFile(
     @Query("key") key: string,

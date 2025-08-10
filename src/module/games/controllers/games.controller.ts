@@ -58,10 +58,10 @@ export class GamesController {
     return this.games.getGameBySlug(dto);
   }
 
-  @Get("/")
+  @Post("/")
   @ApiOperation({ summary: "Get games" })
   @ApiCreatedResponse({ type: GetGamesResponseDto })
-  async getGames(@Query() dto: GetGamesDto) {
+  async getGames(@Body() dto: GetGamesDto) {
     return this.games.getGames(dto);
   }
 

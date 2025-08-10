@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import { setPagination } from "src/shared/pagination";
@@ -33,42 +33,6 @@ export class UserLogsService {
       });
       return userLog.save();
     }
-
-    // let newText = lastLog.text;
-
-    // if (type === "list" && lastLog.type === "rating") {
-    //   lastLog.type = "list";
-    //   newText = newText ? `${text} and ${newText.toLocaleLowerCase()}` : text;
-    // }
-    //
-    // if (type === "list" && lastLog.type !== "rating") {
-    //   if (newText.startsWith("Removed from")) {
-    //     newText = newText.replace(/^Removed from [^ ]+/, text);
-    //   } else {
-    //     newText = newText.replace(/^Added to [^ ]+/, text);
-    //   }
-    // }
-    //
-    // if (type === "rating") {
-    //   newText = newText
-    //     .replace(/Changed rating from \d+ to \d+/i, "")
-    //     .replace(/set rating \d+/i, "")
-    //     .replace(/and\s+$/, "")
-    //     .replace(/^and\s+/, "")
-    //     .replace(/\s{2,}/g, " ")
-    //     .trim();
-    //
-    //   const newRating = text.match(/\d+/)?.[0] ?? "";
-    //
-    //   if (lastLog.type === "rating") {
-    //     const previousRating = lastLog.text.match(/\d+/)?.[0] ?? "";
-    //     newText = newText
-    //       ? `${newText} and Changed rating from ${previousRating} to ${newRating}`
-    //       : `Changed rating from ${previousRating} to ${newRating}`;
-    //   } else {
-    //     newText = newText ? `${newText} and ${text.toLowerCase()}` : text;
-    //   }
-    // }
 
     lastLog.text = `${lastLog.text}<br/>${text}`;
     lastLog.date = new Date();
