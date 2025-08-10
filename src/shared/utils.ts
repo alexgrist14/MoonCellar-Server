@@ -56,7 +56,7 @@ export const followersLookup = () => [
           in: {
             _id: "$$following._id",
             userName: "$$following.userName",
-            profilePicture: "$$following.profilePicture",
+            avatar: "$$following.avatar",
           },
         },
       },
