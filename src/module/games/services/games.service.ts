@@ -37,7 +37,11 @@ export class GamesService {
     return await this.Games.aggregate([
       {
         $match: {
-          _id: { $in: dto._ids.map((id) => new mongoose.Types.ObjectId(id)) },
+          _id: {
+            $in: Array.isArray(dto._ids)
+              ? dto._ids.map((id) => new mongoose.Types.ObjectId(id))
+              : [new mongoose.Types.ObjectId(dto._ids)],
+          },
         },
       },
     ]);
