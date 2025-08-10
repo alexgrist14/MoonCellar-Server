@@ -68,7 +68,7 @@ export class PlaythroughsService {
       userId: play.userId.toString(),
       type: "list",
       text,
-      gameId: play.gameId,
+      gameId: play.gameId.toString(),
     });
 
     return play;
@@ -95,7 +95,7 @@ export class PlaythroughsService {
       userId: play.userId.toString(),
       type: "list",
       text,
-      gameId: play.gameId,
+      gameId: play.gameId.toString(),
     });
 
     return play;
@@ -118,7 +118,7 @@ export class PlaythroughsService {
       userId: play.userId.toString(),
       type: "list",
       text,
-      gameId: play.gameId,
+      gameId: play.gameId.toString(),
     });
 
     return play;

@@ -59,7 +59,7 @@ export class UserGamesService {
       userId: userId,
       type: "rating",
       text: `Set rating ${rating}`,
-      gameId: gameId,
+      gameId: gameId.toString(),
     });
 
     if (!user) {

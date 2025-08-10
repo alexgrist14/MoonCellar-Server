@@ -12,9 +12,8 @@ export const categoriesZod = z.enum([
 export const PlaythroughSchema = z.object({
   _id: z.string().nonempty().describe("Playthrough id"),
   userId: z.string().nonempty().describe("User id"),
-  gameId: z.coerce.number().min(0).describe("Game id"),
-  platformId: z.number().describe("Platform id").optional(),
-  releaseDateId: z.number().describe("Release date id").optional(),
+  gameId: z.string().min(0).describe("Game id"),
+  platformId: z.string().describe("Platform id").optional(),
   category: categoriesZod.describe(`Category}`),
   date: z
     .string()

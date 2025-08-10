@@ -71,9 +71,11 @@ export class FileService {
   async getFile(key: string, bucketName: string) {
     const s3Client = new S3Client(getS3Config());
 
-    return await s3Client.send(
+    const item = await s3Client.send(
       new GetObjectCommand({ Bucket: bucketName, Key: key })
     );
+
+    return item.Body.transformToString();
   }
 
   async deleteFile(key: string, bucketName: string) {

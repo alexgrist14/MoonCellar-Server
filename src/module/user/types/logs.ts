@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export type ILogType = "list" | "custom" | "rating";
 
 export interface ILog {
@@ -5,7 +7,7 @@ export interface ILog {
   date: string;
   type: string;
   text: string;
-  gameId: number;
+  gameId: string;
   userId: string;
   game: Game[];
 }

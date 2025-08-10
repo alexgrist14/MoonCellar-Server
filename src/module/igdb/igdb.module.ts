@@ -63,6 +63,7 @@ import {
 } from "../games/schemas/platform.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpModule } from "@nestjs/axios";
+import { User, UserSchema } from "../user/schemas/user.schema";
 
 @Module({
   controllers: [IgdbParserController],

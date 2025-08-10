@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import { ILogType } from "../types/logs";
+import { Game } from "src/module/games/schemas/game.schema";
 
 export type UserLogsDocument = HydratedDocument<UserLogs>;
 
@@ -12,8 +13,8 @@ export class UserLogs {
   type: ILogType;
   @Prop()
   text: string;
-  @Prop()
-  gameId: number;
+  @Prop({ ref: Game.name })
+  gameId: mongoose.Types.ObjectId;
   @Prop({ ref: "User" })
   userId: mongoose.Types.ObjectId;
 }

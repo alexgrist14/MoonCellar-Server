@@ -35,11 +35,24 @@ export class FilesController {
     return await this.fileService.getFile(key, bucketName);
   }
 
+  @Post("/object")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiResponse({ status: 201, description: "Cool!" })
+  async uploadObject(
+    @Query("key") key: string,
+    @Query("bucketName") bucketName: string,
+    @Query("object") object: string
+  ) {
+    return this.fileService.uploadObject(object, key, bucketName);
+  }
+
   @Post("/")
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
   @UseInterceptors(FileInterceptor("file"))
-  @ApiResponse({ status: 201, description: "picture name" })
+  @ApiResponse({ status: 201, description: "WhatsUp Niggga" })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
     schema: {

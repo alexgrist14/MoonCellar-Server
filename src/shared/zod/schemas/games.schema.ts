@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export const RetroachievementsSchema = z.object({
+  gameId: z.number(),
+  consoleId: z.number(),
+});
+
 export const GameFiltersSchema = z.object({
   genres: z.string().array().or(z.string().nullish()).optional(),
   platforms: z.string().array().or(z.string().nullish()).optional(),
@@ -34,16 +39,25 @@ export const GameSchema = z.object({
   artworks: z.string().array().optional(),
   companies: z.string().array().optional(),
   websites: z.string().array().optional(),
+  first_release: z.number().optional(),
   release_dates: ReleaseDateSchema.array().optional(),
   platformIds: z.string().array(),
-  raIds: z.number().array().optional(),
+  retroachievements: RetroachievementsSchema.array().optional(),
   igdbIds: z.number().array().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 
+export const GetGameBySlugSchema = z.object({
+  slug: z.string(),
+});
+
+export const GetGameByIdSchema = z.object({
+  _id: z.string(),
+});
+
 export const GetGamesByIdsSchema = z.object({
-  _ids: z.coerce.number().array(),
+  _ids: z.string().array(),
 });
 
 export const GetGamesRequestShema = z.object({
@@ -97,12 +111,15 @@ export const UpdateGameRequestShema = GameSchema.omit({
 
 export const GetCustomGameResponseSchema = GameSchema.array();
 
+export type IRetroachievementsField = z.infer<typeof RetroachievementsSchema>;
 export type IGameFilters = z.infer<typeof GameFiltersSchema>;
 export type IReleaseDate = z.infer<typeof ReleaseDateSchema>;
 
 export type IAddGameRequest = z.infer<typeof AddGameRequestShema>;
 export type IUpdateGameRequest = z.infer<typeof UpdateGameRequestShema>;
 export type IGetGamesRequest = z.infer<typeof GetGamesRequestShema>;
+export type IGetGameByIdRequest = z.infer<typeof GetGameByIdSchema>;
+export type IGetGameBySlugRequest = z.infer<typeof GetGameBySlugSchema>;
 export type IGetGamesByIdsRequest = z.infer<typeof GetGamesByIdsSchema>;
 
 export type IGameResponse = z.infer<typeof GameSchema>;

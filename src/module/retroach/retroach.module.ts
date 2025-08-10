@@ -4,10 +4,11 @@ import { RetroachievementsController } from "./controllers/retroach.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { RAGame, RASchema } from "./schemas/retroach.schema";
 import { RAConsole, RAConsoleSchema } from "./schemas/console.schema";
+import { Game, GameDatabaseSchema } from "../games/schemas/game.schema";
 import {
-  IGDBGames,
-  IGDBGamesSchema,
-} from "src/shared/schemas/igdb-games.schema";
+  Platform,
+  PlatformDatabaseSchema,
+} from "../games/schemas/platform.schema";
 
 @Module({
   imports: [
@@ -16,7 +17,10 @@ import {
       { name: RAConsole.name, schema: RAConsoleSchema },
     ]),
     MongooseModule.forFeature([
-      { name: IGDBGames.name, schema: IGDBGamesSchema },
+      { name: Game.name, schema: GameDatabaseSchema },
+    ]),
+    MongooseModule.forFeature([
+      { name: Platform.name, schema: PlatformDatabaseSchema },
     ]),
   ],
 

@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   Patch,
   Query,
@@ -30,9 +29,7 @@ import { UpdateDescriptionDto } from "../dto/update-description.dto";
 import { User } from "../schemas/user.schema";
 import { FileService } from "../services/file-upload.service";
 import { UserProfileService } from "../services/user-profile.service";
-import { BackgroundDto } from "../dto/background.dto";
 import { RolesGuard } from "src/module/roles/roles.guard";
-import { Roles } from "src/module/roles/roles.decorator";
 
 @ApiTags("User Profile")
 @Controller("user")
@@ -74,16 +71,6 @@ export class UserProfileController {
     return this.userProfileService.findById(userId);
   }
 
-  // @Get("/logs/:userId")
-  // @ApiOperation({ summary: "Get user logs" })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "Success",
-  // })
-  // async getUserLogs(@Param("userId") userId: string) {
-  //   return this.userProfileService.getUserLogs(userId);
-  // }
-
   @Patch("email/:userId")
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiCookieAuth()
@@ -112,11 +99,11 @@ export class UserProfileController {
     return this.userProfileService.updatePassword(userId, updatePasswordDto);
   }
 
-  @Patch("profile-picture")
+  @Patch("avatar")
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
   @UseInterceptors(FileInterceptor("file"))
-  @ApiOperation({ summary: "Add user profile picture" })
+  @ApiOperation({ summary: "Add user avatar" })
   @ApiResponse({ status: 201, description: "picture name" })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
@@ -130,35 +117,40 @@ export class UserProfileController {
       },
     },
   })
-  async uploadProfilePicture(
+  async uploadAvatar(
     @Query("userId") userId: string,
     @UploadedFile() file: Express.Multer.File
   ) {
     if (!userId) return;
 
-    return this.fileService.uploadFile(file, `${userId}`, "mooncellar-avatars");
+    return this.userProfileService.updateAvatar(userId, file);
   }
 
-  @Patch("profile-background/:userId")
+  @Patch("background")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), UserIdGuard)
-  @ApiOperation({ summary: "Add user profile background" })
-  @ApiResponse({ status: 201, description: "background name" })
-  async uploadProfileBackground(
-    @Param("userId") userId: string,
-    @Body() background: BackgroundDto
+  @UseGuards(AuthGuard("jwt"))
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiOperation({ summary: "Add user background" })
+  @ApiResponse({ status: 201, description: "picture name" })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+      },
+    },
+  })
+  async uploadBackground(
+    @Query("userId") userId: string,
+    @UploadedFile() file: Express.Multer.File
   ) {
-    return await this.userProfileService.updateProfileBackground(
-      userId,
-      background.url
-    );
-  }
+    if (!userId) return;
 
-  @Get("profile-background/:userId")
-  @ApiOperation({ summary: "Add user profile background" })
-  @ApiResponse({ status: 201, description: "background name" })
-  async getProfileBackGround(@Param("userId") userId: string) {
-    return await this.userProfileService.getProfileBackground(userId);
+    return this.userProfileService.updateBackground(userId, file);
   }
 
   @Patch("description/:userId")

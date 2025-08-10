@@ -3,6 +3,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import {
   IAddGameRequest,
+  IGetGameByIdRequest,
+  IGetGameBySlugRequest,
   IGetGamesByIdsRequest,
   IGetGamesRequest,
   IUpdateGameRequest,
@@ -19,25 +21,37 @@ export class GamesService {
     private fileService: FileService
   ) {}
 
-  async getGameById(id: string) {
-    const game = this.Games.aggregate([{ $match: { _id: id } }]);
+  async getGameBySlug({ slug }: IGetGameBySlugRequest) {
+    const game = this.Games.aggregate([{ $match: { slug } }]);
+
+    return (await game).pop();
+  }
+
+  async getGameById({ _id }: IGetGameByIdRequest) {
+    const game = this.Games.aggregate([{ $match: { _id } }]);
 
     return (await game).pop();
   }
 
   async getGamesByIds(dto: IGetGamesByIdsRequest) {
-    return await this.Games.aggregate([{ $match: { _id: { $in: dto._ids } } }]);
+    return await this.Games.aggregate([
+      {
+        $match: {
+          _id: { $in: dto._ids.map((id) => new mongoose.Types.ObjectId(id)) },
+        },
+      },
+    ]);
   }
 
   async getGames({
-    take,
-    isRandom,
-    isOnlyWithAchievements,
-    page,
+    take = 50,
+    isRandom = false,
+    isOnlyWithAchievements = false,
+    page = 1,
     selected,
     excluded,
     search,
-    mode,
+    mode = "any",
     company,
     years,
     excludeGames,
@@ -102,7 +116,7 @@ export class GamesService {
 
   async parseFieldsToJson() {
     const games = await this.Games.find().select(
-      "modes genres keywords themes companies"
+      "modes genres keywords themes companies type"
     );
 
     const result = {};
@@ -114,16 +128,17 @@ export class GamesService {
         "keywords",
         "themes",
         "companies",
+        "type",
       ];
 
       for (const field of fieldsToParse) {
         const values =
           typeof game[field] === "string" ? [game[field]] : game[field];
-        const parsedValues = values.filter(
+        const parsedValues = values?.filter(
           (value: string) => !result[field]?.includes(value)
         );
 
-        if (parsedValues.length && game[field]) {
+        if (parsedValues?.length && game[field]) {
           !result[field]?.length
             ? (result[field] = parsedValues)
             : result[field].push(...parsedValues);
