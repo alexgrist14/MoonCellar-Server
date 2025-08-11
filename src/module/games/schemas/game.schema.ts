@@ -47,7 +47,7 @@ export class Game {
   @Prop()
   retroachievements: IRetroachievementsField[];
   @Prop()
-  igdbIds: number[];
+  igdbId: number;
   @Prop()
   createdAt: string;
   @Prop()

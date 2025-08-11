@@ -13,7 +13,6 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
 import {
-  ApiCookieAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -24,7 +23,7 @@ import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { SignUpDto } from "./dto/signup.dto";
 
-@ApiTags("auth")
+@ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
   constructor(

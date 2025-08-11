@@ -62,7 +62,6 @@ import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
 import { RAConsole } from "../retroach/schemas/console.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpService } from "@nestjs/axios";
-import { User } from "../user/schemas/user.schema";
 
 @Injectable()
 export class IGDBService {
@@ -245,10 +244,8 @@ export class IGDBService {
     console.log("Games loaded");
 
     const parsedIgdbIds = parsedGames.reduce((res, game) => {
-      if (!game.igdbIds?.length) return res;
-      game.igdbIds.forEach((id) => {
-        res.push(id);
-      });
+      if (!game.igdbId) return res;
+      res.push(game.igdbId);
       return res;
     }, []);
     const games = await this.IGDBGamesModel.find({
