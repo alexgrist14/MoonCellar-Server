@@ -11,8 +11,8 @@ import { ParserType } from "../interface/common.interface";
 import { parserTypes } from "../constants/common";
 import { AuthGuard } from "@nestjs/passport";
 
-@ApiTags("IGDB Parser")
-@Controller("igdb-parser")
+@ApiTags("IGDB")
+@Controller("igdb")
 export class IgdbParserController {
   constructor(private readonly service: IGDBService) {}
 

@@ -1,10 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
-import { IGDBPlatforms } from "src/module/igdb/schemas/igdb-platforms.schema";
-import { IGDBReleaseDates } from "src/module/igdb/schemas/igdb-release-dates.schema";
 import { User } from "src/module/user/schemas/user.schema";
 import { CategoriesType } from "src/module/user/types/actions";
-import { IGDBGames } from "src/shared/schemas/igdb-games.schema";
 import { Platform } from "./platform.schema";
 import { Game } from "./game.schema";
 

@@ -22,9 +22,9 @@ import { AdminModule } from "./module/admin/admin.module";
     }),
     AuthModule,
     UserModule,
+    AdminModule,
     GamesModule,
     IgdbModule,
-    AdminModule,
     RetroachievementsModule,
     ServeStaticModule.forRoot({
       rootPath: `/var/www/uploads/photos`,

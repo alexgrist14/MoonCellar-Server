@@ -18,6 +18,8 @@ import {
 } from "@nestjs/swagger";
 import { FileService } from "../services/file-upload.service";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { RolesGuard } from "src/module/roles/roles.guard";
+import { Roles } from "src/module/roles/roles.decorator";
 
 @ApiTags("Files Controller")
 @Controller("file")
@@ -35,7 +37,8 @@ export class FilesController {
 
   @Post("/object")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @UseInterceptors(FileInterceptor("file"))
   @ApiResponse({ status: 201, description: "Cool!" })
   async uploadObject(
@@ -48,7 +51,8 @@ export class FilesController {
 
   @Post("/")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @UseInterceptors(FileInterceptor("file"))
   @ApiResponse({ status: 201, description: "WhatsUp Niggga" })
   @ApiConsumes("multipart/form-data")
@@ -73,7 +77,8 @@ export class FilesController {
 
   @Delete("/")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async deleteFile(
     @Query("key") key: string,
@@ -84,7 +89,8 @@ export class FilesController {
 
   @Delete("/multi")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async deleteFiles(
     @Query("keys") keys: string[],
@@ -95,7 +101,8 @@ export class FilesController {
 
   @Get("/buckets")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async getBuckets() {
     return await this.fileService.getBuckets();
@@ -103,7 +110,8 @@ export class FilesController {
 
   @Get("/bucket-keys")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async getBucketKeys(@Query("bucketName") bucketName: string) {
     return await this.fileService.getBucketKeys(bucketName);
@@ -111,7 +119,8 @@ export class FilesController {
 
   @Delete("/clear-bucket")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async clearBucket(@Query("bucketName") bucketName: string) {
     return await this.fileService.clearBucket(bucketName);
