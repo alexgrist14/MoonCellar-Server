@@ -60,7 +60,7 @@ export const GetGamesByIdsSchema = z.object({
   _ids: z.string().array().or(z.string()),
 });
 
-export const GetGamesRequestShema = z.object({
+export const GetGamesRequestSchema = z.object({
   take: z.coerce.number().min(1).max(100).default(50).optional(),
   isRandom: z
     .union([z.string(), z.boolean()])
@@ -97,13 +97,13 @@ export const GetGamesRequestShema = z.object({
   excludeGames: z.string().array().optional(),
 });
 
-export const AddGameRequestShema = GameSchema.omit({
+export const AddGameRequestSchema = GameSchema.omit({
   _id: true,
   updatedAt: true,
   createdAt: true,
 });
 
-export const UpdateGameRequestShema = GameSchema.omit({
+export const UpdateGameRequestSchema = GameSchema.omit({
   _id: true,
   updatedAt: true,
   createdAt: true,
@@ -115,9 +115,9 @@ export type IRetroachievementsField = z.infer<typeof RetroachievementsSchema>;
 export type IGameFilters = z.infer<typeof GameFiltersSchema>;
 export type IReleaseDate = z.infer<typeof ReleaseDateSchema>;
 
-export type IAddGameRequest = z.infer<typeof AddGameRequestShema>;
-export type IUpdateGameRequest = z.infer<typeof UpdateGameRequestShema>;
-export type IGetGamesRequest = z.infer<typeof GetGamesRequestShema>;
+export type IAddGameRequest = z.infer<typeof AddGameRequestSchema>;
+export type IUpdateGameRequest = z.infer<typeof UpdateGameRequestSchema>;
+export type IGetGamesRequest = z.infer<typeof GetGamesRequestSchema>;
 export type IGetGameByIdRequest = z.infer<typeof GetGameByIdSchema>;
 export type IGetGameBySlugRequest = z.infer<typeof GetGameBySlugSchema>;
 export type IGetGamesByIdsRequest = z.infer<typeof GetGamesByIdsSchema>;
