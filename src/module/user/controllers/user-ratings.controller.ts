@@ -60,7 +60,6 @@ export class UserRatingsController {
   @ApiOperation({ summary: "Get ratings" })
   @ApiResponse({ status: 200, description: "Success" })
   async getRatings(@Query() dto: GetUserRatingDto) {
-    console.log(dto);
     return await this.userRatingsService.getRatings(dto);
   }
 }
