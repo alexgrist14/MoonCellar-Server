@@ -8,11 +8,9 @@ import {
   IGDBGamesSchema,
 } from "src/shared/schemas/igdb-games.schema";
 import { UserFiltersService } from "./services/user-filters.service";
-import { UserGamesService } from "./services/user-games.service";
 import { UserFollowingsService } from "./services/user-followings.service";
 import { UserFiltersController } from "./controllers/user-filters.controller";
 import { UserFollowingsController } from "./controllers/user-followings.controller";
-import { UserGamesController } from "./controllers/user-games.controller";
 import { UserRAService } from "./services/user-ra.service";
 import { UserRAController } from "./controllers/user-ra.controller";
 import { UserPresetsService } from "./services/user-presets.service";
@@ -44,7 +42,6 @@ import { UserRatingsService } from "./services/user-ratings.service";
     UserFiltersController,
     UserPresetsController,
     UserFollowingsController,
-    UserGamesController,
     UserRAController,
     UserLogsController,
     UserRatingsController,
@@ -55,7 +52,6 @@ import { UserRatingsService } from "./services/user-ratings.service";
     UserFiltersService,
     UserPresetsService,
     FileService,
-    UserGamesService,
     UserFollowingsService,
     UserLogsService,
     UserRatingsService,

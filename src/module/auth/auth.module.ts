@@ -15,7 +15,6 @@ import {
 } from "src/shared/schemas/igdb-games.schema";
 import { UserFiltersService } from "../user/services/user-filters.service";
 import { UserFollowingsService } from "../user/services/user-followings.service";
-import { UserGamesService } from "../user/services/user-games.service";
 import { UserLogsService } from "../user/services/user-logs.service";
 import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
 import { JwtRefreshStrategy } from "./jwt-refresh.strategy";
@@ -50,7 +49,6 @@ import { FileService } from "../user/services/file-upload.service";
     UserLogsService,
     UserFiltersService,
     UserFollowingsService,
-    UserGamesService,
     JwtStrategy,
     JwtRefreshStrategy,
     FileService,

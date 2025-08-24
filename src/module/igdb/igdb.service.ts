@@ -426,7 +426,7 @@ export class IGDBService {
 
         await this.fileService.uploadFile(response.data, key, bucketName);
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
     }
 
