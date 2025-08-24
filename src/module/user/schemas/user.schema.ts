@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { MaxLength } from "class-validator";
 import mongoose, { Document } from "mongoose";
-import { IRAAward } from "../types/award";
-import { IRole, RoleSchema } from "src/shared/zod/schemas/role.schema";
+import { IRAAward } from "src/shared/zod/schemas/ra.schema";
+import { IRole } from "src/shared/zod/schemas/role.schema";
 
 @Schema({
   timestamps: true,
@@ -12,9 +12,9 @@ export class User extends Document {
   userName: string;
   @Prop({ unique: [true, "Duplicate email entered"] })
   email: string;
-  @Prop({ required: true })
+  @Prop()
   password: string;
-  @Prop({ type: String })
+  @Prop()
   refreshToken?: string;
   @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
   followings: mongoose.Types.ObjectId[];
@@ -24,9 +24,9 @@ export class User extends Document {
   presets: { name: string; preset: string }[];
   @Prop()
   @MaxLength(450)
-  description: string;
+  description?: string;
   @Prop()
-  raUsername: string;
+  raUsername?: string;
   @Prop()
   raAwards: IRAAward[];
   @Prop({ default: ["user"] })
