@@ -5,8 +5,6 @@ import {
   Param,
   Patch,
   Query,
-  Req,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -22,43 +20,32 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { UpdateEmailDto } from "../../auth/dto/update-email.dto";
-import { UpdatePasswordDto } from "../../auth/dto/update-password.dto";
-import { UserIdGuard } from "../../auth/user.guard";
-import { UpdateDescriptionDto } from "../dto/update-description.dto";
-import { User } from "../schemas/user.schema";
-import { FileService } from "../services/file-upload.service";
-import { UserProfileService } from "../services/user-profile.service";
 import { RolesGuard } from "src/module/roles/roles.guard";
+import {
+  GetUserByIdDto,
+  GetUserByStringDto,
+  UpdateDescriptionDto,
+  UpdateUserEmailDto,
+  UpdateUserPasswordDto,
+} from "src/shared/zod/dto/user.dto";
+import { UserIdGuard } from "../../auth/user.guard";
+import { User } from "../schemas/user.schema";
+import { UserProfileService } from "../services/user-profile.service";
 
 @ApiTags("User Profile")
 @Controller("user")
 export class UserProfileController {
-  constructor(
-    private readonly userProfileService: UserProfileService,
-    private readonly fileService: FileService
-  ) {}
+  constructor(private readonly userProfileService: UserProfileService) {}
 
-  @Get("name")
-  @ApiOperation({ summary: "Get user by name" })
+  @Get("search")
+  @ApiOperation({ summary: "Get user by name or email" })
   @ApiResponse({
     status: 200,
     description: "Success",
   })
-  @ApiQuery({ name: "name" })
-  findByName(@Query("name") query: string): Promise<User> {
-    return this.userProfileService.findByString(query, "userName");
-  }
-
-  @Get("email")
-  @ApiOperation({ summary: "Get user by email" })
-  @ApiResponse({
-    status: 200,
-    description: "Success",
-  })
-  @ApiQuery({ name: "email" })
-  findByEmail(@Query("email") query: string): Promise<User> {
-    return this.userProfileService.findByString(query, "email");
+  @ApiQuery({ name: "searchString", required: true })
+  findByString(@Query() query: GetUserByStringDto): Promise<User> {
+    return this.userProfileService.findByString(query);
   }
 
   @Get(":userId")
@@ -75,10 +62,10 @@ export class UserProfileController {
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiCookieAuth()
   @ApiOperation({ summary: "Update user email" })
-  @ApiResponse({ status: 200, description: "success" })
+  @ApiResponse({ status: 201, description: "success" })
   async updateEmail(
     @Param("userId") userId: string,
-    @Body() updateEmailDto: UpdateEmailDto
+    @Body() updateEmailDto: UpdateUserEmailDto
   ): Promise<User> {
     return this.userProfileService.updateEmail(userId, updateEmailDto);
   }
@@ -87,15 +74,11 @@ export class UserProfileController {
   @UseGuards(AuthGuard("jwt"), UserIdGuard)
   @ApiCookieAuth()
   @ApiOperation({ summary: "Update user password" })
-  @ApiResponse({ status: 200, description: "Success" })
+  @ApiResponse({ status: 201, description: "Success" })
   async updatePassword(
     @Param("userId") userId: string,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-    @Req() req
+    @Body() updatePasswordDto: UpdateUserPasswordDto
   ): Promise<User> {
-    if (req.user._id.toString() !== userId) {
-      throw new UnauthorizedException("You can only update your own password");
-    }
     return this.userProfileService.updatePassword(userId, updatePasswordDto);
   }
 
@@ -165,7 +148,7 @@ export class UserProfileController {
   ) {
     return await this.userProfileService.updateUserDescription(
       userId,
-      descriptionDto.description
+      descriptionDto
     );
   }
 

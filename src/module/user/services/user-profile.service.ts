@@ -8,10 +8,15 @@ import { InjectModel } from "@nestjs/mongoose";
 import * as bcrypt from "bcryptjs";
 import { Query as ExpressQuery } from "express-serve-static-core";
 import mongoose, { Model } from "mongoose";
-import { UpdateEmailDto } from "src/module/auth/dto/update-email.dto";
-import { UpdatePasswordDto } from "src/module/auth/dto/update-password.dto";
 import { User } from "src/module/user/schemas/user.schema";
 import { FileService } from "./file-upload.service";
+import {
+  IGetUserByIdRequest,
+  IGetUserByStringRequest,
+  IUpdateUserDescriptionRequest,
+  IUpdateUserEmailRequest,
+  IUpdateUserPasswordRequest,
+} from "src/shared/zod/schemas/user.schema";
 
 @Injectable()
 export class UserProfileService {
@@ -30,16 +35,14 @@ export class UserProfileService {
         "-updatedAt",
         "-refreshToken",
         "-__v",
-        "-games",
       ]);
   }
-  async findByString(
-    searchString: string,
-    searchType: "userName" | "email"
-  ): Promise<User> {
+  async findByString({ searchString }: IGetUserByStringRequest): Promise<User> {
     return await this.userModel
-      .findOne({ [searchType]: searchString })
-      .select(["-password", "-createdAt", "-refreshToken", "-__v", "-games"]);
+      .findOne({
+        $or: [{ userName: searchString }, { email: searchString }],
+      })
+      .select(["-password", "-createdAt", "-refreshToken", "-__v"]);
   }
 
   async findAll(query: ExpressQuery): Promise<User[]> {
@@ -64,31 +67,28 @@ export class UserProfileService {
 
   async updateEmail(
     userId: string,
-    UpdateEmailDto: UpdateEmailDto
+    { email }: IUpdateUserEmailRequest
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
     if (!user) throw new BadRequestException("User not found");
 
-    user.email = UpdateEmailDto.newEmail;
+    user.email = email;
     await user.save();
     return user;
   }
 
   async updatePassword(
     userId: string,
-    updatePasswordDto: UpdatePasswordDto
+    { oldPassword, newPassword }: IUpdateUserPasswordRequest
   ): Promise<User> {
     const user = await this.userModel.findById(userId);
     if (!user) throw new BadRequestException("User not found");
 
-    const isPasswordMatched = await bcrypt.compare(
-      updatePasswordDto.oldPassword,
-      user.password
-    );
+    const isPasswordMatched = await bcrypt.compare(oldPassword, user.password);
     if (!isPasswordMatched)
       throw new UnauthorizedException("Password does not match");
 
-    const hashedPassword = await bcrypt.hash(updatePasswordDto.newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
     return user;
@@ -127,7 +127,10 @@ export class UserProfileService {
     return user.save();
   }
 
-  async updateUserDescription(userId: string, description: string) {
+  async updateUserDescription(
+    userId: string,
+    { description }: IUpdateUserDescriptionRequest
+  ) {
     const user = await this.userModel.findById(userId);
 
     user.description = description;

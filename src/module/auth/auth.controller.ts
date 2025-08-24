@@ -12,11 +12,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { UserProfileService } from "../user/services/user-profile.service";
 import { AuthService } from "./auth.service";
@@ -46,7 +42,9 @@ export class AuthController {
     const { accessToken, refreshToken } =
       await this.authService.signUp(signUpDto);
     const userId = (
-      await this.userProfileService.findByString(signUpDto.userName, "userName")
+      await this.userProfileService.findByString({
+        searchString: signUpDto.userName,
+      })
     ).id;
 
     this.authService.setCookies(
@@ -72,7 +70,9 @@ export class AuthController {
     const { accessToken, refreshToken } =
       await this.authService.login(loginDto);
     const userId = (
-      await this.userProfileService.findByString(loginDto.email, "email")
+      await this.userProfileService.findByString({
+        searchString: loginDto.email,
+      })
     ).id;
 
     this.authService.setCookies(

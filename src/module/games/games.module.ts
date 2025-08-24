@@ -4,7 +4,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { UserLogsService } from "../user/services/user-logs.service";
 import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
 import { PlaythroughsService } from "./services/playthroughs.service";
-import { GamesService } from "./services/games.service";
+import { GamesService } from "./schemas/games.service";
 import { GamesController } from "./controllers/games.controller";
 import { PlaythroughsController } from "./controllers/playthorughs.controller";
 import { Platform, PlatformDatabaseSchema } from "./schemas/platform.schema";

@@ -30,7 +30,7 @@ import {
   GetGamesResponseDto,
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
-import { GamesService } from "../services/games.service";
+import { GamesService } from "../schemas/games.service";
 
 @ApiTags("Games")
 @Controller("games")
