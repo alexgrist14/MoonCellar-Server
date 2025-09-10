@@ -30,7 +30,12 @@ export class AuthService {
     user: User
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.jwtService.sign(
-      { id: user._id },
+      {
+        id: user._id,
+        roles: user.roles,
+        userName: user.userName,
+        email: user.email,
+      },
       { expiresIn: accessExpire }
     );
     const refreshToken = this.jwtService.sign(
@@ -89,7 +94,12 @@ export class AuthService {
     }
 
     const newAccessToken = this.jwtService.sign(
-      { id: user._id },
+      {
+        id: user._id,
+        roles: user.roles,
+        userName: user.userName,
+        email: user.email,
+      },
       { expiresIn: accessExpire }
     );
 
