@@ -1,16 +1,26 @@
-import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  BadRequestException,
+} from "@nestjs/common";
 import { jwtDecode } from "jwt-decode";
-import { Error } from "mongoose";
 
 @Injectable()
 export class UserIdGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
+
+    const userIdFromClient = request.headers["x-user-id"];
+
     const token: { id: string } = jwtDecode(request.cookies.accessMoonToken);
-    const userId =
-      request.params?.userId || request.body?.userId || request.query?.userId;
-    if (!token || !userId || token.id !== userId) {
-      throw new Error("Wrong user");
+
+    if (
+      !token?.id ||
+      !userIdFromClient ||
+      token.id !== String(userIdFromClient)
+    ) {
+      throw new BadRequestException("Wrong user");
     }
 
     return true;
