@@ -58,6 +58,8 @@ export class GamesService {
     mode = "any",
     company,
     years,
+    rating,
+    votes,
     excludeGames,
   }: IGetGamesRequest) {
     const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
@@ -72,6 +74,8 @@ export class GamesService {
         company,
         years,
         excludeGames,
+        rating,
+        votes,
       }),
       {
         $sort: {

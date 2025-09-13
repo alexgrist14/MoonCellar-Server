@@ -11,6 +11,8 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
     excluded,
     selected,
     excludeGames,
+    rating,
+    votes,
   } = filters;
 
   return {
@@ -93,12 +95,18 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
               },
             ]
           : []),
-        // ...(rating !== undefined
-        //   ? [{ total_rating: { $gte: +rating } }]
-        //   : []),
-        // ...(votes !== undefined
-        //   ? [{ total_rating_count: { $gte: +votes } }]
-        //   : []),
+        ...(rating !== undefined
+          ? [
+              { "igdb.total_rating": { $exists: true } },
+              { "igdb.total_rating": { $gte: +rating } },
+            ]
+          : []),
+        ...(votes !== undefined
+          ? [
+              { "igdb.total_rating": { $exists: true } },
+              { "igdb.total_rating_count": { $gte: +votes } },
+            ]
+          : []),
         ...(!!selected?.keywords?.length
           ? [
               {
