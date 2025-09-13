@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 import { IGDBArtworks } from "src/module/igdb/schemas/igdb-artworks.schema";
 import { IGDBCovers } from "src/module/igdb/schemas/igdb-covers.schema";
+import { IGDBGameTypes } from "src/module/igdb/schemas/igdb-game-types.schema";
 import { IGDBGenres } from "src/module/igdb/schemas/igdb-genres.schema";
 import { IGDBInvolvedCompanies } from "src/module/igdb/schemas/igdb-involved-companies.schema";
 import { IGDBKeywords } from "src/module/igdb/schemas/igdb-keywords.schema";
@@ -45,7 +46,7 @@ export class IGDBGames {
   total_rating_count: number;
   @Prop()
   aggregated_rating: number;
-  @Prop()
+  @Prop({ ref: IGDBGameTypes.name })
   game_type: number;
   @Prop()
   category: number;

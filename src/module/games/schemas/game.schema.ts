@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import {
+    ICompanyField,
+  IGDBField,
   IReleaseDate,
   IRetroachievementsField,
 } from "src/shared/zod/schemas/games.schema";
@@ -35,7 +37,7 @@ export class Game {
   @Prop()
   artworks: string[];
   @Prop()
-  companies: string[];
+  companies: ICompanyField[];
   @Prop()
   websites: string[];
   @Prop()
@@ -47,7 +49,11 @@ export class Game {
   @Prop()
   retroachievements: IRetroachievementsField[];
   @Prop()
-  igdbId: number;
+  rating: number;
+  @Prop()
+  ratingCount: number;
+  @Prop({ type: Object })
+  igdb: IGDBField;
   @Prop()
   createdAt: string;
   @Prop()

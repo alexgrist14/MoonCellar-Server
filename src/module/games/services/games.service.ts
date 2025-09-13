@@ -73,7 +73,11 @@ export class GamesService {
         years,
         excludeGames,
       }),
-      { $sort: { first_release: -1 } },
+      {
+        $sort: {
+          "igdb.total_rating_count": -1,
+        },
+      },
       {
         $facet: {
           results: [

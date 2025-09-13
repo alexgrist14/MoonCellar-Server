@@ -31,7 +31,16 @@ export class IgdbParserController {
   @ApiOperation({ summary: "Parse games" })
   @ApiResponse({ status: 200, description: "Successfully started" })
   async parseGames() {
-    return this.service.igdbToGames();
+    const limit = 500;
+    const count = await this.service.getGamesCount();
+    const totalPages = Math.ceil(count / limit);
+
+    for (let page = 1; page <= totalPages; page++) {
+      console.log(
+        `Processing page ${page} of ${totalPages} (${limit * page} items)`
+      );
+      await this.service.igdbToGames(page, limit);
+    }
   }
 
   @ApiCookieAuth()

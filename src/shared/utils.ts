@@ -299,7 +299,7 @@ export const getImageLink = (
   multiply?: number
 ) => {
   return (
-    (url.includes("http") ? "" : "https:") +
+    (url.includes("http") ? url : "https:") +
     url.replace("thumb", !!multiply ? `${size}_${multiply}x` : size)
   );
 };

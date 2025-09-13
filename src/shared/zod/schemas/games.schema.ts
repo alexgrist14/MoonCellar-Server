@@ -5,6 +5,20 @@ export const RetroachievementsSchema = z.object({
   consoleId: z.number(),
 });
 
+export const IGDBSchema = z.object({
+  gameId: z.number(),
+  total_rating: z.number().optional(),
+  total_rating_count: z.number().optional(),
+});
+
+export const CompanySchema = z.object({
+  name: z.string(),
+  developer: z.boolean().default(false),
+  porting: z.boolean().default(false),
+  publisher: z.boolean().default(true),
+  supporting: z.boolean().default(false),
+});
+
 export const GameFiltersSchema = z.object({
   genres: z.string().array().or(z.string().nullish()).optional(),
   platforms: z.string().array().or(z.string().nullish()).optional(),
@@ -37,13 +51,15 @@ export const GameSchema = z.object({
   themes: z.string().array().optional(),
   screenshots: z.string().array().optional(),
   artworks: z.string().array().optional(),
-  companies: z.string().array().optional(),
+  companies: CompanySchema.array().optional(),
   websites: z.string().array().optional(),
   first_release: z.number().optional(),
   release_dates: ReleaseDateSchema.array().optional(),
   platformIds: z.string().array(),
+  rating: z.number().optional(),
+  ratingCount: z.number().optional(),
   retroachievements: RetroachievementsSchema.array().optional(),
-  igdbId: z.number().optional(),
+  igdb: IGDBSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -112,6 +128,8 @@ export const UpdateGameRequestSchema = GameSchema.omit({
 export const GetCustomGameResponseSchema = GameSchema.array();
 
 export type IRetroachievementsField = z.infer<typeof RetroachievementsSchema>;
+export type IGDBField = z.infer<typeof IGDBSchema>;
+export type ICompanyField = z.infer<typeof CompanySchema>;
 export type IGameFilters = z.infer<typeof GameFiltersSchema>;
 export type IReleaseDate = z.infer<typeof ReleaseDateSchema>;
 
