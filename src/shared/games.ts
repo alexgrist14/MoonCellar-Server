@@ -91,7 +91,11 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
         ...(!!company
           ? [
               {
-                companies: company,
+                "companies.name": {
+                  $regex: company.replaceAll(" ", "\\s*"),
+
+                  $options: "i",
+                },
               },
             ]
           : []),
