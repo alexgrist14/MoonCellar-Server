@@ -254,7 +254,15 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
             ]
           : []),
         ...(!!excludeGames?.length
-          ? [{ _id: { $nin: excludeGames.map((id) => Number(id)) } }]
+          ? [
+              {
+                _id: {
+                  $nin: excludeGames.map(
+                    (id) => new mongoose.Types.ObjectId(id)
+                  ),
+                },
+              },
+            ]
           : []),
       ],
     },
