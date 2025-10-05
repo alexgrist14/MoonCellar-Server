@@ -79,9 +79,9 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
           ? [
               {
                 first_release: {
-                  $gte: new Date(years[0]).getTime() / 1000,
+                  $gte: new Date(+years[0], 0, 0).getTime() / 1000,
                   $lte:
-                    (new Date((+years[1] + 1).toString()).getTime() -
+                    (new Date(+years[1] + 1, 0, 0).getTime() -
                       24 * 60 * 60 * 1000) /
                     1000,
                 },

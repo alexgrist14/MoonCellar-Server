@@ -77,7 +77,7 @@ export const GetGamesByIdsSchema = z.object({
 });
 
 export const GetGamesRequestSchema = z.object({
-  take: z.coerce.number().min(1).max(100).default(50).optional(),
+  take: z.coerce.number().min(1).max(1000).default(50).optional(),
   isRandom: z
     .union([z.string(), z.boolean()])
     .transform((val) =>
