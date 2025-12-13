@@ -13,6 +13,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCookieAuth,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
@@ -113,8 +114,12 @@ export class FilesController {
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
-  async getBucketKeys(@Query("bucketName") bucketName: string) {
-    return await this.fileService.getBucketKeys(bucketName);
+  @ApiQuery({ name: "prefix", required: false })
+  async getBucketKeys(
+    @Query("bucketName") bucketName: string,
+    @Query("prefix") prefix: string | undefined
+  ) {
+    return await this.fileService.getAllKeys(bucketName, { prefix });
   }
 
   @Delete("/clear-bucket")
@@ -123,6 +128,6 @@ export class FilesController {
   @Roles("admin")
   @ApiResponse({ status: 200, description: "Success" })
   async clearBucket(@Query("bucketName") bucketName: string) {
-    return await this.fileService.clearBucket(bucketName);
+    this.fileService.clearBucket(bucketName);
   }
 }

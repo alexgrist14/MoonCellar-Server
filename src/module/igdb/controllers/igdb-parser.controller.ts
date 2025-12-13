@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import {
+  ApiBody,
   ApiCookieAuth,
   ApiOperation,
   ApiQuery,
@@ -10,6 +11,7 @@ import { IGDBService } from "../igdb.service";
 import { ParserType } from "../interface/common.interface";
 import { parserTypes } from "../constants/common";
 import { AuthGuard } from "@nestjs/passport";
+import { ParseImagesDto } from "../interface/parse.type";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -31,16 +33,49 @@ export class IgdbParserController {
   @ApiOperation({ summary: "Parse games" })
   @ApiResponse({ status: 200, description: "Successfully started" })
   async parseGames() {
-    const limit = 500;
+    const limit = 1000;
     const count = await this.service.getGamesCount();
     const totalPages = Math.ceil(count / limit);
+    let page = 0;
 
-    for (let page = 1; page <= totalPages; page++) {
-      console.log(
-        `Processing page ${page} of ${totalPages} (${limit * page} items)`
-      );
-      await this.service.igdbToGames(page, limit);
-    }
+    const callback = (isStop?: boolean) => {
+      page += 1;
+      if (page <= totalPages) {
+        this.service.igdbToGames(page, limit, totalPages).then((res) => {
+          console.log(res);
+          !isStop && callback();
+        });
+      }
+    };
+
+    callback();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/parse-images")
+  @ApiOperation({ summary: "Parse images" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  @ApiBody({ type: ParseImagesDto })
+  async parseImages(@Body() dto: ParseImagesDto) {
+    const limit = 100;
+    const count = await this.service.getGamesCount();
+    const totalPages = Math.ceil(count / limit);
+    let page = 0;
+
+    const callback = (isStop?: boolean) => {
+      page += 1;
+      if (page <= totalPages) {
+        this.service.parseImagesToS3(page, limit, dto).then(() => {
+          console.log(
+            `${page * limit} games parsed (Total: ${totalPages * limit})\n`
+          );
+          !isStop && setTimeout(() => callback(), 2000);
+        });
+      }
+    };
+
+    callback();
   }
 
   @ApiCookieAuth()

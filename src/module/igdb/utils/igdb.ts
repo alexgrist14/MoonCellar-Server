@@ -9,7 +9,7 @@ export const igdbAuth = () =>
 
 export const igdbAgent = <T>(url: string, token: string, params?: any) => {
   return axios.request<T>({
-    url: "https://mooncellar.space:4000",
+    url,
     method: "post",
     withCredentials: false,
     params,
@@ -17,7 +17,7 @@ export const igdbAgent = <T>(url: string, token: string, params?: any) => {
       Accept: "application/json",
       "Client-ID": process.env.TWITCH_CLIENT_ID,
       Authorization: `Bearer ${token}`,
-      "Target-URL": url,
+      // "Target-URL": url,
     },
   });
 };

@@ -240,140 +240,136 @@ export class IGDBService {
     return this.IGDBGamesModel.countDocuments();
   }
 
-  async igdbToGames(page: number, limit: number) {
+  async igdbToGames(
+    page: number,
+    limit: number,
+    total: number,
+    options?: { isSkipExistedGames?: boolean }
+  ) {
     const games = await this.IGDBGamesModel.find()
       .skip((page - 1) * limit)
       .limit(limit);
     const gamesLength = games.length;
 
+    console.log(`Processing page ${page} of ${total} (${limit * page} items)`);
     console.log("IGDB games loaded", gamesLength);
 
-    const queries = games.map(async (game) => {
-      if (!game) return;
+    const queries = [];
 
-      const _id = new mongoose.Types.ObjectId();
+    for (const game of games) {
+      if (!game) continue;
 
-      const existed = await this.Games.findOne({ "igdb.gameId": game._id });
+      const callback = async () => {
+        const _id = new mongoose.Types.ObjectId();
 
-      const populatedGame: Omit<
-        IGDBGamesDocument,
-        | "game_type"
-        | "cover"
-        | "game_modes"
-        | "genres"
-        | "keywords"
-        | "themes"
-        | "screenshots"
-        | "artworks"
-        | "involved_companies"
-        | "websites"
-        | "release_dates"
-        | "platforms"
-      > & {
-        game_type: IGDBGameTypesDocument;
-        cover: IGDBCoverDocument;
-        game_modes: IGDBModesDocument[];
-        genres: IGDBGenresDocument[];
-        keywords: IGDBKeywordsDocument[];
-        themes: IGDBThemesDocument[];
-        screenshots: IGDBScreenshotsDocument[];
-        artworks: IGDBArtworksDocument[];
-        involved_companies: (Omit<IGDBInvolvedCompaniesDocument, "company"> & {
-          company: IGDBCompaniesDocument;
-        })[];
-        websites: IGDBWebsitesDocument[];
-        release_dates: IGDBReleaseDatesDocument[];
-        platforms: IGDBPlatformsDocument[];
-      } = await game.populate(
-        "game_type cover game_modes genres keywords themes screenshots artworks websites release_dates platforms"
-      );
+        const existed = await this.Games.findOne({ "igdb.gameId": game._id });
 
-      const populatedCompanies: any =
-        await this.IGDBInvolvedCompaniesModel.find({
-          _id: { $in: populatedGame.involved_companies },
-        }).populate("company");
+        if (options?.isSkipExistedGames && !!existed) return Promise.reject();
 
-      populatedGame.involved_companies = populatedCompanies;
+        const covers = await this.fileService.getAllKeys("mooncellar-covers", {
+          prefix: game.slug + "/",
+        });
 
-      const platformIds = await this.Platforms.find({
-        igdbId: { $in: game.platforms },
-      }).select("_id igdbId");
+        const populatedGame: Omit<
+          IGDBGamesDocument,
+          | "game_type"
+          | "cover"
+          | "game_modes"
+          | "genres"
+          | "keywords"
+          | "themes"
+          | "involved_companies"
+          | "websites"
+          | "release_dates"
+          | "platforms"
+        > & {
+          game_type: IGDBGameTypesDocument;
+          cover: IGDBCoverDocument;
+          game_modes: IGDBModesDocument[];
+          genres: IGDBGenresDocument[];
+          keywords: IGDBKeywordsDocument[];
+          themes: IGDBThemesDocument[];
+          involved_companies: (Omit<
+            IGDBInvolvedCompaniesDocument,
+            "company"
+          > & {
+            company: IGDBCompaniesDocument;
+          })[];
+          websites: IGDBWebsitesDocument[];
+          release_dates: IGDBReleaseDatesDocument[];
+          platforms: IGDBPlatformsDocument[];
+        } = await game.populate(
+          "game_type cover game_modes genres keywords themes screenshots artworks websites release_dates platforms"
+        );
 
-      const parsedScreenshots = !!existed?.screenshots.length
-        ? existed.screenshots
-        : await this.parseImagesToS3(
-            populatedGame.screenshots,
-            _id.toString(),
-            "mooncellar-screenshots"
-          );
+        const populatedCompanies: any =
+          await this.IGDBInvolvedCompaniesModel.find({
+            _id: { $in: populatedGame.involved_companies },
+          }).populate("company");
 
-      const parsedArtworks = !!existed?.artworks.length
-        ? existed.artworks
-        : await this.parseImagesToS3(
-            populatedGame.artworks,
-            _id.toString(),
-            "mooncellar-artworks"
-          );
+        populatedGame.involved_companies = populatedCompanies;
 
-      const parsedCovers = !!existed?.cover
-        ? [existed.cover]
-        : await this.parseImagesToS3(
-            [populatedGame.cover],
-            _id.toString(),
-            "mooncellar-covers",
-            true
-          );
+        const platformIds = await this.Platforms.find({
+          igdbId: { $in: game.platforms },
+        }).select("_id igdbId");
 
-      return {
-        _id: existed?._id || _id,
-        slug: populatedGame.slug,
-        name: populatedGame.name,
-        type:
-          populatedGame?.game_type?.type ||
-          populatedGame?.category ||
-          existed?.type ||
-          null,
-        cover: parsedCovers?.[0],
-        storyline: game.storyline,
-        summary: game.summary,
-        modes: populatedGame.game_modes.map((mode) => mode.name),
-        genres: populatedGame.genres.map((genre) => genre.name),
-        keywords: populatedGame.keywords.map((keyword) => keyword.name),
-        themes: populatedGame.themes.map((theme) => theme.name),
-        screenshots: parsedScreenshots,
-        artworks: parsedArtworks,
-        companies: populatedGame.involved_companies.map((comp) => ({
-          name: comp.company.name,
-          developer: comp.developer,
-          publisher: comp.publisher,
-          porting: comp.porting,
-          supporting: comp.supporting,
-        })),
-        websites: populatedGame.websites.map((site) => site.url),
-        first_release: populatedGame.first_release_date,
-        release_dates: populatedGame.release_dates?.map((date) => ({
-          date: date.date,
-          human: date.human,
-          month: date.m,
-          year: date.y,
-          platformId: platformIds.find((plat) => plat.igdbId === date.platform)
-            ?._id,
-          region: date.region,
-        })),
-        platformIds: platformIds.map((plat) => plat._id),
-        igdb: {
-          gameId: game._id,
-          total_rating: game.total_rating,
-          total_rating_count: game.total_rating_count,
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        return Promise.resolve({
+          _id: existed?._id || _id,
+          slug: populatedGame.slug,
+          name: populatedGame.name,
+          type:
+            populatedGame?.game_type?.type ||
+            populatedGame?.category ||
+            existed?.type ||
+            null,
+          cover: !!covers.length
+            ? `https://mooncellar-covers.s3.regru.cloud/${covers[0]}`
+            : undefined,
+          storyline: game.storyline,
+          summary: game.summary,
+          modes: populatedGame.game_modes.map((mode) => mode.name),
+          genres: populatedGame.genres.map((genre) => genre.name),
+          keywords: populatedGame.keywords.map((keyword) => keyword.name),
+          themes: populatedGame.themes.map((theme) => theme.name),
+          companies: populatedGame.involved_companies.map((comp) => ({
+            name: comp.company.name,
+            developer: comp.developer,
+            publisher: comp.publisher,
+            porting: comp.porting,
+            supporting: comp.supporting,
+          })),
+          websites: populatedGame.websites.map((site) => site.url),
+          first_release: populatedGame.first_release_date,
+          release_dates: populatedGame.release_dates?.map((date) => ({
+            date: date.date,
+            human: date.human,
+            month: date.m,
+            year: date.y,
+            platformId: platformIds.find(
+              (plat) => plat.igdbId === date.platform
+            )?._id,
+            region: date.region,
+          })),
+          platformIds: platformIds.map((plat) => plat._id),
+          igdb: {
+            gameId: game._id,
+            total_rating: game.total_rating,
+            total_rating_count: game.total_rating_count,
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       };
-    });
+      queries.push(callback());
+    }
 
-    const parsedGames = await Promise.all(queries);
+    const responses = await Promise.allSettled(queries);
 
     console.log("Games parsed");
+
+    const parsedGames = responses
+      .filter((res) => res.status === "fulfilled")
+      .map((res) => res.value);
 
     return await this.Games.bulkWrite(
       parsedGames.map((game) => ({
@@ -387,39 +383,119 @@ export class IGDBService {
   }
 
   async parseImagesToS3(
-    images: IGDBScreenshotsDocument[],
-    gameId: string,
-    bucketName: string,
-    isCover?: boolean
+    page: number,
+    limit: number,
+    options?: { parseTypes: string[] }
   ) {
-    const result: string[] = [];
+    const games = await this.IGDBGamesModel.find()
+      .select("_id slug screenshots artworks cover")
+      .skip((page - 1) * limit)
+      .limit(limit);
+    const queries = [];
+    const isParseCovers =
+      !options?.parseTypes?.length || options?.parseTypes?.includes("covers");
+    const isParseArtworks =
+      !options?.parseTypes?.length || options?.parseTypes?.includes("artworks");
+    const isParseScreenshots =
+      !options?.parseTypes?.length ||
+      options?.parseTypes?.includes("screenshots");
 
-    for (const i in images) {
-      if (!images?.[i]?.url) continue;
+    console.log("Parsing started");
 
-      const url = getImageLink(
-        images[i]?.url,
-        isCover ? "cover_big" : "1080p",
-        isCover ? 2 : undefined
-      );
-      try {
-        const response = await this.httpService.axiosRef({
-          url,
-          method: "GET",
-          responseType: "arraybuffer",
-        });
+    const sendArrayToS3 = async (
+      bucketName: string,
+      slug: string,
+      images: (IGDBScreenshotsDocument | string)[]
+    ) => {
+      for (const i in images) {
+        try {
+          const _id = new mongoose.Types.ObjectId();
+          if (!images?.[i]) continue;
 
-        const key = `${gameId}_${i}`;
+          const url =
+            typeof images[i] === "string"
+              ? images[i]
+              : getImageLink(images[i]?.url, "1080p");
 
-        result.push(`https://${bucketName}.s3.regru.cloud/${key}`);
+          if (!url) continue;
 
-        await this.fileService.uploadFile(response.data, key, bucketName);
-      } catch (e) {
-        console.error(e);
+          const response = await this.httpService.axiosRef({
+            url,
+            method: "GET",
+            responseType: "arraybuffer",
+          });
+
+          const key = `${slug}/${_id}`;
+          await this.fileService.uploadFile(response.data, key, bucketName);
+        } catch (e) {
+          console.error("Image error: " + (e?.response?.status || "unknown"));
+          return Promise.reject();
+        }
       }
+
+      return Promise.resolve();
+    };
+
+    for (const game of games) {
+      if (!game) continue;
+
+      const callback = async () => {
+        const populatedGame: Pick<IGDBGamesDocument, "_id"> & {
+          cover: IGDBCoverDocument[];
+          screenshots: IGDBScreenshotsDocument[];
+          artworks: IGDBArtworksDocument[];
+        } = await game.populate("cover screenshots artworks");
+        if (isParseCovers) {
+          const gameCovers = await this.fileService.getAllKeys(
+            "mooncellar-covers",
+            { prefix: game.slug + "/" }
+          );
+
+          if (!gameCovers.length) {
+            const coverLink = !!populatedGame.cover?.[0]?.url
+              ? getImageLink(populatedGame.cover[0].url, "cover_big", 2)
+              : undefined;
+            await sendArrayToS3("mooncellar-covers", game.slug, [coverLink]);
+          }
+        }
+
+        if (isParseScreenshots) {
+          const gameScreenshots = await this.fileService.getAllKeys(
+            "mooncellar-screenshots",
+            { prefix: game.slug + "/" }
+          );
+
+          if (!gameScreenshots.length) {
+            await sendArrayToS3(
+              "mooncellar-screenshots",
+              game.slug,
+              populatedGame.screenshots
+            );
+          }
+        }
+
+        if (isParseArtworks) {
+          const gameArtworks = await this.fileService.getAllKeys(
+            "mooncellar-artworks",
+            { prefix: game.slug + "/" }
+          );
+
+          if (!gameArtworks.length) {
+            await sendArrayToS3(
+              "mooncellar-artworks",
+              game.slug,
+              populatedGame.artworks
+            );
+          }
+        }
+
+        return Promise.resolve(game.slug + " parsed");
+      };
+
+      queries.push(callback());
     }
 
-    return result;
+    return Promise.allSettled(queries);
   }
 
   async igdbToPlatforms() {
