@@ -385,20 +385,19 @@ export class IGDBService {
   async parseImagesToS3(
     page: number,
     limit: number,
-    options?: { parseTypes: string[] }
+    options?: {
+      parseType: "covers" | "screenshots" | "artworks";
+      isParseExisted?: boolean;
+    }
   ) {
     const games = await this.IGDBGamesModel.find()
       .select("_id slug screenshots artworks cover")
       .skip((page - 1) * limit)
       .limit(limit);
     const queries = [];
-    const isParseCovers =
-      !options?.parseTypes?.length || options?.parseTypes?.includes("covers");
-    const isParseArtworks =
-      !options?.parseTypes?.length || options?.parseTypes?.includes("artworks");
-    const isParseScreenshots =
-      !options?.parseTypes?.length ||
-      options?.parseTypes?.includes("screenshots");
+    const isParseCovers = options?.parseType === "covers";
+    const isParseArtworks = options?.parseType === "artworks";
+    const isParseScreenshots = options?.parseType === "screenshots";
 
     console.log("Parsing started");
 
@@ -440,56 +439,60 @@ export class IGDBService {
       if (!game) continue;
 
       const callback = async () => {
-        const populatedGame: Pick<IGDBGamesDocument, "_id"> & {
-          cover: IGDBCoverDocument[];
-          screenshots: IGDBScreenshotsDocument[];
-          artworks: IGDBArtworksDocument[];
-        } = await game.populate("cover screenshots artworks");
-        if (isParseCovers) {
-          const gameCovers = await this.fileService.getAllKeys(
-            "mooncellar-covers",
-            { prefix: game.slug + "/" }
-          );
+        try {
+          const populatedGame: Pick<IGDBGamesDocument, "_id"> & {
+            cover: IGDBCoverDocument[];
+            screenshots: IGDBScreenshotsDocument[];
+            artworks: IGDBArtworksDocument[];
+          } = await game.populate("cover screenshots artworks");
+          if (isParseCovers) {
+            const gameCovers = await this.fileService.getAllKeys(
+              "mooncellar-covers",
+              { prefix: game.slug + "/" }
+            );
 
-          if (!gameCovers.length) {
-            const coverLink = !!populatedGame.cover?.[0]?.url
-              ? getImageLink(populatedGame.cover[0].url, "cover_big", 2)
-              : undefined;
-            await sendArrayToS3("mooncellar-covers", game.slug, [coverLink]);
+            if (!gameCovers.length || options?.isParseExisted) {
+              const coverLink = !!populatedGame.cover?.[0]?.url
+                ? getImageLink(populatedGame.cover[0].url, "cover_big", 2)
+                : undefined;
+              await sendArrayToS3("mooncellar-covers", game.slug, [coverLink]);
+            }
           }
-        }
 
-        if (isParseScreenshots) {
-          const gameScreenshots = await this.fileService.getAllKeys(
-            "mooncellar-screenshots",
-            { prefix: game.slug + "/" }
-          );
-
-          if (!gameScreenshots.length) {
-            await sendArrayToS3(
+          if (isParseScreenshots) {
+            const gameScreenshots = await this.fileService.getAllKeys(
               "mooncellar-screenshots",
-              game.slug,
-              populatedGame.screenshots
+              { prefix: game.slug + "/" }
             );
+
+            if (!gameScreenshots.length || options?.isParseExisted) {
+              await sendArrayToS3(
+                "mooncellar-screenshots",
+                game.slug,
+                populatedGame.screenshots
+              );
+            }
           }
-        }
 
-        if (isParseArtworks) {
-          const gameArtworks = await this.fileService.getAllKeys(
-            "mooncellar-artworks",
-            { prefix: game.slug + "/" }
-          );
-
-          if (!gameArtworks.length) {
-            await sendArrayToS3(
+          if (isParseArtworks) {
+            const gameArtworks = await this.fileService.getAllKeys(
               "mooncellar-artworks",
-              game.slug,
-              populatedGame.artworks
+              { prefix: game.slug + "/" }
             );
-          }
-        }
 
-        return Promise.resolve(game.slug + " parsed");
+            if (!gameArtworks.length || options?.isParseExisted) {
+              await sendArrayToS3(
+                "mooncellar-artworks",
+                game.slug,
+                populatedGame.artworks
+              );
+            }
+          }
+
+          return Promise.resolve(game.slug + " parsed");
+        } catch (e) {
+          Promise.reject(e.response?.status || "Error");
+        }
       };
 
       queries.push(callback());

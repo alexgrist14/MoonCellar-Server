@@ -56,9 +56,16 @@ export class IgdbParserController {
   @Post("/parse-images")
   @ApiOperation({ summary: "Parse images" })
   @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiBody({ type: ParseImagesDto })
-  async parseImages(@Body() dto: ParseImagesDto) {
-    const limit = 100;
+  @ApiQuery({ name: "parseType", enum: ["covers", "artworks", "screenshots"] })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "timeout", required: false })
+  @ApiQuery({ name: "isParseExisted", default: false, required: false })
+  async parseImages(
+    @Query("parseType") parseType: "covers" | "artworks" | "screenshots",
+    @Query("limit") limit: number,
+    @Query("timeout") timeout: number,
+    @Query("isParseExisted") isParseExisted: boolean
+  ) {
     const count = await this.service.getGamesCount();
     const totalPages = Math.ceil(count / limit);
     let page = 0;
@@ -66,12 +73,14 @@ export class IgdbParserController {
     const callback = (isStop?: boolean) => {
       page += 1;
       if (page <= totalPages) {
-        this.service.parseImagesToS3(page, limit, dto).then(() => {
-          console.log(
-            `${page * limit} games parsed (Total: ${totalPages * limit})\n`
-          );
-          !isStop && setTimeout(() => callback(), 2000);
-        });
+        this.service
+          .parseImagesToS3(page, limit || 50, { parseType, isParseExisted })
+          .then(() => {
+            console.log(
+              `${page * limit} games parsed (Total: ${totalPages * limit})\n`
+            );
+            !isStop && setTimeout(() => callback(), timeout || 2000);
+          });
       }
     };
 
