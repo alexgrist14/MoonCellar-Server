@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import {
-  ApiBody,
   ApiCookieAuth,
   ApiOperation,
   ApiQuery,
@@ -11,7 +10,6 @@ import { IGDBService } from "../igdb.service";
 import { ParserType } from "../interface/common.interface";
 import { parserTypes } from "../constants/common";
 import { AuthGuard } from "@nestjs/passport";
-import { ParseImagesDto } from "../interface/parse.type";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -80,7 +78,8 @@ export class IgdbParserController {
               `${page * limit} games parsed (Total: ${totalPages * limit})\n`
             );
             !isStop && setTimeout(() => callback(), timeout || 2000);
-          });
+          })
+          .catch(() => {});
       }
     };
 

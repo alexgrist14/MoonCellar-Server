@@ -489,13 +489,19 @@ export class IGDBService {
             }
           }
 
-          return Promise.resolve(game.slug + " parsed");
+          return game.slug + " parsed";
         } catch (e) {
-          Promise.reject(e.response?.status || "Error");
+          console.log(e.response?.status || "Error");
         }
       };
 
-      queries.push(callback());
+      queries.push(
+        new Promise((resolve, reject) => {
+          callback()
+            .then((res) => resolve(res))
+            .catch(() => reject());
+        })
+      );
     }
 
     return Promise.allSettled(queries);
