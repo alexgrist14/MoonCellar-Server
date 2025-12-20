@@ -21,6 +21,7 @@ import { FileService } from "../services/file-upload.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { RolesGuard } from "src/module/roles/roles.guard";
 import { Roles } from "src/module/roles/roles.decorator";
+import { GetFileRequestDto } from "src/shared/zod/dto/files.dto";
 
 @ApiTags("Files Controller")
 @Controller("file")
@@ -29,11 +30,8 @@ export class FilesController {
 
   @Get("/")
   @ApiResponse({ status: 200, description: "Success" })
-  async getFile(
-    @Query("key") key: string,
-    @Query("bucketName") bucketName: string
-  ) {
-    return await this.fileService.getFile(key, bucketName);
+  async getFile(@Query() dto: GetFileRequestDto) {
+    return this.fileService.getFile(dto);
   }
 
   @Post("/object")
@@ -129,5 +127,14 @@ export class FilesController {
   @ApiResponse({ status: 200, description: "Success" })
   async clearBucket(@Query("bucketName") bucketName: string) {
     this.fileService.clearBucket(bucketName);
+  }
+
+  @Delete("/remove-duplicates")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("admin")
+  @ApiResponse({ status: 200, description: "Success" })
+  async removeDuplicates(@Query("bucketName") bucketName: string) {
+    this.fileService.removeDuplicates(bucketName);
   }
 }

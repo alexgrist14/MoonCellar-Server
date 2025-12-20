@@ -10,6 +10,7 @@ import { IGDBService } from "../igdb.service";
 import { ParserType } from "../interface/common.interface";
 import { parserTypes } from "../constants/common";
 import { AuthGuard } from "@nestjs/passport";
+import { ParseImagesDto } from "src/shared/zod/dto/igdb.dto";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -58,12 +59,8 @@ export class IgdbParserController {
   @ApiQuery({ name: "limit", required: false })
   @ApiQuery({ name: "timeout", required: false })
   @ApiQuery({ name: "isParseExisted", default: false, required: false })
-  async parseImages(
-    @Query("parseType") parseType: "covers" | "artworks" | "screenshots",
-    @Query("limit") limit: number,
-    @Query("timeout") timeout: number,
-    @Query("isParseExisted") isParseExisted: boolean
-  ) {
+  async parseImages(@Query() dto: ParseImagesDto) {
+    const { isParseExisted, limit, parseType, timeout } = dto;
     const count = await this.service.getGamesCount();
     const totalPages = Math.ceil(count / limit);
     let page = 0;
@@ -72,7 +69,10 @@ export class IgdbParserController {
       page += 1;
       if (page <= totalPages) {
         this.service
-          .parseImagesToS3(page, limit || 50, { parseType, isParseExisted })
+          .parseImagesToS3(page, limit || 50, {
+            parseType,
+            isParseExisted,
+          })
           .then(() => {
             console.log(
               `${page * limit} games parsed (Total: ${totalPages * limit})\n`
