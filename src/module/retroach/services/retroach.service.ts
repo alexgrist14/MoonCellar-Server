@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import {
   buildAuthorization,
@@ -6,21 +6,22 @@ import {
   getConsoleIds,
   getGameList,
 } from "@retroachievements/api";
-import mongoose, { Model } from "mongoose";
+import { Model } from "mongoose";
 import { updateOrInsertValues } from "src/shared/db";
 
-import { RAConsole } from "../schemas/console.schema";
-import { RAGame } from "../schemas/retroach.schema";
-import { RA_MAIN_USER_NAME } from "src/shared/constants";
-import { getFormattedTitle } from "src/shared/utils";
 import { Game, GameDocument } from "src/module/games/schemas/game.schema";
 import {
   Platform,
   PlatformDocument,
 } from "src/module/games/schemas/platform.schema";
+import { RA_MAIN_USER_NAME } from "src/shared/constants";
+import { getFormattedTitle } from "src/shared/utils";
+import { RAConsole } from "../schemas/console.schema";
+import { RAGame } from "../schemas/retroach.schema";
 
 @Injectable()
 export class RetroachievementsService {
+  private readonly logger = new Logger(RetroachievementsService.name);
   constructor(
     @InjectModel(RAGame.name) private gameModel: Model<RAGame>,
     @InjectModel(RAConsole.name)
@@ -34,137 +35,147 @@ export class RetroachievementsService {
   private readonly apiKey = process.env.RETROACHIEVEMENTS_API_KEY;
 
   async parse(type: "consoles" | "games" | "both") {
-    const authorization = buildAuthorization({
-      username: this.userName,
-      webApiKey: this.apiKey,
-    });
-    const consoles = await getConsoleIds(authorization);
-    let index = 0;
-
-    console.log(`Consoles: ${consoles.length}`);
-
-    const getGames = (consoleId: number, games: GameList) => {
-      getGameList(authorization, {
-        consoleId,
-        shouldOnlyRetrieveGamesWithAchievements: true,
-      }).then((res) => {
-        console.log(
-          `Console: ${index + 1} ${consoles[index].name}. Games: ${games.length} + ${res.length}`
-        );
-
-        setTimeout(() => {
-          index++;
-          return index <= consoles.length - 1
-            ? getGames(consoles[index].id, [...games, ...res])
-            : updateOrInsertValues(this.gameModel, [...games, ...res]);
-        }, 400);
+    try {
+      const authorization = buildAuthorization({
+        username: this.userName,
+        webApiKey: this.apiKey,
       });
-    };
+      const consoles = await getConsoleIds(authorization);
+      let index = 0;
 
-    if (type === "consoles") {
-      return updateOrInsertValues(this.consoleModel, consoles);
-    }
+      console.log(`Consoles: ${consoles.length}`);
 
-    if (type === "games") {
-      return getGames(consoles[index].id, []);
-    }
+      const getGames = (consoleId: number, games: GameList) => {
+        getGameList(authorization, {
+          consoleId,
+          shouldOnlyRetrieveGamesWithAchievements: true,
+        }).then((res) => {
+          console.log(
+            `Console: ${index + 1} ${consoles[index].name}. Games: ${games.length} + ${res.length}`
+          );
 
-    if (type === "both") {
-      await updateOrInsertValues(this.consoleModel, consoles);
+          setTimeout(() => {
+            index++;
+            return index <= consoles.length - 1
+              ? getGames(consoles[index].id, [...games, ...res])
+              : updateOrInsertValues(this.gameModel, [...games, ...res]);
+          }, 400);
+        });
+      };
 
-      return getGames(consoles[index].id, []);
+      if (type === "consoles") {
+        return updateOrInsertValues(this.consoleModel, consoles);
+      }
+
+      if (type === "games") {
+        return getGames(consoles[index].id, []);
+      }
+
+      if (type === "both") {
+        await updateOrInsertValues(this.consoleModel, consoles);
+
+        return getGames(consoles[index].id, []);
+      }
+    } catch (err) {
+      this.logger.error(err, `Failed to parse: ${type}`);
+      throw new err();
     }
   }
 
   async parseRAGames() {
-    const raGames = await this.gameModel.find();
-    const platforms = await this.platforms.find();
-    const games = await this.games.find().select("name platformIds");
+    try {
+      const raGames = await this.gameModel.find();
+      const platforms = await this.platforms.find();
+      const games = await this.games.find().select("name platformIds");
 
-    const gamesSorted = games.reduce(
-      (
-        result: {
-          [key: string]: GameDocument[];
-        },
-        game
-      ) => {
-        const title = getFormattedTitle(game.name);
-
-        Array.isArray(result[title]) && !!result[title]?.length
-          ? result[title].push(game)
-          : (result[title] = [game]);
-
-        return result;
-      },
-      {}
-    );
-
-    const gameIds = raGames.reduce((result, ragame) => {
-      const value = { gameId: ragame._id, consoleId: ragame.consoleId };
-      const title = getFormattedTitle(ragame.title);
-      const filteredGames: GameDocument[] = title.includes("|")
-        ? gamesSorted[title.split("|")[0]] || gamesSorted[title.split("|")[1]]
-        : gamesSorted[title];
-
-      const parsedPlatforms = platforms.filter(
-        (console) => console.raId === ragame.consoleId
-      );
-
-      if (!parsedPlatforms.length || !filteredGames || !filteredGames.length)
-        return result;
-
-      const game = filteredGames?.find(
-        (game) =>
-          !!parsedPlatforms &&
-          game?.platformIds.some((id) =>
-            parsedPlatforms.some(
-              (plat) => plat._id.toString() === id.toString()
-            )
-          )
-      );
-
-      const id = game?._id?.toString();
-
-      if (!!id) {
-        !!result?.[id]?.length
-          ? result[id].push(value)
-          : (result[id] = [value]);
-      }
-
-      return result;
-    }, {});
-
-    console.log(Object.values(gameIds).flat().length);
-
-    await this.games.bulkWrite(
-      Object.keys(gameIds).map((key) => ({
-        updateOne: {
-          filter: {
-            _id: key,
+      const gamesSorted = games.reduce(
+        (
+          result: {
+            [key: string]: GameDocument[];
           },
-          update: [
-            {
-              $set: {
-                retroachievements: {
-                  $cond: [
-                    {
-                      $ifNull: ["$raIds", false],
-                    },
-                    {
-                      $setUnion: ["$raIds", gameIds[key]],
-                    },
-                    gameIds[key],
-                  ],
+          game
+        ) => {
+          const title = getFormattedTitle(game.name);
+
+          Array.isArray(result[title]) && !!result[title]?.length
+            ? result[title].push(game)
+            : (result[title] = [game]);
+
+          return result;
+        },
+        {}
+      );
+
+      const gameIds = raGames.reduce((result, ragame) => {
+        const value = { gameId: ragame._id, consoleId: ragame.consoleId };
+        const title = getFormattedTitle(ragame.title);
+        const filteredGames: GameDocument[] = title.includes("|")
+          ? gamesSorted[title.split("|")[0]] || gamesSorted[title.split("|")[1]]
+          : gamesSorted[title];
+
+        const parsedPlatforms = platforms.filter(
+          (console) => console.raId === ragame.consoleId
+        );
+
+        if (!parsedPlatforms.length || !filteredGames || !filteredGames.length)
+          return result;
+
+        const game = filteredGames?.find(
+          (game) =>
+            !!parsedPlatforms &&
+            game?.platformIds.some((id) =>
+              parsedPlatforms.some(
+                (plat) => plat._id.toString() === id.toString()
+              )
+            )
+        );
+
+        const id = game?._id?.toString();
+
+        if (!!id) {
+          !!result?.[id]?.length
+            ? result[id].push(value)
+            : (result[id] = [value]);
+        }
+
+        return result;
+      }, {});
+
+      console.log(Object.values(gameIds).flat().length);
+
+      await this.games.bulkWrite(
+        Object.keys(gameIds).map((key) => ({
+          updateOne: {
+            filter: {
+              _id: key,
+            },
+            update: [
+              {
+                $set: {
+                  retroachievements: {
+                    $cond: [
+                      {
+                        $ifNull: ["$raIds", false],
+                      },
+                      {
+                        $setUnion: ["$raIds", gameIds[key]],
+                      },
+                      gameIds[key],
+                    ],
+                  },
                 },
               },
-            },
-          ],
-        },
-      }))
-    );
+            ],
+          },
+        }))
+      );
 
-    console.log("Parsing ended");
-    return "Success";
+      console.log("Parsing ended");
+      return "Success";
+    } catch (err) {
+      this.logger.error(err, `Failed to parse ra games`);
+      throw new err();
+    }
   }
 
   async getUnrecognised() {

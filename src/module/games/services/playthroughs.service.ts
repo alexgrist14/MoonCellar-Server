@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import {
@@ -15,6 +15,7 @@ import {
 
 @Injectable()
 export class PlaythroughsService {
+  private readonly logger = new Logger(PlaythroughsService.name);
   constructor(
     @InjectModel(Playthrough.name)
     private GamesPlaythrouhgs: Model<IPlaythroughDocument>,
@@ -30,7 +31,7 @@ export class PlaythroughsService {
     stringStart: "Added to" | "Removed from";
     play: IPlaythroughDocument;
   }) {
-    const platform = await this.Platforms.findById(play.platformId);
+    const platform = await this.Platforms.findById(play.platformId).orFail();
     const text =
       `${stringStart} ${play.isMastered ? "mastered" : play.category}` +
       (!!platform ? `<br/><i>${platform.name}</i>` : "");
@@ -42,85 +43,105 @@ export class PlaythroughsService {
     return await this.GamesPlaythrouhgs.find({
       ...data,
       userId: new mongoose.Types.ObjectId(data.userId),
-    });
+    }).orFail();
   }
 
   async getPlaythroughsMinimal(data: IGetPlaythroughsRequest) {
     return await this.GamesPlaythrouhgs.find({
       ...data,
       userId: new mongoose.Types.ObjectId(data.userId),
-    }).select("_id category gameId isMastered updatedAt");
+    })
+      .select("_id category gameId isMastered updatedAt")
+      .orFail();
   }
 
   async savePlaythrough(data: ISavePlaythroughRequest) {
-    const play = await this.GamesPlaythrouhgs.create({
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      const play = await this.GamesPlaythrouhgs.create({
+        ...data,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-    const { text } = await this.getAdditionalInfo({
-      play,
-      stringStart: "Added to",
-    });
+      const { text } = await this.getAdditionalInfo({
+        play,
+        stringStart: "Added to",
+      });
 
-    await this.logsService.createUserLog({
-      userId: play.userId.toString(),
-      type: "list",
-      text,
-      gameId: play.gameId.toString(),
-    });
+      await this.logsService.createUserLog({
+        userId: play.userId.toString(),
+        type: "list",
+        text,
+        gameId: play.gameId.toString(),
+      });
 
-    return play;
+      return play;
+    } catch (err) {
+      this.logger.error(
+        err,
+        `Failed to save playthrough: ${JSON.stringify(data)}`
+      );
+      throw new err();
+    }
   }
 
   async updatePlaythrough(
     id: mongoose.Types.ObjectId,
     data: IUpdatePlaythroughRequest
   ) {
-    const play = await this.GamesPlaythrouhgs.findOneAndUpdate(
-      { _id: id },
-      { ...data, updatedAt: new Date().toISOString() },
-      {
-        new: true,
-      }
-    );
+    try {
+      const play = await this.GamesPlaythrouhgs.findOneAndUpdate(
+        { _id: id },
+        { ...data, updatedAt: new Date().toISOString() },
+        {
+          new: true,
+        }
+      );
 
-    const { text } = await this.getAdditionalInfo({
-      play,
-      stringStart: "Added to",
-    });
+      const { text } = await this.getAdditionalInfo({
+        play,
+        stringStart: "Added to",
+      });
 
-    await this.logsService.createUserLog({
-      userId: play.userId.toString(),
-      type: "list",
-      text,
-      gameId: play.gameId.toString(),
-    });
+      await this.logsService.createUserLog({
+        userId: play.userId.toString(),
+        type: "list",
+        text,
+        gameId: play.gameId.toString(),
+      });
 
-    return play;
+      return play;
+    } catch (err) {
+      this.logger.error(err, `Failed to update playthrough: ${id}`);
+      throw new err();
+    }
   }
 
   async deletePlaythrough(id: mongoose.Types.ObjectId) {
-    const play = await this.GamesPlaythrouhgs.findOneAndDelete(
-      { _id: id },
-      {
-        new: true,
-      }
-    );
+    try {
+      const play = await this.GamesPlaythrouhgs.findOneAndDelete(
+        { _id: id },
+        {
+          new: true,
+        }
+      );
 
-    const { text } = await this.getAdditionalInfo({
-      play,
-      stringStart: "Removed from",
-    });
+      const { text } = await this.getAdditionalInfo({
+        play,
+        stringStart: "Removed from",
+      });
 
-    await this.logsService.createUserLog({
-      userId: play.userId.toString(),
-      type: "list",
-      text,
-      gameId: play.gameId.toString(),
-    });
+      await this.logsService.createUserLog({
+        userId: play.userId.toString(),
+        type: "list",
+        text,
+        gameId: play.gameId.toString(),
+      });
 
-    return play;
+      return play;
+    } catch (err) {
+      this.logger.error(err, `Failed to delete playthrough: ${id}`);
+      throw new err();
+    }
   }
 }

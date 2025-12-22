@@ -7,6 +7,7 @@ import * as cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { rootDir } from "./shared/constants";
 import { patchNestjsSwagger } from "@anatine/zod-nestjs";
+import { Logger } from "nestjs-pino";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -24,6 +25,7 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
   app.use(json({ limit: "2mb" }));
+  app.useLogger(app.get(Logger));
 
   const config = new DocumentBuilder()
     .setTitle("MoonCellar API")

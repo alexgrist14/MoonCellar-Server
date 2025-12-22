@@ -1,7 +1,10 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from "@nestjs/common";
 import { SignUpDto } from "./dto/signup.dto";
@@ -21,6 +24,7 @@ import {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService
@@ -29,45 +33,63 @@ export class AuthService {
   private async generateTokensAndUpdateUser(
     user: User
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const accessToken = this.jwtService.sign(
-      {
-        id: user._id,
-        roles: user.roles,
-        userName: user.userName,
-        email: user.email,
-      },
-      { expiresIn: accessExpire }
-    );
-    const refreshToken = this.jwtService.sign(
-      { id: user._id },
-      { expiresIn: refreshExpire }
-    );
+    try {
+      const accessToken = this.jwtService.sign(
+        {
+          id: user._id,
+          roles: user.roles,
+          userName: user.userName,
+          email: user.email,
+        },
+        { expiresIn: accessExpire }
+      );
+      const refreshToken = this.jwtService.sign(
+        { id: user._id },
+        { expiresIn: refreshExpire }
+      );
 
-    user.refreshToken = refreshToken;
-    await user.save();
+      user.refreshToken = refreshToken;
+      await user.save();
 
-    return { accessToken, refreshToken };
+      return { accessToken, refreshToken };
+    } catch (err) {
+      this.logger.error(err, "Failed to generate tokens");
+      throw new err();
+    }
   }
 
   async signUp(
     signUpDto: SignUpDto
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const { userName, email, password } = signUpDto;
-    const isEmailExists = await this.userModel.findOne({ email });
-    const isUserExists = await this.userModel.findOne({ userName });
+    try {
+      const { userName, email, password } = signUpDto;
+      const isEmailExists = await this.userModel.findOne({ email });
+      const isUserExists = await this.userModel.findOne({ userName });
 
-    if (isEmailExists) throw new BadRequestException("Email already exists");
-    if (isUserExists) throw new BadRequestException("UserName already exists");
+      if (isEmailExists) throw new ConflictException("Email already exists");
+      if (isUserExists) throw new ConflictException("UserName already exists");
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.userModel.create({
-      userName,
-      email,
-      password: hashedPassword,
-    });
+      const user = await this.userModel.create({
+        userName,
+        email,
+        password: hashedPassword,
+      });
 
-    return this.generateTokensAndUpdateUser(user);
+      return this.generateTokensAndUpdateUser(user);
+    } catch (err) {
+      if (
+        err instanceof ConflictException ||
+        err instanceof BadRequestException ||
+        err instanceof UnauthorizedException ||
+        err instanceof ForbiddenException
+      ) {
+        throw err;
+      }
+      this.logger.error(err, "Failed to sign up");
+      throw new err();
+    }
   }
 
   async login(
@@ -93,24 +115,29 @@ export class AuthService {
       throw new ForbiddenException();
     }
 
-    const newAccessToken = this.jwtService.sign(
-      {
-        id: user._id,
-        roles: user.roles,
-        userName: user.userName,
-        email: user.email,
-      },
-      { expiresIn: accessExpire }
-    );
+    try {
+      const newAccessToken = this.jwtService.sign(
+        {
+          id: user._id,
+          roles: user.roles,
+          userName: user.userName,
+          email: user.email,
+        },
+        { expiresIn: accessExpire }
+      );
 
-    const newRefreshToken = this.jwtService.sign(
-      { id: user._id },
-      { expiresIn: refreshExpire }
-    );
-    user.refreshToken = newRefreshToken;
-    await user.save();
+      const newRefreshToken = this.jwtService.sign(
+        { id: user._id },
+        { expiresIn: refreshExpire }
+      );
+      user.refreshToken = newRefreshToken;
+      await user.save();
 
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    } catch (err) {
+      this.logger.error(err, "Failed to refresh token");
+      throw new err();
+    }
   }
 
   setCookies(
@@ -154,10 +181,15 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    const user = await this.userModel.findById(userId);
-    if (user) {
-      user.refreshToken = null;
-      await user.save();
+    try {
+      const user = await this.userModel.findById(userId).orFail();
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+    } catch (err) {
+      this.logger.error(err, `Failed to logout: ${userId}`);
+      throw new err();
     }
   }
 }

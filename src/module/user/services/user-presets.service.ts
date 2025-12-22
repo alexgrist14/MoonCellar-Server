@@ -1,79 +1,95 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import mongoose from "mongoose";
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
 
 @Injectable()
 export class UserPresetsService {
+  private readonly logger = new Logger(UserPresetsService.name);
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async addPreset(userId: string, name: string, preset: string) {
-    const user = await this.userModel
-      .findOneAndUpdate(
-        {
-          _id: new mongoose.Types.ObjectId(userId),
-          "presets.name": { $ne: name },
-        },
-        [
+    try {
+      const user = await this.userModel
+        .findOneAndUpdate(
           {
-            $set: {
-              presets: {
-                $concatArrays: [
-                  "$presets",
-                  [
-                    {
-                      $cond: {
-                        if: {
-                          $not: {
-                            $in: [{ name, preset }, "$presets"],
-                          },
-                        },
-                        then: { name, preset },
-                        else: "$$REMOVE",
-                      },
-                    },
-                  ],
-                ],
-              },
-            },
+            _id: new mongoose.Types.ObjectId(userId),
+            "presets.name": { $ne: name },
           },
-        ],
-        { new: true }
-      )
-      .select("presets");
-
-    if (!user) {
-      throw new BadRequestException("Preset already Exists!");
-    }
-
-    return user;
-  }
-
-  async removePreset(userId: string, name: string) {
-    return this.userModel
-      .findOneAndUpdate(
-        { _id: new mongoose.Types.ObjectId(userId) },
-        [
-          {
-            $set: {
-              presets: {
-                $filter: {
-                  input: "$presets",
-                  cond: { $ne: ["$$this.name", name] },
+          [
+            {
+              $set: {
+                presets: {
+                  $concatArrays: [
+                    "$presets",
+                    [
+                      {
+                        $cond: {
+                          if: {
+                            $not: {
+                              $in: [{ name, preset }, "$presets"],
+                            },
+                          },
+                          then: { name, preset },
+                          else: "$$REMOVE",
+                        },
+                      },
+                    ],
+                  ],
                 },
               },
             },
-          },
-        ],
-        { new: true }
-      )
-      .select("presets");
+          ],
+          { new: true }
+        )
+        .select("presets")
+        .orFail();
+
+      if (!user) {
+        throw new ConflictException("Preset already Exists!");
+      }
+
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to add preset: ${userId}`);
+      throw new err();
+    }
+  }
+
+  async removePreset(userId: string, name: string) {
+    try {
+      return this.userModel
+        .findOneAndUpdate(
+          { _id: new mongoose.Types.ObjectId(userId) },
+          [
+            {
+              $set: {
+                presets: {
+                  $filter: {
+                    input: "$presets",
+                    cond: { $ne: ["$$this.name", name] },
+                  },
+                },
+              },
+            },
+          ],
+          { new: true }
+        )
+        .select("presets");
+    } catch (err) {
+      this.logger.error(err, `Failed to remove preset: ${userId}`);
+      throw new err();
+    }
   }
 
   async getPresets(userId: string) {
-    return this.userModel
-      .findOne({ _id: new mongoose.Types.ObjectId(userId) })
-      .select("presets");
+    try {
+      return this.userModel
+        .findOne({ _id: new mongoose.Types.ObjectId(userId) })
+        .select("presets");
+    } catch (err) {
+      this.logger.error(err, `Failed to get presets: ${userId}`);
+      throw new err();
+    }
   }
 }

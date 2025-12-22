@@ -12,10 +12,13 @@ import { GamesModule } from "./module/games/games.module";
 import { APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "@anatine/zod-nestjs";
 import { AdminModule } from "./module/admin/admin.module";
+import { LoggerModule } from "nestjs-pino";
+import { pinoConfig } from "./module/logger/logger.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    LoggerModule.forRootAsync(pinoConfig),
     ScheduleModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING, {
       dbName: "games",

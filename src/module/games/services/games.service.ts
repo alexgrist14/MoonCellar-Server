@@ -1,4 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import {
@@ -15,6 +19,7 @@ import { FileService } from "src/module/user/services/file-upload.service";
 
 @Injectable()
 export class GamesService {
+  private readonly logger = new Logger(GamesService.name);
   constructor(
     @InjectModel(Game.name)
     private Games: Model<GameDocument>,
@@ -22,29 +27,44 @@ export class GamesService {
   ) {}
 
   async getGameBySlug({ slug }: IGetGameBySlugRequest) {
-    const game = this.Games.aggregate([{ $match: { slug } }]);
+    try {
+      const game = this.Games.aggregate([{ $match: { slug } }]);
 
-    return (await game).pop();
+      return (await game).pop();
+    } catch (err) {
+      this.logger.error(err, `Failed to get game by slug: ${slug}`);
+      throw new err();
+    }
   }
 
   async getGameById({ _id }: IGetGameByIdRequest) {
-    const game = this.Games.aggregate([{ $match: { _id } }]);
+    try {
+      const game = this.Games.aggregate([{ $match: { _id } }]);
 
-    return (await game).pop();
+      return (await game).pop();
+    } catch (err) {
+      this.logger.error(err, `Failed to get game by id: ${_id}`);
+      throw new err();
+    }
   }
 
   async getGamesByIds(dto: IGetGamesByIdsRequest) {
-    return await this.Games.aggregate([
-      {
-        $match: {
-          _id: {
-            $in: Array.isArray(dto._ids)
-              ? dto._ids.map((id) => new mongoose.Types.ObjectId(id))
-              : [new mongoose.Types.ObjectId(dto._ids)],
+    try {
+      return await this.Games.aggregate([
+        {
+          $match: {
+            _id: {
+              $in: Array.isArray(dto._ids)
+                ? dto._ids.map((id) => new mongoose.Types.ObjectId(id))
+                : [new mongoose.Types.ObjectId(dto._ids)],
+            },
           },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      this.logger.error(err, `Failed to get games by ids: ${dto._ids}`);
+      throw new err();
+    }
   }
 
   async getGames({
@@ -62,106 +82,131 @@ export class GamesService {
     votes,
     excludeGames,
   }: IGetGamesRequest) {
-    const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
+    try {
+      const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
-    const games = await this.Games.aggregate([
-      gamesFilters({
-        isOnlyWithAchievements,
-        selected,
-        excluded,
-        search,
-        mode,
-        company,
-        years,
-        excludeGames,
-        rating,
-        votes,
-      }),
-      {
-        $sort: {
-          "igdb.total_rating_count": -1,
-        },
-      },
-      {
-        $facet: {
-          results: [
-            ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
-          ],
-          totalCount: [{ $count: "count" }],
-        },
-      },
-      {
-        $addFields: {
-          total: {
-            $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
+      const games = await this.Games.aggregate([
+        gamesFilters({
+          isOnlyWithAchievements,
+          selected,
+          excluded,
+          search,
+          mode,
+          company,
+          years,
+          excludeGames,
+          rating,
+          votes,
+        }),
+        {
+          $sort: {
+            "igdb.total_rating_count": -1,
           },
         },
-      },
-      {
-        $project: {
-          results: 1,
-          total: 1,
+        {
+          $facet: {
+            results: [
+              ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
+            ],
+            totalCount: [{ $count: "count" }],
+          },
         },
-      },
-    ]);
+        {
+          $addFields: {
+            total: {
+              $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
+            },
+          },
+        },
+        {
+          $project: {
+            results: 1,
+            total: 1,
+          },
+        },
+      ]);
 
-    return games.pop();
+      return games.pop();
+    } catch (err) {
+      this.logger.error(err, `Failed to get games`);
+      throw new err();
+    }
   }
 
   async addGame(data: IAddGameRequest) {
-    return this.Games.create(data);
+    try {
+      return this.Games.create(data);
+    } catch (err) {
+      this.logger.error(err, `Failed to add game: ${JSON.stringify(data)}`);
+      throw new err();
+    }
   }
 
   async updateGame(_id: mongoose.Types.ObjectId, data: IUpdateGameRequest) {
-    return this.Games.findOneAndUpdate(
-      { _id },
-      { ...data, updatedAt: new Date().toISOString() },
-      {
-        new: true,
-      }
-    );
+    try {
+      return this.Games.findOneAndUpdate(
+        { _id },
+        { ...data, updatedAt: new Date().toISOString() },
+        {
+          new: true,
+        }
+      );
+    } catch (err) {
+      this.logger.error(err, `Failed to update game: ${_id}`);
+      throw new err();
+    }
   }
 
   async deleteGame(_id: mongoose.Types.ObjectId) {
-    return this.Games.findOneAndDelete({ _id });
+    try {
+      return this.Games.findOneAndDelete({ _id });
+    } catch (err) {
+      this.logger.error(err, `Failed to delete game: ${_id}`);
+      throw new err();
+    }
   }
 
   async parseFieldsToJson() {
-    const games = await this.Games.find().select(
-      "modes genres keywords themes companies type"
-    );
+    try {
+      const games = await this.Games.find().select(
+        "modes genres keywords themes companies type"
+      );
 
-    const result = {};
+      const result = {};
 
-    for (const game of games) {
-      const fieldsToParse = [
-        "modes",
-        "genres",
-        "keywords",
-        "themes",
-        "companies",
-        "type",
-      ];
+      for (const game of games) {
+        const fieldsToParse = [
+          "modes",
+          "genres",
+          "keywords",
+          "themes",
+          "companies",
+          "type",
+        ];
 
-      for (const field of fieldsToParse) {
-        const values =
-          typeof game[field] === "string" ? [game[field]] : game[field];
-        const parsedValues = values?.filter(
-          (value: string) => !result[field]?.includes(value)
-        );
+        for (const field of fieldsToParse) {
+          const values =
+            typeof game[field] === "string" ? [game[field]] : game[field];
+          const parsedValues = values?.filter(
+            (value: string) => !result[field]?.includes(value)
+          );
 
-        if (parsedValues?.length && game[field]) {
-          !result[field]?.length
-            ? (result[field] = parsedValues)
-            : result[field].push(...parsedValues);
+          if (parsedValues?.length && game[field]) {
+            !result[field]?.length
+              ? (result[field] = parsedValues)
+              : result[field].push(...parsedValues);
+          }
         }
       }
-    }
 
-    return this.fileService.uploadObject(
-      JSON.stringify(result),
-      "filters",
-      "mooncellar-common"
-    );
+      return this.fileService.uploadObject(
+        JSON.stringify(result),
+        "filters",
+        "mooncellar-common"
+      );
+    } catch (err) {
+      this.logger.error(err, `Failed to parse fields to json`);
+      throw new err();
+    }
   }
 }

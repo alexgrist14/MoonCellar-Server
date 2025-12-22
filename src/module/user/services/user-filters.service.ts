@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import mongoose from "mongoose";
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
 
 @Injectable()
 export class UserFiltersService {
+  private readonly logger = new Logger(UserFiltersService.name);
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async addFilter(userId: string, name: string, filter: string) {
@@ -41,10 +41,11 @@ export class UserFiltersService {
         ],
         { new: true }
       )
-      .select("filters");
+      .select("filters")
+      .orFail();
 
     if (!user) {
-      throw new BadRequestException("Filter already Exists!");
+      throw new ConflictException("Filter already Exists!");
     }
 
     return user;
@@ -68,12 +69,14 @@ export class UserFiltersService {
         ],
         { new: true }
       )
-      .select("filters");
+      .select("filters")
+      .orFail();
   }
 
   async getFilters(userId: string) {
     return this.userModel
       .findOne({ _id: new mongoose.Types.ObjectId(userId) })
-      .select("filters");
+      .select("filters")
+      .orFail();
   }
 }

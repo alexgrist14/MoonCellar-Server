@@ -1,6 +1,6 @@
 import {
-  BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -9,143 +9,191 @@ import * as bcrypt from "bcryptjs";
 import { Query as ExpressQuery } from "express-serve-static-core";
 import mongoose, { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
-import { FileService } from "./file-upload.service";
 import {
-  IGetUserByIdRequest,
   IGetUserByStringRequest,
   IUpdateUserDescriptionRequest,
   IUpdateUserEmailRequest,
   IUpdateUserPasswordRequest,
 } from "src/shared/zod/schemas/user.schema";
+import { FileService } from "./file-upload.service";
 
 @Injectable()
 export class UserProfileService {
+  private readonly logger = new Logger(UserProfileService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private fileService: FileService
   ) {}
 
   async findById(userId: string): Promise<User> {
-    return await this.userModel
-      .findById(userId)
-      .select([
-        "-password",
-        "-logs",
-        "-createdAt",
-        "-updatedAt",
-        "-refreshToken",
-        "-__v",
-      ]);
+    try {
+      return await this.userModel
+        .findById(userId)
+        .select([
+          "-password",
+          "-logs",
+          "-createdAt",
+          "-updatedAt",
+          "-refreshToken",
+          "-__v",
+        ]);
+    } catch (err) {
+      this.logger.error(err, `Failed to find user by id: ${userId}`);
+      throw new err();
+    }
   }
   async findByString({ searchString }: IGetUserByStringRequest): Promise<User> {
-    return await this.userModel
-      .findOne({
-        $or: [{ userName: searchString }, { email: searchString }],
-      })
-      .select(["-password", "-createdAt", "-refreshToken", "-__v"]);
+    try {
+      return await this.userModel
+        .findOne({
+          $or: [{ userName: searchString }, { email: searchString }],
+        })
+        .select(["-password", "-createdAt", "-refreshToken", "-__v"]);
+    } catch (err) {
+      this.logger.error(err, `Failed to find user by string: ${searchString}`);
+      throw new err();
+    }
   }
 
   async findAll(query: ExpressQuery): Promise<User[]> {
-    const resPerPage = 2;
-    const currentPage = +query.page || 1;
-    const skip = resPerPage * (currentPage - 1);
+    try {
+      const resPerPage = 2;
+      const currentPage = +query.page || 1;
+      const skip = resPerPage * (currentPage - 1);
 
-    const keyword = query.keyword
-      ? {
-          title: {
-            $regex: query.keyword,
-            $options: "i",
-          },
-        }
-      : {};
-    const users = await this.userModel
-      .find({ ...keyword })
-      .limit(resPerPage)
-      .skip(skip);
-    return users;
+      const keyword = query.keyword
+        ? {
+            title: {
+              $regex: query.keyword,
+              $options: "i",
+            },
+          }
+        : {};
+      const users = await this.userModel
+        .find({ ...keyword })
+        .limit(resPerPage)
+        .skip(skip);
+      return users;
+    } catch (err) {
+      this.logger.error(err, `Failed to find all users`);
+      throw new err();
+    }
   }
 
   async updateEmail(
     userId: string,
     { email }: IUpdateUserEmailRequest
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    if (!user) throw new BadRequestException("User not found");
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException("User not found");
 
-    user.email = email;
-    await user.save();
-    return user;
+      user.email = email;
+      await user.save();
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to update email: ${userId}`);
+      throw new err();
+    }
   }
 
   async updatePassword(
     userId: string,
     { oldPassword, newPassword }: IUpdateUserPasswordRequest
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    if (!user) throw new BadRequestException("User not found");
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException("User not found");
 
-    const isPasswordMatched = await bcrypt.compare(oldPassword, user.password);
-    if (!isPasswordMatched)
-      throw new UnauthorizedException("Password does not match");
+      const isPasswordMatched = await bcrypt.compare(
+        oldPassword,
+        user.password
+      );
+      if (!isPasswordMatched)
+        throw new UnauthorizedException("Password does not match");
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save();
-    return user;
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      await user.save();
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to update password: ${userId}`);
+      throw new err();
+    }
   }
 
   async updateAvatar(userId: string, file: Express.Multer.File): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    const avatarId = new mongoose.Types.ObjectId().toString();
+    try {
+      const user = await this.userModel.findById(userId);
+      const avatarId = new mongoose.Types.ObjectId().toString();
 
-    if (!user) throw new NotFoundException("User not found");
+      if (!user) throw new NotFoundException("User not found");
 
-    await this.fileService.uploadFile(file, avatarId, "mooncellar-avatars");
+      await this.fileService.uploadFile(file, avatarId, "mooncellar-avatars");
 
-    user.avatar = `https://mooncellar-avatars.s3.regru.cloud/${avatarId}`;
+      user.avatar = `https://mooncellar-avatars.s3.regru.cloud/${avatarId}`;
 
-    return user.save();
+      return user.save();
+    } catch (err) {
+      this.logger.error(err, `Failed to update avatar: ${userId}`);
+      throw new err();
+    }
   }
 
   async updateBackground(
     userId: string,
     file: Express.Multer.File
   ): Promise<User> {
-    const user = await this.userModel.findById(userId);
-    const backgroundId = new mongoose.Types.ObjectId().toString();
+    try {
+      const user = await this.userModel.findById(userId);
+      const backgroundId = new mongoose.Types.ObjectId().toString();
 
-    if (!user) throw new NotFoundException("User not found");
+      if (!user) throw new NotFoundException("User not found");
 
-    await this.fileService.uploadFile(
-      file,
-      backgroundId,
-      "mooncellar-backgrounds"
-    );
+      await this.fileService.uploadFile(
+        file,
+        backgroundId,
+        "mooncellar-backgrounds"
+      );
 
-    user.background = `https://mooncellar-backgrounds.s3.regru.cloud/${backgroundId}`;
+      user.background = `https://mooncellar-backgrounds.s3.regru.cloud/${backgroundId}`;
 
-    return user.save();
+      return user.save();
+    } catch (err) {
+      this.logger.error(err, `Failed to update background: ${userId}`);
+      throw new err();
+    }
   }
 
   async updateUserDescription(
     userId: string,
     { description }: IUpdateUserDescriptionRequest
   ) {
-    const user = await this.userModel.findById(userId);
+    try {
+      const user = await this.userModel.findById(userId);
 
-    user.description = description;
-    await user.save();
-    return user;
+      user.description = description;
+      await user.save();
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to update user description: ${userId}`);
+      throw new err();
+    }
   }
 
   async updateUserTime(userId: string) {
-    const user = await this.userModel.findById(userId);
-    const now = new Date();
-    const isoString = now.toISOString();
-    const formattedDate = isoString.replace("Z", "+00:00");
+    try {
+      const user = await this.userModel.findById(userId);
+      const now = new Date();
+      const isoString = now.toISOString();
+      const formattedDate = isoString.replace("Z", "+00:00");
 
-    user.updatedAt = new Date(formattedDate);
-    await user.save();
-    return user;
+      user.updatedAt = new Date(formattedDate);
+      await user.save();
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to update user time: ${userId}`);
+      throw new err();
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import { igdbAuth, igdbParser } from "./utils/igdb";
@@ -65,6 +65,7 @@ import { HttpService } from "@nestjs/axios";
 
 @Injectable()
 export class IGDBService {
+  private readonly logger = new Logger(IGDBService.name);
   constructor(
     @InjectModel(IGDBGames.name)
     private IGDBGamesModel: Model<IGDBGamesDocument>,
@@ -109,125 +110,164 @@ export class IGDBService {
   ) {}
 
   private async parser<T>(type: ParserType, model: Model<T>) {
-    const { data: authData } = await igdbAuth();
-    const { access_token: token } = authData;
+    try {
+      const { data: authData } = await igdbAuth();
+      const { access_token: token } = authData;
 
-    if (!token) return;
+      if (!token) {
+        this.logger.warn(`There is no token to parse: ${type}`);
+        return;
+      }
 
-    return igdbParser<T>({
-      token,
-      action: type,
-      parsingCallback: async (items: T[]) => {
-        return updateOrInsertValues<T>(model, items);
-      },
-    });
+      return igdbParser<T>({
+        token,
+        action: type,
+        parsingCallback: async (items: T[]) => {
+          return updateOrInsertValues<T>(model, items);
+        },
+      });
+    } catch (err) {
+      this.logger.error(err, `Failed to parse: ${type}`);
+      throw new err();
+    }
   }
 
   async parseAll() {
-    await this.parser<IGDBCompaniesDocument>(
-      "companies",
-      this.IGDBCompaniesModel
-    );
-    await this.parser<IGDBWebsitesDocument>("websites", this.IGDBWebsitesModel);
-    await this.parser<IGDBInvolvedCompaniesDocument>(
-      "involved_companies",
-      this.IGDBInvolvedCompaniesModel
-    );
-    await this.parser<IGDBThemesDocument>("themes", this.IGDBThemesModel);
-    await this.parser<IGDBKeywordsDocument>("keywords", this.IGDBKeywordsModel);
-    await this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
-    await this.parser<IGDBPlatformLogosDocument>(
-      "platform_logos",
-      this.IGDBPlatformLogosModel
-    );
-    await this.parser<IGDBFamiliesDocument>("families", this.IGDBFamiliesModel);
-    await this.parser<IGDBPlatformsDocument>(
-      "platforms",
-      this.IGDBPlatformsModel
-    );
-    await this.parser<IGDBGenresDocument>("genres", this.IGDBGenresModel);
-    await this.parser<IGDBScreenshotsDocument>(
-      "screenshots",
-      this.IGDBScreenshotsModel
-    );
-    await this.parser<IGDBArtworksDocument>("artworks", this.IGDBArtworksModel);
-    await this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
-    await this.parser<IGDBReleaseDatesDocument>(
-      "release_dates",
-      this.IGDBReleaseDatesModel
-    );
-    await this.parser<IGDBGameTypesDocument>(
-      "game_types",
-      this.IGDBGameTypesModel
-    );
+    try {
+      await this.parser<IGDBCompaniesDocument>(
+        "companies",
+        this.IGDBCompaniesModel
+      );
+      await this.parser<IGDBWebsitesDocument>(
+        "websites",
+        this.IGDBWebsitesModel
+      );
+      await this.parser<IGDBInvolvedCompaniesDocument>(
+        "involved_companies",
+        this.IGDBInvolvedCompaniesModel
+      );
+      await this.parser<IGDBThemesDocument>("themes", this.IGDBThemesModel);
+      await this.parser<IGDBKeywordsDocument>(
+        "keywords",
+        this.IGDBKeywordsModel
+      );
+      await this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
+      await this.parser<IGDBPlatformLogosDocument>(
+        "platform_logos",
+        this.IGDBPlatformLogosModel
+      );
+      await this.parser<IGDBFamiliesDocument>(
+        "families",
+        this.IGDBFamiliesModel
+      );
+      await this.parser<IGDBPlatformsDocument>(
+        "platforms",
+        this.IGDBPlatformsModel
+      );
+      await this.parser<IGDBGenresDocument>("genres", this.IGDBGenresModel);
+      await this.parser<IGDBScreenshotsDocument>(
+        "screenshots",
+        this.IGDBScreenshotsModel
+      );
+      await this.parser<IGDBArtworksDocument>(
+        "artworks",
+        this.IGDBArtworksModel
+      );
+      await this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
+      await this.parser<IGDBReleaseDatesDocument>(
+        "release_dates",
+        this.IGDBReleaseDatesModel
+      );
+      await this.parser<IGDBGameTypesDocument>(
+        "game_types",
+        this.IGDBGameTypesModel
+      );
 
-    return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
+      return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
+    } catch (err) {
+      this.logger.error(err, `Failed to parse all`);
+      throw new err();
+    }
   }
 
   async parseSelected(type: ParserType) {
-    switch (type) {
-      case "games":
-        return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
-      case "covers":
-        return this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
-      case "genres":
-        return this.parser<IGDBGenresDocument>("genres", this.IGDBGenresModel);
-      case "modes":
-        return this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
-      case "families":
-        return this.parser<IGDBFamiliesDocument>(type, this.IGDBFamiliesModel);
-      case "platforms":
-        return this.parser<IGDBPlatformsDocument>(
-          "platforms",
-          this.IGDBPlatformsModel
-        );
-      case "keywords":
-        return this.parser<IGDBKeywordsDocument>(
-          "keywords",
-          this.IGDBKeywordsModel
-        );
-      case "themes":
-        return this.parser<IGDBThemesDocument>("themes", this.IGDBThemesModel);
-      case "screenshots":
-        return this.parser<IGDBScreenshotsDocument>(
-          "screenshots",
-          this.IGDBScreenshotsModel
-        );
-      case "artworks":
-        return this.parser<IGDBArtworksDocument>(
-          "artworks",
-          this.IGDBArtworksModel
-        );
-      case "platform_logos":
-        return this.parser<IGDBPlatformLogosDocument>(
-          "platform_logos",
-          this.IGDBPlatformLogosModel
-        );
-      case "websites":
-        return this.parser<IGDBWebsitesDocument>(
-          "websites",
-          this.IGDBWebsitesModel
-        );
-      case "involved_companies":
-        return this.parser<IGDBInvolvedCompaniesDocument>(
-          "involved_companies",
-          this.IGDBInvolvedCompaniesModel
-        );
-      case "companies":
-        return this.parser<IGDBCompaniesDocument>(
-          "companies",
-          this.IGDBCompaniesModel
-        );
-      case "release_dates":
-        return this.parser<IGDBReleaseDatesDocument>(
-          "release_dates",
-          this.IGDBReleaseDatesModel
-        );
-      case "game_types":
-        return this.parser<IGDBGameTypesDocument>(
-          "game_types",
-          this.IGDBGameTypesModel
-        );
+    try {
+      switch (type) {
+        case "games":
+          return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
+        case "covers":
+          return this.parser<IGDBCoverDocument>("covers", this.IGDBCoversModel);
+        case "genres":
+          return this.parser<IGDBGenresDocument>(
+            "genres",
+            this.IGDBGenresModel
+          );
+        case "modes":
+          return this.parser<IGDBModesDocument>("modes", this.IGDBModesModel);
+        case "families":
+          return this.parser<IGDBFamiliesDocument>(
+            type,
+            this.IGDBFamiliesModel
+          );
+        case "platforms":
+          return this.parser<IGDBPlatformsDocument>(
+            "platforms",
+            this.IGDBPlatformsModel
+          );
+        case "keywords":
+          return this.parser<IGDBKeywordsDocument>(
+            "keywords",
+            this.IGDBKeywordsModel
+          );
+        case "themes":
+          return this.parser<IGDBThemesDocument>(
+            "themes",
+            this.IGDBThemesModel
+          );
+        case "screenshots":
+          return this.parser<IGDBScreenshotsDocument>(
+            "screenshots",
+            this.IGDBScreenshotsModel
+          );
+        case "artworks":
+          return this.parser<IGDBArtworksDocument>(
+            "artworks",
+            this.IGDBArtworksModel
+          );
+        case "platform_logos":
+          return this.parser<IGDBPlatformLogosDocument>(
+            "platform_logos",
+            this.IGDBPlatformLogosModel
+          );
+        case "websites":
+          return this.parser<IGDBWebsitesDocument>(
+            "websites",
+            this.IGDBWebsitesModel
+          );
+        case "involved_companies":
+          return this.parser<IGDBInvolvedCompaniesDocument>(
+            "involved_companies",
+            this.IGDBInvolvedCompaniesModel
+          );
+        case "companies":
+          return this.parser<IGDBCompaniesDocument>(
+            "companies",
+            this.IGDBCompaniesModel
+          );
+        case "release_dates":
+          return this.parser<IGDBReleaseDatesDocument>(
+            "release_dates",
+            this.IGDBReleaseDatesModel
+          );
+        case "game_types":
+          return this.parser<IGDBGameTypesDocument>(
+            "game_types",
+            this.IGDBGameTypesModel
+          );
+      }
+    } catch (err) {
+      this.logger.error(err, `Failed to parse selected: ${type}`);
+      throw new err();
     }
   }
 
@@ -246,140 +286,159 @@ export class IGDBService {
     total: number,
     options?: { isSkipExistedGames?: boolean }
   ) {
-    const games = await this.IGDBGamesModel.find()
-      .skip((page - 1) * limit)
-      .limit(limit);
-    const gamesLength = games.length;
+    try {
+      const games = await this.IGDBGamesModel.find()
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .orFail();
+      const gamesLength = games.length;
 
-    console.log(`Processing page ${page} of ${total} (${limit * page} items)`);
-    console.log("IGDB games loaded", gamesLength);
+      this.logger.log(
+        `Processing page ${page} of ${total} (${limit * page} items)`
+      );
+      this.logger.log("IGDB games loaded", gamesLength);
 
-    const queries = [];
+      const queries = [];
 
-    for (const game of games) {
-      if (!game) continue;
+      for (const game of games) {
+        if (!game) continue;
 
-      const callback = async () => {
-        const _id = new mongoose.Types.ObjectId();
+        const callback = async () => {
+          try {
+            const _id = new mongoose.Types.ObjectId();
 
-        const existed = await this.Games.findOne({ "igdb.gameId": game._id });
+            const existed = await this.Games.findOne({
+              "igdb.gameId": game._id,
+            });
 
-        if (options?.isSkipExistedGames && !!existed) return Promise.reject();
+            if (options?.isSkipExistedGames && !!existed)
+              return Promise.reject();
 
-        const covers = await this.fileService.getAllKeys("mooncellar-covers", {
-          prefix: game.slug + "/",
-        });
+            const covers = await this.fileService.getAllKeys(
+              "mooncellar-covers",
+              {
+                prefix: game.slug + "/",
+              }
+            );
 
-        const populatedGame: Omit<
-          IGDBGamesDocument,
-          | "game_type"
-          | "cover"
-          | "game_modes"
-          | "genres"
-          | "keywords"
-          | "themes"
-          | "involved_companies"
-          | "websites"
-          | "release_dates"
-          | "platforms"
-        > & {
-          game_type: IGDBGameTypesDocument;
-          cover: IGDBCoverDocument;
-          game_modes: IGDBModesDocument[];
-          genres: IGDBGenresDocument[];
-          keywords: IGDBKeywordsDocument[];
-          themes: IGDBThemesDocument[];
-          involved_companies: (Omit<
-            IGDBInvolvedCompaniesDocument,
-            "company"
-          > & {
-            company: IGDBCompaniesDocument;
-          })[];
-          websites: IGDBWebsitesDocument[];
-          release_dates: IGDBReleaseDatesDocument[];
-          platforms: IGDBPlatformsDocument[];
-        } = await game.populate(
-          "game_type cover game_modes genres keywords themes screenshots artworks websites release_dates platforms"
-        );
+            const populatedGame: Omit<
+              IGDBGamesDocument,
+              | "game_type"
+              | "cover"
+              | "game_modes"
+              | "genres"
+              | "keywords"
+              | "themes"
+              | "involved_companies"
+              | "websites"
+              | "release_dates"
+              | "platforms"
+            > & {
+              game_type: IGDBGameTypesDocument;
+              cover: IGDBCoverDocument;
+              game_modes: IGDBModesDocument[];
+              genres: IGDBGenresDocument[];
+              keywords: IGDBKeywordsDocument[];
+              themes: IGDBThemesDocument[];
+              involved_companies: (Omit<
+                IGDBInvolvedCompaniesDocument,
+                "company"
+              > & {
+                company: IGDBCompaniesDocument;
+              })[];
+              websites: IGDBWebsitesDocument[];
+              release_dates: IGDBReleaseDatesDocument[];
+              platforms: IGDBPlatformsDocument[];
+            } = await game.populate(
+              "game_type cover game_modes genres keywords themes screenshots artworks websites release_dates platforms"
+            );
 
-        const populatedCompanies: any =
-          await this.IGDBInvolvedCompaniesModel.find({
-            _id: { $in: populatedGame.involved_companies },
-          }).populate("company");
+            const populatedCompanies: any =
+              await this.IGDBInvolvedCompaniesModel.find({
+                _id: { $in: populatedGame.involved_companies },
+              }).populate("company");
 
-        populatedGame.involved_companies = populatedCompanies;
+            populatedGame.involved_companies = populatedCompanies;
 
-        const platformIds = await this.Platforms.find({
-          igdbId: { $in: game.platforms },
-        }).select("_id igdbId");
+            const platformIds = await this.Platforms.find({
+              igdbId: { $in: game.platforms },
+            }).select("_id igdbId");
 
-        return Promise.resolve({
-          _id: existed?._id || _id,
-          slug: populatedGame.slug,
-          name: populatedGame.name,
-          type:
-            populatedGame?.game_type?.type ||
-            populatedGame?.category ||
-            existed?.type ||
-            null,
-          cover: !!covers.length
-            ? `https://mooncellar-covers.s3.regru.cloud/${covers[0]}`
-            : undefined,
-          storyline: game.storyline,
-          summary: game.summary,
-          modes: populatedGame.game_modes.map((mode) => mode.name),
-          genres: populatedGame.genres.map((genre) => genre.name),
-          keywords: populatedGame.keywords.map((keyword) => keyword.name),
-          themes: populatedGame.themes.map((theme) => theme.name),
-          companies: populatedGame.involved_companies.map((comp) => ({
-            name: comp.company.name,
-            developer: comp.developer,
-            publisher: comp.publisher,
-            porting: comp.porting,
-            supporting: comp.supporting,
-          })),
-          websites: populatedGame.websites.map((site) => site.url),
-          first_release: populatedGame.first_release_date,
-          release_dates: populatedGame.release_dates?.map((date) => ({
-            date: date.date,
-            human: date.human,
-            month: date.m,
-            year: date.y,
-            platformId: platformIds.find(
-              (plat) => plat.igdbId === date.platform
-            )?._id,
-            region: date.region,
-          })),
-          platformIds: platformIds.map((plat) => plat._id),
-          igdb: {
-            gameId: game._id,
-            total_rating: game.total_rating,
-            total_rating_count: game.total_rating_count,
+            return Promise.resolve({
+              _id: existed?._id || _id,
+              slug: populatedGame.slug,
+              name: populatedGame.name,
+              type:
+                populatedGame?.game_type?.type ||
+                populatedGame?.category ||
+                existed?.type ||
+                null,
+              cover: !!covers.length
+                ? `https://mooncellar-covers.s3.regru.cloud/${covers[0]}`
+                : undefined,
+              storyline: game.storyline,
+              summary: game.summary,
+              modes: populatedGame.game_modes.map((mode) => mode.name),
+              genres: populatedGame.genres.map((genre) => genre.name),
+              keywords: populatedGame.keywords.map((keyword) => keyword.name),
+              themes: populatedGame.themes.map((theme) => theme.name),
+              companies: populatedGame.involved_companies.map((comp) => ({
+                name: comp.company.name,
+                developer: comp.developer,
+                publisher: comp.publisher,
+                porting: comp.porting,
+                supporting: comp.supporting,
+              })),
+              websites: populatedGame.websites.map((site) => site.url),
+              first_release: populatedGame.first_release_date,
+              release_dates: populatedGame.release_dates?.map((date) => ({
+                date: date.date,
+                human: date.human,
+                month: date.m,
+                year: date.y,
+                platformId: platformIds.find(
+                  (plat) => plat.igdbId === date.platform
+                )?._id,
+                region: date.region,
+              })),
+              platformIds: platformIds.map((plat) => plat._id),
+              igdb: {
+                gameId: game._id,
+                total_rating: game.total_rating,
+                total_rating_count: game.total_rating_count,
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          } catch (err) {
+            this.logger.error(err, `Failed to parse game: ${game._id}`);
+            throw new err();
+          }
+        };
+        queries.push(callback());
+      }
+
+      const responses = await Promise.allSettled(queries);
+
+      this.logger.log("Games parsed");
+
+      const parsedGames = responses
+        .filter((res) => res.status === "fulfilled")
+        .map((res) => res.value);
+
+      return await this.Games.bulkWrite(
+        parsedGames.map((game) => ({
+          updateOne: {
+            filter: { _id: game._id },
+            update: { $set: game },
+            upsert: true,
           },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      };
-      queries.push(callback());
+        }))
+      );
+    } catch (err) {
+      this.logger.error(err, `Failed to igdb to games`);
+      throw new err();
     }
-
-    const responses = await Promise.allSettled(queries);
-
-    console.log("Games parsed");
-
-    const parsedGames = responses
-      .filter((res) => res.status === "fulfilled")
-      .map((res) => res.value);
-
-    return await this.Games.bulkWrite(
-      parsedGames.map((game) => ({
-        updateOne: {
-          filter: { _id: game._id },
-          update: { $set: game },
-          upsert: true,
-        },
-      }))
-    );
   }
 
   async parseImagesToS3(
@@ -390,153 +449,168 @@ export class IGDBService {
       isParseExisted?: boolean;
     }
   ) {
-    const games = await this.IGDBGamesModel.find()
-      .select("_id slug screenshots artworks cover")
-      .skip((page - 1) * limit)
-      .limit(limit);
-    const queries = [];
-    const isParseCovers = options?.parseType === "covers";
-    const isParseArtworks = options?.parseType === "artworks";
-    const isParseScreenshots = options?.parseType === "screenshots";
+    try {
+      const games = await this.IGDBGamesModel.find()
+        .select("_id slug screenshots artworks cover")
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .orFail();
+      const queries = [];
+      const isParseCovers = options?.parseType === "covers";
+      const isParseArtworks = options?.parseType === "artworks";
+      const isParseScreenshots = options?.parseType === "screenshots";
 
-    console.log("Parsing started");
+      this.logger.log("Parsing started");
 
-    const sendArrayToS3 = async (
-      bucketName: string,
-      slug: string,
-      images: (IGDBScreenshotsDocument | string)[]
-    ) => {
-      for (const i in images) {
-        try {
-          const _id = new mongoose.Types.ObjectId();
-          if (!images?.[i]) continue;
+      const sendArrayToS3 = async (
+        bucketName: string,
+        slug: string,
+        images: (IGDBScreenshotsDocument | string)[]
+      ) => {
+        for (const i in images) {
+          try {
+            const _id = new mongoose.Types.ObjectId();
+            if (!images?.[i]) continue;
 
-          const url =
-            typeof images[i] === "string"
-              ? images[i]
-              : getImageLink(images[i]?.url, "1080p");
+            const url =
+              typeof images[i] === "string"
+                ? images[i]
+                : getImageLink(images[i]?.url, "1080p");
 
-          if (!url) continue;
+            if (!url) continue;
 
-          const response = await this.httpService.axiosRef({
-            url,
-            method: "GET",
-            responseType: "arraybuffer",
-          });
+            const response = await this.httpService.axiosRef({
+              url,
+              method: "GET",
+              responseType: "arraybuffer",
+            });
 
-          const key = `${slug}/${_id}`;
-          await this.fileService.uploadFile(response.data, key, bucketName);
-        } catch (e) {
-          console.error("Image error: " + (e?.response?.status || "unknown"));
-          return Promise.reject();
+            const key = `${slug}/${_id}`;
+            await this.fileService.uploadFile(response.data, key, bucketName);
+          } catch (e) {
+            this.logger.error(
+              "Image error: " + (e?.response?.status || "unknown")
+            );
+            return Promise.reject();
+          }
         }
-      }
 
-      return Promise.resolve();
-    };
-
-    for (const game of games) {
-      if (!game) continue;
-
-      const callback = async () => {
-        try {
-          const populatedGame: Pick<IGDBGamesDocument, "_id"> & {
-            cover: IGDBCoverDocument[];
-            screenshots: IGDBScreenshotsDocument[];
-            artworks: IGDBArtworksDocument[];
-          } = await game.populate("cover screenshots artworks");
-          if (isParseCovers) {
-            const gameCovers = await this.fileService.getAllKeys(
-              "mooncellar-covers",
-              { prefix: game.slug + "/" }
-            );
-
-            if (!gameCovers.length || options?.isParseExisted) {
-              const coverLink = !!populatedGame.cover?.[0]?.url
-                ? getImageLink(populatedGame.cover[0].url, "cover_big", 2)
-                : undefined;
-              await sendArrayToS3("mooncellar-covers", game.slug, [coverLink]);
-            }
-          }
-
-          if (isParseScreenshots) {
-            const gameScreenshots = await this.fileService.getAllKeys(
-              "mooncellar-screenshots",
-              { prefix: game.slug + "/" }
-            );
-
-            if (!gameScreenshots.length || options?.isParseExisted) {
-              await sendArrayToS3(
-                "mooncellar-screenshots",
-                game.slug,
-                populatedGame.screenshots
-              );
-            }
-          }
-
-          if (isParseArtworks) {
-            const gameArtworks = await this.fileService.getAllKeys(
-              "mooncellar-artworks",
-              { prefix: game.slug + "/" }
-            );
-
-            if (!gameArtworks.length || options?.isParseExisted) {
-              await sendArrayToS3(
-                "mooncellar-artworks",
-                game.slug,
-                populatedGame.artworks
-              );
-            }
-          }
-
-          return game.slug + " parsed";
-        } catch (e) {
-          console.log(e.response?.status || "Error");
-        }
+        return Promise.resolve();
       };
 
-      queries.push(
-        new Promise((resolve, reject) => {
-          callback()
-            .then((res) => resolve(res))
-            .catch(() => reject());
-        })
-      );
-    }
+      for (const game of games) {
+        if (!game) continue;
 
-    return Promise.allSettled(queries);
+        const callback = async () => {
+          try {
+            const populatedGame: Pick<IGDBGamesDocument, "_id"> & {
+              cover: IGDBCoverDocument[];
+              screenshots: IGDBScreenshotsDocument[];
+              artworks: IGDBArtworksDocument[];
+            } = await game.populate("cover screenshots artworks");
+            if (isParseCovers) {
+              const gameCovers = await this.fileService.getAllKeys(
+                "mooncellar-covers",
+                { prefix: game.slug + "/" }
+              );
+
+              if (!gameCovers.length || options?.isParseExisted) {
+                const coverLink = !!populatedGame.cover?.[0]?.url
+                  ? getImageLink(populatedGame.cover[0].url, "cover_big", 2)
+                  : undefined;
+                await sendArrayToS3("mooncellar-covers", game.slug, [
+                  coverLink,
+                ]);
+              }
+            }
+
+            if (isParseScreenshots) {
+              const gameScreenshots = await this.fileService.getAllKeys(
+                "mooncellar-screenshots",
+                { prefix: game.slug + "/" }
+              );
+
+              if (!gameScreenshots.length || options?.isParseExisted) {
+                await sendArrayToS3(
+                  "mooncellar-screenshots",
+                  game.slug,
+                  populatedGame.screenshots
+                );
+              }
+            }
+
+            if (isParseArtworks) {
+              const gameArtworks = await this.fileService.getAllKeys(
+                "mooncellar-artworks",
+                { prefix: game.slug + "/" }
+              );
+
+              if (!gameArtworks.length || options?.isParseExisted) {
+                await sendArrayToS3(
+                  "mooncellar-artworks",
+                  game.slug,
+                  populatedGame.artworks
+                );
+              }
+            }
+
+            return game.slug + " parsed";
+          } catch (e) {
+            this.logger.error(e.response?.status || "Error");
+          }
+        };
+
+        queries.push(
+          new Promise((resolve, reject) => {
+            callback()
+              .then((res) => resolve(res))
+              .catch(() => reject());
+          })
+        );
+      }
+
+      return Promise.allSettled(queries);
+    } catch (err) {
+      this.logger.error(err, `Failed to parse images to s3`);
+      throw new err();
+    }
   }
 
   async igdbToPlatforms() {
-    const platforms: any[] = await this.IGDBPlatformsModel.find()
-      .populate("platform_logo")
-      .populate("platform_family");
+    try {
+      const platforms: any[] = await this.IGDBPlatformsModel.find()
+        .populate("platform_logo")
+        .populate("platform_family");
 
-    for (const platform of platforms) {
-      const ra = await this.RAPlatforms.findOne({ igdbIds: platform._id });
+      for (const platform of platforms) {
+        const ra = await this.RAPlatforms.findOne({ igdbIds: platform._id });
 
-      if (!platform) return;
+        if (!platform) return;
 
-      await this.Platforms.create({
-        name: platform.name,
-        slug: platform.slug,
-        generation: platform?.generation || null,
-        ...(!!platform.platform_family && {
-          family: {
-            name: platform.platform_family.name,
-            slug: platform.platform_family.slug,
-          },
-        }),
-        ...(!!platform.platform_logo && {
-          logo: getImageLink(platform.platform_logo.url, "thumb"),
-        }),
-        igdbId: platform._id,
-        raId: ra?._id || null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+        await this.Platforms.create({
+          name: platform.name,
+          slug: platform.slug,
+          generation: platform?.generation || null,
+          ...(!!platform.platform_family && {
+            family: {
+              name: platform.platform_family.name,
+              slug: platform.platform_family.slug,
+            },
+          }),
+          ...(!!platform.platform_logo && {
+            logo: getImageLink(platform.platform_logo.url, "thumb"),
+          }),
+          igdbId: platform._id,
+          raId: ra?._id || null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return "Completed";
+    } catch (err) {
+      this.logger.error(err, `Failed to igdb to platforms`);
+      throw new err();
     }
-
-    return "Completed";
   }
 }
