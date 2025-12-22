@@ -39,7 +39,7 @@ export const pinoConfig: LoggerModuleAsyncParams = {
       transport: {
         target: "pino-loki",
         options: {
-          host: "http://localhost:3100",
+          host: process.env.LOKI_HOST ?? "http://localhost:3100",
           json: true,
           batch: true,
           labels: { app: "nestjs-loki-grafana" },
