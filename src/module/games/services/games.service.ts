@@ -49,6 +49,10 @@ export class GamesService {
   }
 
   async getGamesByIds(dto: IGetGamesByIdsRequest) {
+    if (!dto._ids?.length) {
+      return [];
+    }
+
     try {
       return await this.Games.aggregate([
         {

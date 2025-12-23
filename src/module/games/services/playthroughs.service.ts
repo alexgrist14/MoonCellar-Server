@@ -43,16 +43,14 @@ export class PlaythroughsService {
     return await this.GamesPlaythrouhgs.find({
       ...data,
       userId: new mongoose.Types.ObjectId(data.userId),
-    }).orFail();
+    });
   }
 
   async getPlaythroughsMinimal(data: IGetPlaythroughsRequest) {
     return await this.GamesPlaythrouhgs.find({
       ...data,
       userId: new mongoose.Types.ObjectId(data.userId),
-    })
-      .select("_id category gameId isMastered updatedAt")
-      .orFail();
+    }).select("_id category gameId isMastered updatedAt");
   }
 
   async savePlaythrough(data: ISavePlaythroughRequest) {
