@@ -16,7 +16,7 @@ export class PlatformsService {
       return await this.Platforms.find();
     } catch (err) {
       this.logger.error(err, `Failed to get platforms`);
-      throw new err();
+      throw err;
     }
   }
 }

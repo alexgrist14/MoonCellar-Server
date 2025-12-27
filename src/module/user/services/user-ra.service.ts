@@ -37,7 +37,7 @@ export class UserRAService {
       return achievements;
     } catch (err) {
       this.logger.error(err, `Failed to get user achievements: ${raUsername}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -73,7 +73,7 @@ export class UserRAService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to set user RA info: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

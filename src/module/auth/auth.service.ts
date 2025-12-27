@@ -54,7 +54,7 @@ export class AuthService {
       return { accessToken, refreshToken };
     } catch (err) {
       this.logger.error(err, "Failed to generate tokens");
-      throw new err();
+      throw err;
     }
   }
 
@@ -88,7 +88,7 @@ export class AuthService {
         throw err;
       }
       this.logger.error(err, "Failed to sign up");
-      throw new err();
+      throw err;
     }
   }
 
@@ -136,7 +136,7 @@ export class AuthService {
       return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     } catch (err) {
       this.logger.error(err, "Failed to refresh token");
-      throw new err();
+      throw err;
     }
   }
 
@@ -189,7 +189,7 @@ export class AuthService {
       }
     } catch (err) {
       this.logger.error(err, `Failed to logout: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

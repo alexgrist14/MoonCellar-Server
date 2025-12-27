@@ -39,7 +39,7 @@ export class UserProfileService {
         ]);
     } catch (err) {
       this.logger.error(err, `Failed to find user by id: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
   async findByString({ searchString }: IGetUserByStringRequest): Promise<User> {
@@ -51,7 +51,7 @@ export class UserProfileService {
         .select(["-password", "-createdAt", "-refreshToken", "-__v"]);
     } catch (err) {
       this.logger.error(err, `Failed to find user by string: ${searchString}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -76,7 +76,7 @@ export class UserProfileService {
       return users;
     } catch (err) {
       this.logger.error(err, `Failed to find all users`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -93,7 +93,7 @@ export class UserProfileService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to update email: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -118,7 +118,7 @@ export class UserProfileService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to update password: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -136,7 +136,7 @@ export class UserProfileService {
       return user.save();
     } catch (err) {
       this.logger.error(err, `Failed to update avatar: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -161,7 +161,7 @@ export class UserProfileService {
       return user.save();
     } catch (err) {
       this.logger.error(err, `Failed to update background: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -177,7 +177,7 @@ export class UserProfileService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to update user description: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -193,7 +193,7 @@ export class UserProfileService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to update user time: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

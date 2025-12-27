@@ -46,7 +46,7 @@ export class UserLogsService {
       return await lastLog.save();
     } catch (err) {
       this.logger.error(err, `Failed to create user log: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -67,7 +67,7 @@ export class UserLogsService {
       ]);
     } catch (err) {
       this.logger.error(err, `Failed to get user logs: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

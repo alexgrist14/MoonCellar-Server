@@ -48,7 +48,7 @@ export class GamesService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to upload image for game: ${gameId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -59,7 +59,7 @@ export class GamesService {
       return (await game).pop();
     } catch (err) {
       this.logger.error(err, `Failed to get game by slug: ${slug}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -70,7 +70,7 @@ export class GamesService {
       return (await game).pop();
     } catch (err) {
       this.logger.error(err, `Failed to get game by id: ${_id}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -93,7 +93,7 @@ export class GamesService {
       ]);
     } catch (err) {
       this.logger.error(err, `Failed to get games by ids: ${dto._ids}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -159,7 +159,7 @@ export class GamesService {
       return games.pop();
     } catch (err) {
       this.logger.error(err, `Failed to get games`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -168,7 +168,7 @@ export class GamesService {
       return this.Games.create(data);
     } catch (err) {
       this.logger.error(err, `Failed to add game: ${JSON.stringify(data)}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -183,7 +183,7 @@ export class GamesService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to update game: ${_id}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -192,7 +192,7 @@ export class GamesService {
       return this.Games.findOneAndDelete({ _id });
     } catch (err) {
       this.logger.error(err, `Failed to delete game: ${_id}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -236,7 +236,7 @@ export class GamesService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to parse fields to json`);
-      throw new err();
+      throw err;
     }
   }
 }

@@ -7,7 +7,8 @@ export const pinoConfig: LoggerModuleAsyncParams = {
     pinoHttp: {
       level: "info",
       customLogLevel: (res, err) => {
-        if (err || res.statusCode >= 500) return "error";
+        if (err && err instanceof Error) return "error";
+        if (res.statusCode >= 500) return "error";
         if (res.statusCode >= 400) return "warn";
         return "info";
       },

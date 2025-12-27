@@ -78,7 +78,7 @@ export class RetroachievementsService {
       }
     } catch (err) {
       this.logger.error(err, `Failed to parse: ${type}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -174,7 +174,7 @@ export class RetroachievementsService {
       return "Success";
     } catch (err) {
       this.logger.error(err, `Failed to parse ra games`);
-      throw new err();
+      throw err;
     }
   }
 

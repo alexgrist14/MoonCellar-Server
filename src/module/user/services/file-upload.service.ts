@@ -36,7 +36,7 @@ export class FileService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to upload object: ${key}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -53,7 +53,7 @@ export class FileService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to upload file: ${key}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -64,7 +64,7 @@ export class FileService {
       return await s3Client.send(new ListBucketsCommand());
     } catch (err) {
       this.logger.error(err, `Failed to get buckets`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -106,7 +106,7 @@ export class FileService {
       return keys;
     } catch (err) {
       this.logger.error(err, `Failed to get all keys: ${bucketName}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -125,7 +125,7 @@ export class FileService {
       return keys;
     } catch (err) {
       this.logger.error(err, `Failed to clear bucket: ${bucketName}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -155,7 +155,7 @@ export class FileService {
       };
     } catch (err) {
       this.logger.error(err, `Failed to get file: ${params.key}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -171,7 +171,7 @@ export class FileService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to delete file: ${key}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -187,7 +187,7 @@ export class FileService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to delete files: ${keys}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -234,7 +234,7 @@ export class FileService {
       }
     } catch (err) {
       this.logger.error(err, `Failed to remove duplicates: ${bucketName}`);
-      throw new err();
+      throw err;
     }
   }
 }

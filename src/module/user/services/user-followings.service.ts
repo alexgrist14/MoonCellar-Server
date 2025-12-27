@@ -32,7 +32,7 @@ export class UserFollowingsService {
       ).pop();
     } catch (err) {
       this.logger.error(err, `Failed to add user following: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -55,20 +55,30 @@ export class UserFollowingsService {
       ).pop();
     } catch (err) {
       this.logger.error(err, `Failed to remove user following: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
   async getUserFollowings(userId: string) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException("User not found");
-    return (
-      await this.userModel.aggregate([
-        {
-          $match: { _id: new mongoose.Types.ObjectId(userId) },
-        },
-        ...followersLookup(),
-      ])
-    ).pop();
+    try {
+      const result = (
+        await this.userModel.aggregate([
+          {
+            $match: { _id: new mongoose.Types.ObjectId(userId) },
+          },
+          ...followersLookup(),
+        ])
+      ).pop();
+      if (!result) {
+        this.logger.warn(`No followings found for user: ${userId}`);
+        return { followings: [] };
+      }
+      return result;
+    } catch (err) {
+      this.logger.error(err, `Failed to get user followings: ${userId}`);
+      throw err;
+    }
   }
 }

@@ -38,7 +38,7 @@ export class UserRatingsService {
       return userRating;
     } catch (err) {
       this.logger.error(err, `Failed to add rating: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -60,7 +60,7 @@ export class UserRatingsService {
       return userRating;
     } catch (err) {
       this.logger.error(err, `Failed to update rating: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -69,7 +69,7 @@ export class UserRatingsService {
       return this.userRatings.findOneAndDelete({ _id });
     } catch (err) {
       this.logger.error(err, `Failed to remove rating: ${_id}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -80,7 +80,7 @@ export class UserRatingsService {
       });
     } catch (err) {
       this.logger.error(err, `Failed to get ratings: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

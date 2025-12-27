@@ -81,7 +81,7 @@ export class PlaythroughsService {
         err,
         `Failed to save playthrough: ${JSON.stringify(data)}`
       );
-      throw new err();
+      throw err;
     }
   }
 
@@ -113,7 +113,7 @@ export class PlaythroughsService {
       return play;
     } catch (err) {
       this.logger.error(err, `Failed to update playthrough: ${id}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -141,7 +141,7 @@ export class PlaythroughsService {
       return play;
     } catch (err) {
       this.logger.error(err, `Failed to delete playthrough: ${id}`);
-      throw new err();
+      throw err;
     }
   }
 }

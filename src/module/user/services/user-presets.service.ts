@@ -52,7 +52,7 @@ export class UserPresetsService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to add preset: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -78,7 +78,7 @@ export class UserPresetsService {
         .select("presets");
     } catch (err) {
       this.logger.error(err, `Failed to remove preset: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -89,7 +89,7 @@ export class UserPresetsService {
         .select("presets");
     } catch (err) {
       this.logger.error(err, `Failed to get presets: ${userId}`);
-      throw new err();
+      throw err;
     }
   }
 }

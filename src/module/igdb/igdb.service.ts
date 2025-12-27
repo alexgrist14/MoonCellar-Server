@@ -128,7 +128,7 @@ export class IGDBService {
       });
     } catch (err) {
       this.logger.error(err, `Failed to parse: ${type}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -186,7 +186,7 @@ export class IGDBService {
       return this.parser<IGDBGamesDocument>("games", this.IGDBGamesModel);
     } catch (err) {
       this.logger.error(err, `Failed to parse all`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -267,7 +267,7 @@ export class IGDBService {
       }
     } catch (err) {
       this.logger.error(err, `Failed to parse selected: ${type}`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -412,7 +412,7 @@ export class IGDBService {
             });
           } catch (err) {
             this.logger.error(err, `Failed to parse game: ${game._id}`);
-            throw new err();
+            throw err;
           }
         };
         queries.push(callback());
@@ -437,7 +437,7 @@ export class IGDBService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to igdb to games`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -572,7 +572,7 @@ export class IGDBService {
       return Promise.allSettled(queries);
     } catch (err) {
       this.logger.error(err, `Failed to parse images to s3`);
-      throw new err();
+      throw err;
     }
   }
 
@@ -610,7 +610,7 @@ export class IGDBService {
       return "Completed";
     } catch (err) {
       this.logger.error(err, `Failed to igdb to platforms`);
-      throw new err();
+      throw err;
     }
   }
 }
