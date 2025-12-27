@@ -155,7 +155,7 @@ export class GamesService {
           },
         },
       ]);
-
+      console.log("1");
       return games.pop();
     } catch (err) {
       this.logger.error(err, `Failed to get games`);
