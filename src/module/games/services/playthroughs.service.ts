@@ -31,7 +31,9 @@ export class PlaythroughsService {
     stringStart: "Added to" | "Removed from";
     play: IPlaythroughDocument;
   }) {
-    const platform = await this.Platforms.findById(play.platformId).orFail();
+    const platform = !!play.platformId
+      ? await this.Platforms.findById(play.platformId).orFail()
+      : undefined;
     const text =
       `${stringStart} ${play.isMastered ? "mastered" : play.category}` +
       (!!platform ? `<br/><i>${platform.name}</i>` : "");

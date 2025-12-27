@@ -125,7 +125,7 @@ export const UpdateGameRequestSchema = GameSchema.omit({
   _id: true,
   updatedAt: true,
   createdAt: true,
-});
+}).partial();
 
 export const GetCustomGameResponseSchema = GameSchema.array();
 

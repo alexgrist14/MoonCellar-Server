@@ -109,8 +109,7 @@ export class FilesController {
 
   @Get("/bucket-keys")
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("admin")
+  @UseGuards(AuthGuard("jwt"))
   @ApiResponse({ status: 200, description: "Success" })
   @ApiQuery({ name: "prefix", required: false })
   async getBucketKeys(

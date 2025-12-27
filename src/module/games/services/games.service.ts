@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import {
@@ -25,6 +21,36 @@ export class GamesService {
     private Games: Model<GameDocument>,
     private fileService: FileService
   ) {}
+
+  async uploadImage(
+    gameId: mongoose.Types.ObjectId,
+    image: Express.Multer.File,
+    type: "cover" | "screenshot" | "artwork"
+  ) {
+    try {
+      const game = await this.Games.findOne({
+        _id: new mongoose.Types.ObjectId(gameId),
+      });
+      if (!game) throw new NotFoundException("Game not found");
+      const _id = new mongoose.Types.ObjectId();
+
+      await this.fileService.uploadFile(
+        image,
+        gameId.toString() + "/" + _id.toString(),
+        "mooncellar-" + type + "s"
+      );
+
+      return (
+        `https://mooncellar-${type}s.s3.regru.cloud/` +
+        gameId.toString() +
+        "/" +
+        _id.toString()
+      );
+    } catch (err) {
+      this.logger.error(err, `Failed to upload image for game: ${gameId}`);
+      throw new err();
+    }
+  }
 
   async getGameBySlug({ slug }: IGetGameBySlugRequest) {
     try {

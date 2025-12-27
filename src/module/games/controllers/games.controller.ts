@@ -9,13 +9,18 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import {
+  ApiBody,
+  ApiConsumes,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 import mongoose from "mongoose";
@@ -31,6 +36,7 @@ import {
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
 import { GamesService } from "../services/games.service";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @ApiTags("Games")
 @Controller("games")
@@ -99,5 +105,41 @@ export class GamesController {
   @ApiOperation({ summary: "Parse filters" })
   async parseCommon() {
     return this.games.parseFieldsToJson();
+  }
+
+  @Post("/upload-image/:id")
+  @ApiOperation({ summary: "Upload image" })
+  @ApiCreatedResponse({ type: String })
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @HttpCode(HttpStatus.OK)
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiQuery({
+    name: "type",
+    type: String,
+    enum: ["cover", "screenshot", "artwork"],
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+      },
+    },
+  })
+  async uploadImage(
+    @Query("gameId") gameId: string,
+    @Query("type") type: "cover" | "screenshot" | "artwork",
+    @UploadedFile() image: Express.Multer.File
+  ) {
+    return this.games.uploadImage(
+      new mongoose.Types.ObjectId(gameId),
+      image,
+      type
+    );
   }
 }
