@@ -146,8 +146,9 @@ export class UserProfileService {
   ): Promise<User> {
     try {
       const user = await this.userModel.findById(userId);
-      const backgroundId = new mongoose.Types.ObjectId().toString();
-
+      const backgroundId =
+        file.originalname + "." + new mongoose.Types.ObjectId().toString();
+      console.log(file);
       if (!user) throw new NotFoundException("User not found");
 
       await this.fileService.uploadFile(
@@ -160,7 +161,7 @@ export class UserProfileService {
 
       return user.save();
     } catch (err) {
-      this.logger.error(err, `Failed to update background: ${userId}`);
+      this.logger.error(err, `Failed to update background for user: ${userId}`);
       throw err;
     }
   }

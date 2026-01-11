@@ -131,8 +131,6 @@ export class UserProfileController {
     @Query("userId") userId: string,
     @UploadedFile() file: Express.Multer.File
   ) {
-    if (!userId) return;
-
     return this.userProfileService.updateBackground(userId, file);
   }
 
