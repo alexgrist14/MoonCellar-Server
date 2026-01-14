@@ -55,4 +55,22 @@ export class AdminService {
       throw error;
     }
   }
+
+  async removeUserRole(userId: string, role: IRole) {
+    try {
+      const user = await this.userModel
+        .findByIdAndUpdate(userId, { $pull: { roles: role } }, { new: true })
+        .select("-password -__v")
+        .exec();
+
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(error, `Error removing user role ${userId} ${role}`);
+      throw error;
+    }
+  }
 }

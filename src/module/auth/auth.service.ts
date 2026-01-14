@@ -98,12 +98,12 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userModel.findOne({ email });
 
-    if (!user) throw new UnauthorizedException("Email does not exists");
+    if (!user) throw new BadRequestException("Email does not exists");
 
     const isPasswordMatched = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatched)
-      throw new UnauthorizedException("Password does not match");
+      throw new BadRequestException("Password does not match");
 
     return this.generateTokensAndUpdateUser(user);
   }

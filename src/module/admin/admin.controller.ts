@@ -1,7 +1,14 @@
-import { Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  UseGuards,
+} from "@nestjs/common";
 import { ApiCookieAuth, ApiTags } from "@nestjs/swagger";
 import { AdminService } from "./admin.service";
-import { IRole } from "src/shared/zod/schemas/role.schema";
+import { IRole, RolesEnum } from "src/shared/zod/schemas/role.schema";
 import { RolesGuard } from "../roles/roles.guard";
 import { Roles } from "../roles/roles.decorator";
 import { AuthGuard } from "@nestjs/passport";
@@ -9,7 +16,7 @@ import { AuthGuard } from "@nestjs/passport";
 @ApiTags("Admin user management")
 @Controller("admin")
 @UseGuards(RolesGuard)
-@Roles("admin")
+@Roles(RolesEnum.ADMIN)
 @UseGuards(AuthGuard("jwt"))
 @ApiCookieAuth()
 export class AdminController {
@@ -31,5 +38,13 @@ export class AdminController {
     @Param("role") role: IRole
   ) {
     return this.adminService.addUserRole(userId, role);
+  }
+
+  @Delete("users/:userId/role/:role")
+  async removeUserRole(
+    @Param("userId") userId: string,
+    @Param("role") role: IRole
+  ) {
+    return this.adminService.removeUserRole(userId, role);
   }
 }
