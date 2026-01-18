@@ -47,4 +47,9 @@ export class AdminController {
   ) {
     return this.adminService.removeUserRole(userId, role);
   }
+
+  @Delete("users/:userId")
+  async deleteUser(@Param("userId") userId: string) {
+    return this.adminService.deleteUser(userId);
+  }
 }

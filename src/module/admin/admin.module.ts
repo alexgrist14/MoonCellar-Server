@@ -3,10 +3,24 @@ import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import { User, UserSchema } from "../user/schemas/user.schema";
+import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
+import {
+  Rating,
+  UserRatingsDatabaseSchema,
+} from "../user/schemas/user-ratings.schema";
+import {
+  Playthrough,
+  PlaythroughDatabaseSchema,
+} from "../games/schemas/playthroughs.schema";
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: UserLogs.name, schema: UserLogsSchema },
+      { name: Rating.name, schema: UserRatingsDatabaseSchema },
+      { name: Playthrough.name, schema: PlaythroughDatabaseSchema },
+    ]),
   ],
   controllers: [AdminController],
   providers: [AdminService],
