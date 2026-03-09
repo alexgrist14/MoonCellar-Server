@@ -196,6 +196,27 @@ export class GamesService {
     }
   }
 
+  async getTopRatedRandomGames() {
+    try {
+      const games = await this.Games.aggregate([
+        {
+          $match: {
+            "igdb.total_rating": { $exists: true, $gt: 80},
+            "igdb.total_rating_count": { $exists: true, $gt: 100 },
+          },
+        },
+        {
+          $sample: { size: 3 },
+        },
+      ]);
+
+      return games;
+    } catch (err) {
+      this.logger.error(err, `Failed to get top rated random games`);
+      throw err;
+    }
+  }
+
   async parseFieldsToJson() {
     try {
       const games = await this.Games.find().select(
@@ -236,6 +257,42 @@ export class GamesService {
       );
     } catch (err) {
       this.logger.error(err, `Failed to parse fields to json`);
+      throw err;
+    }
+  }
+
+  async getTotalGamesCountByGenre() {
+    try {
+      const result = await this.Games.aggregate([
+        {
+          $match: {
+            genres: { $exists: true, $ne: [] },
+          },
+        },
+        {
+          $unwind: "$genres",
+        },
+        {
+          $group: {
+            _id: "$genres",
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { count: -1 },
+        },
+        {
+          $project: {
+            _id: 0,
+            genre: "$_id",
+            count: 1,
+          },
+        },
+      ]) as unknown as {genre: string; count: number}[];
+
+      return result;
+    } catch (err) {
+      this.logger.error(err, `Failed to get total games count by genre`);
       throw err;
     }
   }

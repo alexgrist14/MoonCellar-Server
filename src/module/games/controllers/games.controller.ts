@@ -64,6 +64,32 @@ export class GamesController {
     return this.games.getGameBySlug(dto);
   }
 
+  @Get("/top-rated-random")
+  @ApiOperation({ summary: "Get 3 random top rated games" })
+  @ApiCreatedResponse({ type: GetGamesResponseDto })
+  async getTopRatedRandomGames() {
+    return this.games.getTopRatedRandomGames();
+  }
+
+  @Get("/count-by-genre")
+  @ApiOperation({ summary: "Get total games count grouped by genre" })
+  @ApiCreatedResponse({
+    description: "Array of objects with genre and count",
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          genre: { type: "string" },
+          count: { type: "number" },
+        },
+      },
+    },
+  })
+  async getTotalGamesCountByGenre() {
+    return this.games.getTotalGamesCountByGenre();
+  }
+
   @Post("/")
   @ApiOperation({ summary: "Get games" })
   @ApiCreatedResponse({ type: GetGamesResponseDto })
@@ -142,4 +168,6 @@ export class GamesController {
       type
     );
   }
+
+  
 }
