@@ -45,6 +45,8 @@ export class IGDBGames {
   @Prop()
   total_rating_count: number;
   @Prop()
+  updated_at: number;
+  @Prop()
   aggregated_rating: number;
   @Prop({ ref: IGDBGameTypes.name })
   game_type: number;
@@ -71,3 +73,4 @@ export class IGDBGames {
 }
 
 export const IGDBGamesSchema = SchemaFactory.createForClass(IGDBGames);
+IGDBGamesSchema.index({ updated_at: 1 });

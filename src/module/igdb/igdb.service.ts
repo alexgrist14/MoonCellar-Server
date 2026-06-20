@@ -1,7 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
-import { igdbAuth, igdbParser } from "./utils/igdb";
+import {
+  getMaxUpdatedAt,
+  igdbAuth,
+  igdbParser,
+  runWithConcurrency,
+} from "./utils/igdb";
 import { IGDBCoverDocument, IGDBCovers } from "./schemas/igdb-covers.schema";
 import { IGDBGenres, IGDBGenresDocument } from "./schemas/igdb-genres.schema";
 import {
@@ -62,10 +67,27 @@ import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
 import { RAConsole } from "../retroach/schemas/console.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpService } from "@nestjs/axios";
+import {
+  IGDBSyncState,
+  IGDBSyncStateDocument,
+} from "./schemas/igdb-sync-state.schema";
+import { Cron } from "@nestjs/schedule";
+import {
+  IGDB_GAMES_SYNC_CRON,
+  IGDB_GAMES_SYNC_CRON_OPTIONS,
+  IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY,
+  IGDB_GAMES_SYNC_UPDATED_DELAY_MS,
+  IGDB_GAMES_SYNC_UPDATED_LIMIT,
+} from "./constants/sync";
+
+const DEFAULT_IGDB_SYNC_LIMIT = 100;
+const DEFAULT_IGDB_SYNC_DELAY_MS = 1000;
+const DEFAULT_GAMES_SYNC_CONCURRENCY = 5;
 
 @Injectable()
 export class IGDBService {
   private readonly logger = new Logger(IGDBService.name);
+  private isSyncUpdatedGamesCronRunning = false;
   constructor(
     @InjectModel(IGDBGames.name)
     private IGDBGamesModel: Model<IGDBGamesDocument>,
@@ -99,6 +121,8 @@ export class IGDBService {
     private IGDBReleaseDatesModel: Model<IGDBReleaseDatesDocument>,
     @InjectModel(IGDBGameTypes.name)
     private IGDBGameTypesModel: Model<IGDBGameTypesDocument>,
+    @InjectModel(IGDBSyncState.name)
+    private IGDBSyncStateModel: Model<IGDBSyncStateDocument>,
     @InjectModel(Game.name)
     private Games: Model<GameDocument>,
     @InjectModel(Platform.name)
@@ -108,6 +132,94 @@ export class IGDBService {
     private fileService: FileService,
     private httpService: HttpService
   ) {}
+
+  private async getSyncCheckpoint(type: ParserType) {
+    const state = await this.IGDBSyncStateModel.findOne({
+      parserType: type,
+    }).lean();
+
+    return state?.lastUpdatedAt || 0;
+  }
+
+  private async getGamesSyncState() {
+    return this.IGDBSyncStateModel.findOne({
+      parserType: "games",
+    }).lean();
+  }
+
+  private async markGamesBackfillStarted() {
+    const now = new Date().toISOString();
+
+    return this.IGDBSyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillCompleted: false,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+          backfillUpdatedAt: 0,
+          lastUpdatedAt: 0,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async setGamesBackfillProgress(backfillUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.IGDBSyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async markGamesBackfillCompleted(lastUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.IGDBSyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillCompleted: true,
+          backfillUpdatedAt: lastUpdatedAt,
+          lastUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async setSyncCheckpoint(type: ParserType, lastUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.IGDBSyncStateModel.findOneAndUpdate(
+      { parserType: type },
+      {
+        $set: {
+          lastUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
 
   private async parser<T>(type: ParserType, model: Model<T>) {
     try {
@@ -276,21 +388,186 @@ export class IGDBService {
     return authData;
   }
 
-  async getGamesCount() {
-    return this.IGDBGamesModel.countDocuments();
+  async getGamesCount(options?: { updatedAfter?: number }) {
+    return this.IGDBGamesModel.countDocuments({
+      ...(!!options?.updatedAfter && {
+        updated_at: { $gt: options.updatedAfter },
+      }),
+    });
+  }
+
+  async backfillGames(options?: { limit?: number; delayMs?: number }) {
+    try {
+      const { data: authData } = await igdbAuth();
+      const { access_token: token } = authData;
+
+      if (!token) {
+        this.logger.warn(`There is no token to backfill games`);
+        return;
+      }
+
+      const state = await this.getGamesSyncState();
+      let checkpoint = state?.backfillUpdatedAt || state?.lastUpdatedAt || 0;
+      let processedCount = 0;
+
+      await this.markGamesBackfillStarted();
+
+      await igdbParser<IGDBGamesDocument>({
+        token,
+        action: "games",
+        options: {
+          limit: options?.limit || DEFAULT_IGDB_SYNC_LIMIT,
+          delayMs: options?.delayMs ?? DEFAULT_IGDB_SYNC_DELAY_MS,
+          sort: "updated_at asc",
+          isCollectItems: false,
+        },
+        parsingCallback: async (items) => {
+          await updateOrInsertValues<IGDBGamesDocument>(
+            this.IGDBGamesModel,
+            items
+          );
+          checkpoint = getMaxUpdatedAt(items, checkpoint);
+          processedCount += items.length;
+          await this.setGamesBackfillProgress(checkpoint);
+        },
+      });
+
+      await this.markGamesBackfillCompleted(checkpoint);
+
+      return {
+        processedCount,
+        lastUpdatedAt: checkpoint,
+      };
+    } catch (err) {
+      this.logger.error(err, `Failed to backfill games`);
+      throw err;
+    }
+  }
+
+  async syncUpdatedGames(options?: { limit?: number; delayMs?: number }) {
+    try {
+      const { data: authData } = await igdbAuth();
+      const { access_token: token } = authData;
+
+      if (!token) {
+        this.logger.warn(`There is no token to sync updated games`);
+        return;
+      }
+
+      const state = await this.getGamesSyncState();
+      if (!state?.backfillCompleted) {
+        throw new BadRequestException(
+          "IGDB games backfill must complete before sync-updated can run"
+        );
+      }
+
+      let checkpoint = await this.getSyncCheckpoint("games");
+      const changedIds: number[] = [];
+
+      await igdbParser<IGDBGamesDocument>({
+        token,
+        action: "games",
+        options: {
+          limit: options?.limit || DEFAULT_IGDB_SYNC_LIMIT,
+          delayMs: options?.delayMs ?? DEFAULT_IGDB_SYNC_DELAY_MS,
+          where: `updated_at > ${checkpoint}`,
+          sort: "updated_at asc",
+          isCollectItems: false,
+        },
+        parsingCallback: async (items) => {
+          await updateOrInsertValues<IGDBGamesDocument>(
+            this.IGDBGamesModel,
+            items
+          );
+          changedIds.push(...items.map((item) => item._id));
+          checkpoint = getMaxUpdatedAt(items, checkpoint);
+          await this.setSyncCheckpoint("games", checkpoint);
+        },
+      });
+
+      return {
+        changedCount: changedIds.length,
+        changedIds,
+        lastUpdatedAt: checkpoint,
+      };
+    } catch (err) {
+      this.logger.error(err, `Failed to sync updated games`);
+      throw err;
+    }
+  }
+
+  @Cron(IGDB_GAMES_SYNC_CRON, IGDB_GAMES_SYNC_CRON_OPTIONS)
+  async syncUpdatedGamesCron() {
+    if (this.isSyncUpdatedGamesCronRunning) {
+      this.logger.warn("IGDB games sync cron is already running");
+      return;
+    }
+
+    this.isSyncUpdatedGamesCronRunning = true;
+
+    try {
+      const result = await this.syncUpdatedGames({
+        limit: IGDB_GAMES_SYNC_UPDATED_LIMIT,
+        delayMs: IGDB_GAMES_SYNC_UPDATED_DELAY_MS,
+      });
+
+      if (!result?.changedIds?.length) {
+        this.logger.log("IGDB games sync cron finished without changes");
+        return result;
+      }
+
+      const gamesSync = await this.igdbToGames(
+        1,
+        result.changedIds.length,
+        1,
+        {
+          igdbGameIds: result.changedIds,
+          concurrency: IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY,
+        }
+      );
+
+      this.logger.log(
+        `IGDB games sync cron finished with ${result.changedCount} changes`
+      );
+
+      return {
+        ...result,
+        gamesSync,
+      };
+    } catch (err) {
+      this.logger.error(err, "Failed to run IGDB games sync cron");
+      throw err;
+    } finally {
+      this.isSyncUpdatedGamesCronRunning = false;
+    }
   }
 
   async igdbToGames(
     page: number,
     limit: number,
     total: number,
-    options?: { isSkipExistedGames?: boolean }
+    options?: {
+      isSkipExistedGames?: boolean;
+      igdbGameIds?: number[];
+      updatedAfter?: number;
+      concurrency?: number;
+    }
   ) {
     try {
-      const games = await this.IGDBGamesModel.find()
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .orFail();
+      const igdbGameIds = options?.igdbGameIds;
+      let gamesQuery = this.IGDBGamesModel.find();
+
+      if (!!igdbGameIds?.length) {
+        gamesQuery = gamesQuery.where("_id").in(igdbGameIds);
+      } else {
+        gamesQuery = gamesQuery.skip((page - 1) * limit).limit(limit);
+      }
+
+      if (!!options?.updatedAfter) {
+        gamesQuery = gamesQuery.where("updated_at").gt(options.updatedAfter);
+      }
+
+      const games = await gamesQuery.sort({ updated_at: 1 }).orFail();
       const gamesLength = games.length;
 
       this.logger.log(
@@ -298,21 +575,21 @@ export class IGDBService {
       );
       this.logger.log("IGDB games loaded", gamesLength);
 
-      const queries = [];
+      const parsedGames = await runWithConcurrency(
+        games,
+        options?.concurrency || DEFAULT_GAMES_SYNC_CONCURRENCY,
+        async (game) => {
+          if (!game) return null;
 
-      for (const game of games) {
-        if (!game) continue;
-
-        const callback = async () => {
           try {
             const _id = new mongoose.Types.ObjectId();
+            const now = new Date().toISOString();
 
             const existed = await this.Games.findOne({
               "igdb.gameId": game._id,
             });
 
-            if (options?.isSkipExistedGames && !!existed)
-              return Promise.reject();
+            if (options?.isSkipExistedGames && !!existed) return null;
 
             const covers = await this.fileService.getAllKeys(
               "mooncellar-covers",
@@ -407,27 +684,30 @@ export class IGDBService {
                 total_rating: game.total_rating,
                 total_rating_count: game.total_rating_count,
               },
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              createdAt: existed?.createdAt || now,
+              updatedAt: now,
             });
           } catch (err) {
             this.logger.error(err, `Failed to parse game: ${game._id}`);
             throw err;
           }
-        };
-        queries.push(callback());
-      }
-
-      const responses = await Promise.allSettled(queries);
+        }
+      );
 
       this.logger.log("Games parsed");
 
-      const parsedGames = responses
-        .filter((res) => res.status === "fulfilled")
-        .map((res) => res.value);
+      const gamesToWrite = parsedGames.filter(Boolean);
+
+      if (!gamesToWrite.length) {
+        return {
+          matchedCount: 0,
+          modifiedCount: 0,
+          upsertedCount: 0,
+        };
+      }
 
       return await this.Games.bulkWrite(
-        parsedGames.map((game) => ({
+        gamesToWrite.map((game) => ({
           updateOne: {
             filter: { _id: game._id },
             update: { $set: game },

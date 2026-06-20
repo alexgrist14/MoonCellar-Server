@@ -63,7 +63,10 @@ import {
 } from "../games/schemas/platform.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpModule } from "@nestjs/axios";
-import { User, UserSchema } from "../user/schemas/user.schema";
+import {
+  IGDBSyncState,
+  IGDBSyncStateSchema,
+} from "./schemas/igdb-sync-state.schema";
 
 @Module({
   controllers: [IgdbParserController],
@@ -91,6 +94,7 @@ import { User, UserSchema } from "../user/schemas/user.schema";
       { name: RAConsole.name, schema: RAConsoleSchema },
       { name: Game.name, schema: GameDatabaseSchema },
       { name: Platform.name, schema: PlatformDatabaseSchema },
+      { name: IGDBSyncState.name, schema: IGDBSyncStateSchema },
     ]),
   ],
 })

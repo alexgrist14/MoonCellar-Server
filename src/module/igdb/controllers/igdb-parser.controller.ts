@@ -31,23 +31,94 @@ export class IgdbParserController {
   @Post("/to-games")
   @ApiOperation({ summary: "Parse games" })
   @ApiResponse({ status: 200, description: "Successfully started" })
-  async parseGames() {
-    const limit = 1000;
-    const count = await this.service.getGamesCount();
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "concurrency", required: false })
+  @ApiQuery({ name: "updatedAfter", required: false })
+  async parseGames(
+    @Query("limit") limitQuery?: string,
+    @Query("concurrency") concurrencyQuery?: string,
+    @Query("updatedAfter") updatedAfterQuery?: string
+  ) {
+    const limit = Number(limitQuery) || 100;
+    const concurrency = Number(concurrencyQuery) || undefined;
+    const updatedAfter = Number(updatedAfterQuery) || undefined;
+    const count = await this.service.getGamesCount({ updatedAfter });
     const totalPages = Math.ceil(count / limit);
     let page = 0;
 
     const callback = (isStop?: boolean) => {
       page += 1;
       if (page <= totalPages) {
-        this.service.igdbToGames(page, limit, totalPages).then((res) => {
-          console.log(res);
-          !isStop && callback();
-        });
+        this.service
+          .igdbToGames(page, limit, totalPages, {
+            concurrency,
+            updatedAfter,
+          })
+          .then((res) => {
+            console.log(res);
+            !isStop && callback();
+          });
       }
     };
 
     callback();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/games/backfill")
+  @ApiOperation({ summary: "Backfill IGDB games with checkpoint tracking" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "delayMs", required: false })
+  async backfillGames(
+    @Query("limit") limitQuery?: string,
+    @Query("delayMs") delayMsQuery?: string
+  ) {
+    return this.service.backfillGames({
+      limit: Number(limitQuery) || undefined,
+      delayMs: Number(delayMsQuery) || undefined,
+    });
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/games/sync-updated")
+  @ApiOperation({ summary: "Sync only updated IGDB games" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "delayMs", required: false })
+  @ApiQuery({ name: "syncToGames", required: false })
+  @ApiQuery({ name: "concurrency", required: false })
+  async syncUpdatedGames(
+    @Query("limit") limitQuery?: string,
+    @Query("delayMs") delayMsQuery?: string,
+    @Query("syncToGames") syncToGamesQuery?: string,
+    @Query("concurrency") concurrencyQuery?: string
+  ) {
+    const result = await this.service.syncUpdatedGames({
+      limit: Number(limitQuery) || undefined,
+      delayMs: Number(delayMsQuery) || undefined,
+    });
+
+    if (syncToGamesQuery !== "true" || !result?.changedIds?.length) {
+      return result;
+    }
+
+    const gamesSync = await this.service.igdbToGames(
+      1,
+      result.changedIds.length,
+      1,
+      {
+        igdbGameIds: result.changedIds,
+        concurrency: Number(concurrencyQuery) || undefined,
+      }
+    );
+
+    return {
+      ...result,
+      gamesSync,
+    };
   }
 
   @ApiCookieAuth()

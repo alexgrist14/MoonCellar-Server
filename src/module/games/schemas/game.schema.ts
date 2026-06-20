@@ -61,3 +61,4 @@ export class Game {
 }
 
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
+GameDatabaseSchema.index({ "igdb.gameId": 1 });
