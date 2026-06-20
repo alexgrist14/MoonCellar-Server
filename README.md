@@ -29,33 +29,39 @@
 ## Installation
 
 ```bash
-$ npm install
+$ bun install
 ```
 
 ## Running the app
 
 ```bash
 # development
-$ npm run start
+$ bun run start
 
 # watch mode
-$ npm run start:dev
+$ bun run start:dev
 
 # production mode
-$ npm run start:prod
+$ bun run start:prod
 ```
+
+## Package Manager
+
+Bun is the primary package manager for local development and CI. The
+`package-lock.json` file is kept temporarily so the current remote deployment
+script can keep using npm until the server-side `build.sh` is migrated to Bun.
 
 ## Test
 
 ```bash
 # unit tests
-$ npm run test
+$ bun run test
 
 # e2e tests
-$ npm run test:e2e
+$ bun run test:e2e
 
 # test coverage
-$ npm run test:cov
+$ bun run test:cov
 ```
 
 ## Support
