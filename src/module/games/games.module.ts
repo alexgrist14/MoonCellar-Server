@@ -16,11 +16,13 @@ import { FileService } from "../user/services/file-upload.service";
 import { PlatformsController } from "./controllers/platforms.controller";
 import { PlatformsService } from "./services/platforms.service";
 import { GamesService } from "./services/games.service";
+import { HltbService } from "./services/hltb.service";
 
 @Module({
   controllers: [GamesController, PlaythroughsController, PlatformsController],
   providers: [
     GamesService,
+    HltbService,
     PlaythroughsService,
     UserLogsService,
     FileService,

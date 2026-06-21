@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import {
-    ICompanyField,
+  ICompanyField,
   IGDBField,
+  IHltbField,
   IReleaseDate,
   IRetroachievementsField,
 } from "src/shared/zod/schemas/games.schema";
@@ -54,6 +55,8 @@ export class Game {
   ratingCount: number;
   @Prop({ type: Object })
   igdb: IGDBField;
+  @Prop({ type: Object })
+  hltb: IHltbField;
   @Prop()
   createdAt: string;
   @Prop()
@@ -62,3 +65,4 @@ export class Game {
 
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
+GameDatabaseSchema.index({ "hltb.updatedAt": 1 }, { sparse: true });
