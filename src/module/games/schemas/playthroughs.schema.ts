@@ -11,7 +11,7 @@ export type IPlaythroughDocument = HydratedDocument<Playthrough>;
 export class Playthrough {
   @Prop({ ref: User.name })
   userId: mongoose.Schema.Types.ObjectId;
-  @Prop()
+  @Prop({ type: String })
   category: CategoriesType;
   @Prop()
   date: string;

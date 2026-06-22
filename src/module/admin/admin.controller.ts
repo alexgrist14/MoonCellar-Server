@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { ApiCookieAuth, ApiTags } from "@nestjs/swagger";
 import { AdminService } from "./admin.service";
-import { IRole, RolesEnum } from "src/shared/zod/schemas/role.schema";
+import { type IRole, RolesEnum } from "src/shared/zod/schemas/role.schema";
 import { RolesGuard } from "../roles/roles.guard";
 import { Roles } from "../roles/roles.decorator";
 import { AuthGuard } from "@nestjs/passport";

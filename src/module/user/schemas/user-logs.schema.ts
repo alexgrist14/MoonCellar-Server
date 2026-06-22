@@ -9,7 +9,7 @@ export type UserLogsDocument = HydratedDocument<UserLogs>;
 export class UserLogs {
   @Prop()
   date: Date;
-  @Prop()
+  @Prop({ type: String })
   type: ILogType;
   @Prop()
   text: string;

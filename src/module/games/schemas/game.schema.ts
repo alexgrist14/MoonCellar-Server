@@ -37,17 +37,17 @@ export class Game {
   screenshots: string[];
   @Prop()
   artworks: string[];
-  @Prop()
+  @Prop({ type: [Object] })
   companies: ICompanyField[];
   @Prop()
   websites: string[];
   @Prop()
   first_release: number;
-  @Prop()
+  @Prop({ type: [Object] })
   release_dates: IReleaseDate[];
   @Prop({ ref: Platform.name })
   platformIds: mongoose.Types.ObjectId[];
-  @Prop()
+  @Prop({ type: [Object] })
   retroachievements: IRetroachievementsField[];
   @Prop()
   rating: number;
