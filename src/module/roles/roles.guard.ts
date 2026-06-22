@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLES_KEY } from "./roles.decorator";
-import { IRole } from "src/shared/zod/schemas/role.schema";
+import type { IRole } from "src/shared/zod/schemas/role.schema";
 
 @Injectable()
 export class RolesGuard implements CanActivate {

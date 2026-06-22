@@ -13,7 +13,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { UserProfileService } from "../user/services/user-profile.service";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";

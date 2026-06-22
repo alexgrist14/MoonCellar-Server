@@ -20,7 +20,7 @@ async function bootstrap() {
     credentials: true,
     origin: [
       ...(process.env.LOCAL_CONNECTION?.split(",") || []),
-      "https://mooncellar.space",
+      "https://mooncellar.net",
     ],
   });
   app.useGlobalPipes(new ValidationPipe());

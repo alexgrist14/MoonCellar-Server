@@ -6,7 +6,7 @@ export type IGDBSyncStateDocument = HydratedDocument<IGDBSyncState>;
 
 @Schema()
 export class IGDBSyncState {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, type: String })
   parserType: ParserType;
 
   @Prop({ default: 0 })

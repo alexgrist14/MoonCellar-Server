@@ -5,7 +5,7 @@ import { User } from "../user/schemas/user.schema";
 import { UserLogs } from "../user/schemas/user-logs.schema";
 import { Rating } from "../user/schemas/user-ratings.schema";
 import { Playthrough } from "../games/schemas/playthroughs.schema";
-import { IRole } from "src/shared/zod/schemas/role.schema";
+import type { IRole } from "src/shared/zod/schemas/role.schema";
 
 @Injectable()
 export class AdminService {
