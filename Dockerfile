@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY ./package*.json ./
 COPY ./bun.lock ./
-RUN bun ci
+RUN bun install --frozen-lockfile
 
 COPY . .
 COPY ./.env .env
