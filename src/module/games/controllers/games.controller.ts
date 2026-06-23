@@ -195,6 +195,15 @@ export class GamesController {
       staleDays: parsePositiveInt(staleDaysQuery),
     });
   }
+
+  @Delete("/hltb")
+  @ApiOperation({ summary: "Remove stored HLTB times from all games" })
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @HttpCode(HttpStatus.OK)
+  async clearHltb() {
+    return this.hltb.clearAllHltb();
+  }
 }
 
 const parsePositiveInt = (value?: string) => {

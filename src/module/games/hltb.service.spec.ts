@@ -3,8 +3,8 @@ import {
   HLTB_CRON_MAX_GAMES,
   HLTB_DEFAULT_BATCH_SIZE,
   HLTB_DEFAULT_DELAY_MS,
-  HLTB_MIN_SIMILARITY,
   HLTB_STALE_DAYS,
+  HLTB_STRONG_TITLE_SIMILARITY,
   HLTB_SYNC_CRON,
   HLTB_SYNC_CRON_OPTIONS,
 } from "./constants/hltb";
@@ -18,9 +18,9 @@ describe("HLTB cron configuration", () => {
     });
     expect(HLTB_DEFAULT_BATCH_SIZE).toBe(50);
     expect(HLTB_DEFAULT_DELAY_MS).toBe(1500);
-    expect(HLTB_CRON_MAX_GAMES).toBe(300);
+    expect(HLTB_CRON_MAX_GAMES).toBe(30000);
     expect(HLTB_CRON_DELAY_MS).toBe(3000);
     expect(HLTB_STALE_DAYS).toBe(30);
-    expect(HLTB_MIN_SIMILARITY).toBe(0.4);
+    expect(HLTB_STRONG_TITLE_SIMILARITY).toBe(0.85);
   });
 });

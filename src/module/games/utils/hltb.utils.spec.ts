@@ -1,54 +1,340 @@
 import {
+  buildHltbSearchQueries,
   buildIncrementalHltbFilter,
   buildMissingHltbFilter,
+  buildPlatformKeySet,
+  canonicalPlatform,
   hasHltbTimes,
+  HltbMatchContext,
   mapHltbEntryToField,
+  normalizeCoreTitle,
   pickBestHltbMatch,
+  titleSimilarity,
 } from "./hltb.utils";
 import { HLTB_STALE_DAYS } from "../constants/hltb";
 
+const ctx = (overrides: Partial<HltbMatchContext> = {}): HltbMatchContext => ({
+  name: "Game",
+  platformKeys: new Set(),
+  years: new Set(),
+  ...overrides,
+});
+
 describe("hltb.utils", () => {
+  describe("titleSimilarity", () => {
+    it("is 1 for identical titles regardless of word order", () => {
+      expect(
+        titleSimilarity(
+          "Super Mario World: Super Mario Advance 2",
+          "Super Mario Advance 2: Super Mario World"
+        )
+      ).toBe(1);
+    });
+
+    it("is low for titles that only share a generic prefix", () => {
+      expect(
+        titleSimilarity("Shin Megami Tensei", "Shin Megami Tensei V")
+      ).toBeLessThan(0.85);
+    });
+  });
+
+  describe("canonicalPlatform", () => {
+    it("maps Super Famicom and Super Nintendo to the same key", () => {
+      expect(canonicalPlatform("Super Famicom")).toBe(
+        canonicalPlatform("Super Nintendo")
+      );
+    });
+
+    it("maps PC (Microsoft Windows) and DOS onto PC", () => {
+      expect(canonicalPlatform("PC (Microsoft Windows)")).toBe("pc");
+      expect(canonicalPlatform("DOS")).toBe("pc");
+    });
+
+    it("normalizes separators so 'X|S' and 'X/S' agree", () => {
+      expect(canonicalPlatform("Xbox Series X|S")).toBe(
+        canonicalPlatform("Xbox Series X/S")
+      );
+    });
+  });
+
+  describe("normalizeCoreTitle", () => {
+    it("strips edition/version markers", () => {
+      expect(normalizeCoreTitle("Final Fantasy: 20th Anniversary Edition")).toBe(
+        "final fantasy"
+      );
+      expect(normalizeCoreTitle("The Last of Us: Remastered")).toBe(
+        "the last of us"
+      );
+    });
+
+    it("strips platform-specific edition suffixes", () => {
+      expect(normalizeCoreTitle("Resident Evil 4: Wii Edition")).toBe(
+        "resident evil 4"
+      );
+    });
+
+    it("strips remaster/redux/hd and director's cut markers", () => {
+      expect(normalizeCoreTitle("Darksiders: Warmastered Edition")).toBe(
+        "darksiders"
+      );
+      expect(normalizeCoreTitle("The Vanishing of Ethan Carter Redux")).toBe(
+        "the vanishing of ethan carter"
+      );
+      expect(normalizeCoreTitle("Ōkami HD")).toBe("okami");
+      expect(normalizeCoreTitle("Sonic Adventure DX: Director's Cut")).toBe(
+        "sonic adventure dx"
+      );
+      expect(normalizeCoreTitle("Hitman: Game of the Year Edition")).toBe(
+        "hitman"
+      );
+    });
+
+    it("does NOT strip a sequel ordinal mislabeled as an edition", () => {
+      // "Fourth Edition" here denotes The Settlers IV, not a re-release.
+      expect(normalizeCoreTitle("The Settlers: Fourth Edition")).toBe(
+        "the settlers fourth edition"
+      );
+    });
+
+    it("leaves plain titles untouched", () => {
+      expect(normalizeCoreTitle("Final Fantasy III")).toBe("final fantasy iii");
+    });
+  });
+
+  describe("canonicalPlatform (mobile)", () => {
+    it("collapses iOS / Android / Windows Phone onto HLTB's 'Mobile'", () => {
+      expect(canonicalPlatform("iOS")).toBe("mobile");
+      expect(canonicalPlatform("Android")).toBe("mobile");
+      expect(canonicalPlatform("Windows Phone")).toBe("mobile");
+      expect(canonicalPlatform("Mobile")).toBe("mobile");
+    });
+  });
+
   describe("pickBestHltbMatch", () => {
-    it("returns the highest similarity match above threshold", () => {
+    it("matches a re-release to its base entry when corroborated by platform", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 3480,
+            name: "Final Fantasy",
+            platforms: ["NES", "PlayStation Portable", "Nintendo 3DS"],
+            releaseYear: 1987,
+            similarity: 1,
+          },
+          {
+            id: 3499,
+            name: "Final Fantasy IV",
+            platforms: ["PlayStation Portable", "Super Nintendo"],
+            releaseYear: 1991,
+            similarity: 0.81,
+          },
+        ],
+        ctx({
+          name: "Final Fantasy: 20th Anniversary Edition",
+          platformKeys: buildPlatformKeySet(["PlayStation Portable", "iOS"]),
+          years: new Set([2007]),
+        })
+      );
+
+      expect(result?.id).toBe(3480);
+    });
+
+    it("matches a DLC whose HLTB entry carries a trailing 'DLC' token", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 23639,
+            name: "Assassin's Creed: Unity - Dead Kings DLC",
+            platforms: ["PC", "PlayStation 4", "Xbox One"],
+            releaseYear: 2015,
+            similarity: 0.83,
+          },
+        ],
+        ctx({
+          name: "Assassin's Creed Unity: Dead Kings",
+          platformKeys: buildPlatformKeySet([
+            "Xbox One",
+            "PC (Microsoft Windows)",
+            "PlayStation 4",
+          ]),
+          years: new Set([2015]),
+        })
+      );
+
+      expect(result?.id).toBe(23639);
+    });
+
+    it("uses platform overlap to pick the right entry among same-named games", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 94537,
+            name: "Final Fantasy III",
+            platforms: ["NES", "PC"],
+            releaseYear: 1990,
+            similarity: 1,
+          },
+          {
+            id: 3497,
+            name: "Final Fantasy III",
+            platforms: ["Nintendo DS", "PlayStation Portable"],
+            releaseYear: 2006,
+            similarity: 1,
+          },
+        ],
+        ctx({
+          name: "Final Fantasy III",
+          platformKeys: buildPlatformKeySet(["PlayStation Portable"]),
+          years: new Set([2012]),
+        })
+      );
+
+      expect(result?.id).toBe(3497);
+    });
+
+
+    it("confirms an exact title corroborated by platform overlap", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 9367,
+            name: "Super Mario Advance 2: Super Mario World",
+            platforms: ["Game Boy Advance"],
+            releaseYear: 2001,
+            similarity: 0.5,
+          },
+        ],
+        ctx({
+          name: "Super Mario World: Super Mario Advance 2",
+          platformKeys: buildPlatformKeySet(["Wii U", "Game Boy Advance"]),
+          years: new Set([2002]),
+        })
+      );
+
+      expect(result?.id).toBe(9367);
+    });
+
+    it("disambiguates a series by release year + platform", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 8420,
+            name: "Shin Megami Tensei",
+            platforms: ["Super Nintendo", "PlayStation"],
+            releaseYear: 1992,
+            similarity: 1,
+          },
+          {
+            id: 8426,
+            name: "Shin Megami Tensei IV",
+            platforms: ["Nintendo 3DS"],
+            releaseYear: 2013,
+            similarity: 0.9,
+          },
+          {
+            id: 53769,
+            name: "Shin Megami Tensei V",
+            platforms: ["Nintendo Switch"],
+            releaseYear: 2021,
+            similarity: 0.9,
+          },
+        ],
+        ctx({
+          name: "Shin Megami Tensei",
+          platformKeys: buildPlatformKeySet(["Super Famicom", "Wii"]),
+          years: new Set([1992, 2007]),
+        })
+      );
+
+      expect(result?.id).toBe(8420);
+    });
+
+    it("skips when several entries share the title and none can be confirmed", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 9948,
+            name: "The Incredible Hulk",
+            platforms: ["Super Nintendo", "Sega Mega Drive/Genesis"],
+            releaseYear: 1993,
+            similarity: 1,
+          },
+          {
+            id: 89054,
+            name: "The Incredible Hulk",
+            platforms: ["Game Boy Advance"],
+            releaseYear: 2003,
+            similarity: 1,
+          },
+          {
+            id: 9949,
+            name: "The Incredible Hulk",
+            platforms: ["PlayStation 3", "Wii"],
+            releaseYear: 2008,
+            similarity: 1,
+          },
+        ],
+        ctx({
+          name: "The Incredible Hulk",
+          platformKeys: buildPlatformKeySet(["Atari 2600"]),
+          years: new Set(),
+        })
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("accepts a unique exact title even without corroboration", () => {
       const result = pickBestHltbMatch(
         [
           {
             id: 50419,
             name: "Nioh: Complete Edition",
             similarity: 0.2,
-            mainTime: 42 * 3600,
-            mainExtraTime: 84 * 3600,
-            completionistTime: 97 * 3600,
           },
           {
             id: 36936,
             name: "Nioh",
             similarity: 1,
-            mainTime: 34.5 * 3600,
-            mainExtraTime: 61 * 3600,
-            completionistTime: 93.5 * 3600,
           },
         ],
-        "Nioh"
+        ctx({ name: "Nioh" })
       );
 
       expect(result?.id).toBe(36936);
     });
 
-    it("returns null when similarity is below threshold", () => {
+    it("returns null when nothing matches the title", () => {
       const result = pickBestHltbMatch(
-        [
-          {
-            id: 1,
-            name: "Unrelated Game",
-            similarity: 0.1,
-            mainTime: 10 * 3600,
-          },
-        ],
-        "Elden Ring"
+        [{ id: 1, name: "Unrelated Game", similarity: 0.1 }],
+        ctx({ name: "Elden Ring" })
       );
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("buildHltbSearchQueries", () => {
+    it("returns just the full name when there are no subtitles", () => {
+      expect(buildHltbSearchQueries("Shin Megami Tensei")).toEqual([
+        "Shin Megami Tensei",
+      ]);
+    });
+
+    it("adds subtitle parts and a reversed variant for colon titles", () => {
+      const queries = buildHltbSearchQueries(
+        "Super Mario World: Super Mario Advance 2"
+      );
+
+      expect(queries).toContain("Super Mario World: Super Mario Advance 2");
+      expect(queries).toContain("Super Mario Advance 2");
+      expect(queries).toContain("Super Mario Advance 2 Super Mario World");
+    });
+
+    it("includes the edition-stripped core as a query", () => {
+      const queries = buildHltbSearchQueries("Hitman: Game of the Year Edition");
+
+      expect(queries).toContain("hitman");
     });
   });
 

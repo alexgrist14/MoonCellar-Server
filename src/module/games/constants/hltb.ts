@@ -12,4 +12,13 @@ export const HLTB_CRON_MAX_GAMES = 30000;
 export const HLTB_CRON_DELAY_MS = 3000;
 export const HLTB_STALE_DAYS = 30;
 
-export const HLTB_MIN_SIMILARITY = 0.4;
+/**
+ * Minimum order-independent token-set similarity for a title to count as a
+ * "strong" match. Combined with a platform/year corroboration check, this
+ * keeps unrelated games (e.g. a different "The Incredible Hulk") from being
+ * accepted. Tuned so reordered titles ("A: B" vs "B: A") still score 1.0.
+ */
+export const HLTB_STRONG_TITLE_SIMILARITY = 0.85;
+
+/** Pause between fallback search queries for the same game, in milliseconds. */
+export const HLTB_QUERY_DELAY_MS = 400;

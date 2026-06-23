@@ -6,22 +6,27 @@ import { FilterQuery, Model } from "mongoose";
 import { PinoLogger } from "nestjs-pino";
 import { sleep } from "src/shared/utils";
 import { Game, GameDocument } from "../schemas/game.schema";
+import { Platform, PlatformDocument } from "../schemas/platform.schema";
 import {
   HLTB_CRON_DELAY_MS,
   HLTB_CRON_MAX_GAMES,
   HLTB_DEFAULT_BATCH_SIZE,
   HLTB_DEFAULT_DELAY_MS,
+  HLTB_QUERY_DELAY_MS,
   HLTB_STALE_DAYS,
   HLTB_SYNC_CRON,
   HLTB_SYNC_CRON_OPTIONS,
 } from "../constants/hltb";
 import {
+  buildHltbSearchQueries,
   buildIncrementalHltbFilter,
   buildMissingHltbFilter,
+  buildPlatformKeySet,
   hasHltbTimes,
+  HltbMatchContext,
   HltbSearchEntry,
   mapHltbEntryToField,
-  pickBestHltbMatch,
+  selectHltbMatch,
 } from "../utils/hltb.utils";
 
 export type HltbSyncOptions = {
@@ -51,6 +56,8 @@ export class HltbService {
   constructor(
     @InjectModel(Game.name)
     private readonly gamesModel: Model<GameDocument>,
+    @InjectModel(Platform.name)
+    private readonly platformsModel: Model<PlatformDocument>,
     private readonly logger: PinoLogger
   ) {
     this.logger.setContext(HltbService.name);
@@ -134,6 +141,8 @@ export class HltbService {
       };
     }
 
+    const platformNames = await this.loadPlatformNames();
+
     const result = {
       processed: 0,
       updated: 0,
@@ -160,7 +169,7 @@ export class HltbService {
 
       const games = await this.gamesModel
         .find(filter)
-        .select("_id name hltb")
+        .select("_id name hltb platformIds release_dates first_release")
         .sort({ _id: 1 })
         .skip(skip)
         .limit(currentLimit)
@@ -180,16 +189,34 @@ export class HltbService {
         this.logger.info(`${progress} fetching HLTB for "${game.name}"`);
 
         try {
-          const hltb = await this.fetchHltbForGame(
-            game.name,
-            game.hltb?.hltbId
-          );
+          const ctx = this.buildMatchContext(game, platformNames);
+          const hltb = await this.fetchHltbForGame(ctx);
 
           if (!hltb || !hasHltbTimes(hltb)) {
             result.skipped += 1;
-            this.logger.warn(
-              `${progress} skipped "${game.name}" — no HLTB match or empty times`
-            );
+
+            if (game.hltb) {
+              // The previously-stored match no longer passes verification
+              // (or HLTB has no usable times) — drop it instead of keeping
+              // a potential false positive.
+              bulkOps.push({
+                updateOne: {
+                  filter: { _id: game._id },
+                  update: {
+                    $unset: { hltb: "" },
+                    $set: { updatedAt: new Date().toISOString() },
+                  },
+                },
+              });
+              this.logger.warn(
+                `${progress} cleared stale HLTB for "${game.name}" — no verified match`
+              );
+            } else {
+              this.logger.warn(
+                `${progress} skipped "${game.name}" — no verified HLTB match`
+              );
+            }
+
             continue;
           }
 
@@ -293,38 +320,103 @@ export class HltbService {
     return {};
   }
 
-  private async fetchHltbForGame(gameName: string, existingHltbId?: string) {
-    if (existingHltbId) {
-      try {
-        this.logger.debug(
-          `Fetching HLTB by id ${existingHltbId} for "${gameName}"`
-        );
-        const detail = await this.searchById(Number(existingHltbId));
+  /** Removes the `hltb` field from every game so the catalogue can be rebuilt
+   * from scratch by a subsequent sync. */
+  async clearAllHltb(): Promise<{ matched: number; cleared: number }> {
+    this.logger.warn("Clearing the HLTB field from all games");
 
-        if (detail) {
-          return mapHltbEntryToField(detail);
-        }
-      } catch (err) {
-        this.logger.warn(
-          err,
-          `Failed to fetch HLTB detail for id ${existingHltbId}, falling back to search`
-        );
+    const res = await this.gamesModel.updateMany(
+      { hltb: { $exists: true } },
+      { $unset: { hltb: "" }, $set: { updatedAt: new Date().toISOString() } }
+    );
+
+    this.logger.info(
+      `Cleared HLTB from ${res.modifiedCount} games (matched ${res.matchedCount})`
+    );
+
+    return { matched: res.matchedCount, cleared: res.modifiedCount };
+  }
+
+  private async loadPlatformNames(): Promise<Map<string, string>> {
+    const platforms = await this.platformsModel
+      .find({})
+      .select("_id name")
+      .lean();
+
+    const map = new Map<string, string>();
+    for (const platform of platforms) {
+      if (platform?.name) {
+        map.set(String(platform._id), platform.name);
       }
     }
 
-    this.logger.debug(`Searching HLTB by name for "${gameName}"`);
-    const results = await this.search(gameName);
-    const bestMatch = pickBestHltbMatch(results, gameName);
-
-    if (!bestMatch) {
-      return null;
-    }
-
-    return mapHltbEntryToField(bestMatch);
+    return map;
   }
 
-  private async search(gameName: string): Promise<HltbSearchEntry[]> {
-    const response = await this.hltbClient.search(gameName);
+  private buildMatchContext(
+    game: Pick<
+      Game,
+      "name" | "platformIds" | "release_dates" | "first_release"
+    >,
+    platformNames: Map<string, string>
+  ): HltbMatchContext {
+    const platformLabels = (game.platformIds ?? [])
+      .map((id) => platformNames.get(String(id)))
+      .filter((name): name is string => !!name);
+
+    const years = new Set<number>();
+    for (const release of game.release_dates ?? []) {
+      if (release?.year) {
+        years.add(release.year);
+      }
+    }
+    if (game.first_release) {
+      years.add(new Date(game.first_release * 1000).getUTCFullYear());
+    }
+
+    return {
+      name: game.name,
+      platformKeys: buildPlatformKeySet(platformLabels),
+      years,
+    };
+  }
+
+  private async fetchHltbForGame(ctx: HltbMatchContext) {
+    const queries = buildHltbSearchQueries(ctx.name);
+    const pool = new Map<number, HltbSearchEntry>();
+    let bestMatch: HltbSearchEntry | null = null;
+
+    for (let i = 0; i < queries.length; i += 1) {
+      const query = queries[i];
+      this.logger.debug(`Searching HLTB for "${ctx.name}" with query "${query}"`);
+
+      const results = await this.search(query);
+      for (const entry of results) {
+        if (!pool.has(entry.id)) {
+          pool.set(entry.id, entry);
+        }
+      }
+
+      const match = selectHltbMatch([...pool.values()], ctx);
+      bestMatch = match?.entry ?? bestMatch;
+
+      // A corroborated match (title + platform/year) is trustworthy enough to
+      // stop early; the exact-title fallback waits for all queries so a later
+      // query cannot reveal a second exact title that should void it.
+      if (match?.tier === "confirmed") {
+        return mapHltbEntryToField(match.entry);
+      }
+
+      if (i < queries.length - 1 && HLTB_QUERY_DELAY_MS > 0) {
+        await sleep(HLTB_QUERY_DELAY_MS);
+      }
+    }
+
+    return bestMatch ? mapHltbEntryToField(bestMatch) : null;
+  }
+
+  private async search(query: string): Promise<HltbSearchEntry[]> {
+    const response = await this.hltbClient.search(query);
 
     if (!response.success || !response.data?.length) {
       return [];
@@ -337,18 +429,8 @@ export class HltbService {
       mainExtraTime: entry.mainExtraTime,
       completionistTime: entry.completionistTime,
       similarity: entry.similarity,
+      platforms: entry.platforms,
+      releaseYear: entry.releaseYear,
     }));
-  }
-
-  private async searchById(hltbId: number): Promise<HltbSearchEntry | null> {
-    const response = await this.hltbClient.search(String(hltbId));
-
-    if (!response.success || !response.data?.length) {
-      return null;
-    }
-
-    return (
-      response.data.find((entry) => entry.id === hltbId) ?? response.data[0]
-    );
   }
 }
