@@ -37,15 +37,23 @@ export const pinoConfig: LoggerModuleAsyncParams = {
           };
         },
       },
-      transport: {
-        target: "pino-loki",
-        options: {
-          host: process.env.LOKI_HOST ?? "http://localhost:3100",
-          json: true,
-          batch: true,
-          labels: { app: "nestjs-loki-grafana" },
-        },
-      },
+      transport: process.env.LOKI_HOST
+        ? {
+            target: "pino-loki",
+            options: {
+              host: process.env.LOKI_HOST,
+              json: true,
+              batch: true,
+              labels: { app: "nestjs-loki-grafana" },
+            },
+          }
+        : {
+            target: "pino-pretty",
+            options: {
+              colorize: true,
+              singleLine: true,
+            },
+          },
     },
   }),
   inject: [ConfigService],

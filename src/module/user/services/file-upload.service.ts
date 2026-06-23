@@ -44,11 +44,14 @@ export class FileService {
     try {
       const s3Client = new S3Client(getS3Config());
 
+      if (!file.buffer.length) return;
+
       return await s3Client.send(
         new PutObjectCommand({
           Bucket: bucketName,
           Key: key,
           Body: file.buffer,
+          ContentType: file.mimetype,
         })
       );
     } catch (err) {

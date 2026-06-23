@@ -516,15 +516,10 @@ export class IGDBService {
         return result;
       }
 
-      const gamesSync = await this.igdbToGames(
-        1,
-        result.changedIds.length,
-        1,
-        {
-          igdbGameIds: result.changedIds,
-          concurrency: IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY,
-        }
-      );
+      const gamesSync = await this.igdbToGames(1, result.changedIds.length, 1, {
+        igdbGameIds: result.changedIds,
+        concurrency: IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY,
+      });
 
       this.logger.log(
         `IGDB games sync cron finished with ${result.changedCount} changes`
@@ -765,11 +760,17 @@ export class IGDBService {
               responseType: "arraybuffer",
             });
 
+            if (!response.data.length) {
+              this.logger.error("Image not found: " + url);
+              continue;
+            };
+
             const key = `${slug}/${_id}`;
             await this.fileService.uploadFile(response.data, key, bucketName);
           } catch (e) {
             this.logger.error(
-              "Image error: " + (e?.response?.status || "unknown")
+              "Image error: " +
+                (e?.response?.status || e?.err?.message || "unknown")
             );
             return Promise.reject();
           }

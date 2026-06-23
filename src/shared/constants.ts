@@ -12,8 +12,8 @@ export const refreshExpire = 30 * 24 * 60 * 60 * 1000;
 export const RA_MAIN_USER_NAME = "alexgrist14";
 
 export const getS3Config = (): S3ClientConfig => ({
-  endpoint: "https://s3.regru.cloud",
-  region: "ru-central1",
+  endpoint: process.env.S3_HOST,
+  region: process.env.S3_REGION,
   credentials: {
     accessKeyId: process.env.S3_ID,
     secretAccessKey: process.env.S3_KEY,

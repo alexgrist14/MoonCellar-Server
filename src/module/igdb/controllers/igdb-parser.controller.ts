@@ -127,13 +127,13 @@ export class IgdbParserController {
   @ApiOperation({ summary: "Parse images" })
   @ApiResponse({ status: 200, description: "Successfully started" })
   @ApiQuery({ name: "parseType", enum: ["covers", "artworks", "screenshots"] })
-  @ApiQuery({ name: "limit", required: false })
-  @ApiQuery({ name: "timeout", required: false })
+  @ApiQuery({ name: "limit", required: false, default: 50 })
+  @ApiQuery({ name: "timeout", required: false, default: 2000 })
   @ApiQuery({ name: "isParseExisted", default: false, required: false })
   async parseImages(@Query() dto: ParseImagesDto) {
     const { isParseExisted, limit, parseType, timeout } = dto;
     const count = await this.service.getGamesCount();
-    const totalPages = Math.ceil(count / limit);
+    const totalPages = Math.ceil(count / (limit || 2000));
     let page = 0;
 
     const callback = (isStop?: boolean) => {
