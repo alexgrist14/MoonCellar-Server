@@ -53,6 +53,7 @@ jobs:
 
             cd ${{ secrets.WORK_DIR }}
             ../run.sh
+            systemctl --user daemon-reload
             systemctl restart --user Mooncellar-Backend.service
 
             podman image prune -f
