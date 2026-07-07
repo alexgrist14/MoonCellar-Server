@@ -756,7 +756,12 @@ export class IGDBService {
             }
 
             const key = `${slug}/${_id}`;
-            await this.fileService.uploadFile(response.data, key, bucketName);
+            await this.fileService.uploadFile(
+              response.data,
+              key,
+              bucketName,
+              "image/jpeg"
+            );
 
             if (bucketName === "mooncellar-covers") {
               await this.Games.updateOne(

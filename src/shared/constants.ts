@@ -19,3 +19,18 @@ export const getS3Config = (): S3ClientConfig => ({
     secretAccessKey: process.env.S3_KEY,
   },
 });
+
+export const mimeToExt = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'text/plain': 'txt',
+  'text/csv': 'csv',
+  'application/json': 'json',
+  'video/mp4': 'mp4',
+  'audio/mpeg': 'mp3',
+};

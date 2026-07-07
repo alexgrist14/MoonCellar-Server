@@ -10,7 +10,7 @@ import {
   ListObjectsV2CommandInput,
 } from "@aws-sdk/client-s3";
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { getS3Config } from "src/shared/constants";
+import { getS3Config, mimeToExt } from "src/shared/constants";
 import {
   IGetFileRequest,
   IGetFileResponse,
@@ -44,14 +44,15 @@ export class FileService {
     file: Express.Multer.File,
     key: string,
     bucketName: string,
+    mimetype?: string,
     isPrivate?: boolean
   ) {
     try {
       const s3Client = new S3Client(getS3Config());
 
-      // if (!file.buffer.length) return;
+      if (!file) return;
 
-      const ext = file.originalname.split(".").pop();
+      const ext = mimeToExt[file.mimetype || mimetype] || "";
 
       return await s3Client.send(
         new PutObjectCommand({
