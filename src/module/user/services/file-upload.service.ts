@@ -44,7 +44,7 @@ export class FileService {
     try {
       const s3Client = new S3Client(getS3Config());
 
-      if (!file.buffer.length) return;
+      // if (!file.buffer.length) return;
 
       return await s3Client.send(
         new PutObjectCommand({

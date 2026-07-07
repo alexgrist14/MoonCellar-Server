@@ -586,13 +586,6 @@ export class IGDBService {
 
             if (options?.isSkipExistedGames && !!existed) return null;
 
-            const covers = await this.fileService.getAllKeys(
-              "mooncellar-covers",
-              {
-                prefix: game.slug + "/",
-              }
-            );
-
             const populatedGame: Omit<
               IGDBGamesDocument,
               | "game_type"
@@ -645,9 +638,6 @@ export class IGDBService {
                 populatedGame?.category ||
                 existed?.type ||
                 null,
-              cover: !!covers.length
-                ? `https://mooncellar-covers.s3.regru.cloud/${covers[0]}`
-                : undefined,
               storyline: game.storyline,
               summary: game.summary,
               modes: populatedGame.game_modes.map((mode) => mode.name),
@@ -763,10 +753,25 @@ export class IGDBService {
             if (!response.data.length) {
               this.logger.error("Image not found: " + url);
               continue;
-            };
+            }
 
             const key = `${slug}/${_id}`;
             await this.fileService.uploadFile(response.data, key, bucketName);
+
+            if (bucketName === "mooncellar-covers") {
+              await this.Games.updateOne(
+                { slug },
+                {
+                  $set: {
+                    cover:
+                      process.env.S3_HOST_CDN.replace(
+                        "%backet",
+                        "mooncellar-covers"
+                      ) + key,
+                  },
+                }
+              );
+            }
           } catch (e) {
             this.logger.error(
               "Image error: " +
