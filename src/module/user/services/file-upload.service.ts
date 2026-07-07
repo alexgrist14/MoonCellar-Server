@@ -51,10 +51,12 @@ export class FileService {
 
       // if (!file.buffer.length) return;
 
+      const ext = file.originalname.split(".").pop();
+
       return await s3Client.send(
         new PutObjectCommand({
           Bucket: bucketName,
-          Key: key,
+          Key: key + `.${ext}`,
           Body: file.buffer,
           ContentType: file.mimetype,
           ACL: isPrivate ? "private" : "public-read",
