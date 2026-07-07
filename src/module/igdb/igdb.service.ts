@@ -772,7 +772,9 @@ export class IGDBService {
                       process.env.S3_HOST_CDN.replace(
                         "%backet",
                         "mooncellar-covers"
-                      ) + key,
+                      ) +
+                      key +
+                      ".jpg",
                   },
                 }
               );
