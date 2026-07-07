@@ -40,7 +40,12 @@ export class FileService {
     }
   }
 
-  async uploadFile(file: Express.Multer.File, key: string, bucketName: string) {
+  async uploadFile(
+    file: Express.Multer.File,
+    key: string,
+    bucketName: string,
+    isPrivate?: boolean
+  ) {
     try {
       const s3Client = new S3Client(getS3Config());
 
@@ -52,6 +57,7 @@ export class FileService {
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
+          ACL: isPrivate ? "private" : "public-read",
         })
       );
     } catch (err) {
