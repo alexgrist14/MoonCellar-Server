@@ -148,7 +148,7 @@ export class AuthService {
   ): void {
     const domain = origin?.includes("localhost")
       ? ".localhost"
-      : "mooncellar.net";
+      : "mooncellar.space";
     const secure = origin?.includes("https") ? true : false;
     const sameSite =
       origin?.includes("localhost") || !secure ? undefined : "none";
