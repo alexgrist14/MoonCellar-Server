@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import {
+  buildIgdbQueryParams,
   getMaxUpdatedAt,
+  igdbAgent,
   igdbAuth,
   igdbParser,
   runWithConcurrency,
@@ -72,6 +74,8 @@ import {
   IGDBSyncStateDocument,
 } from "./schemas/igdb-sync-state.schema";
 import { Cron } from "@nestjs/schedule";
+import { PinoLogger } from "nestjs-pino";
+import { runInCronLogContext } from "src/shared/cron-logging";
 import {
   IGDB_GAMES_SYNC_CRON,
   IGDB_GAMES_SYNC_CRON_OPTIONS,
@@ -130,7 +134,8 @@ export class IGDBService {
     @InjectModel(RAConsole.name)
     private RAPlatforms: Model<RAConsole>,
     private fileService: FileService,
-    private httpService: HttpService
+    private httpService: HttpService,
+    private readonly pino: PinoLogger
   ) {}
 
   private async getSyncCheckpoint(type: ParserType) {
@@ -444,6 +449,78 @@ export class IGDBService {
     }
   }
 
+  async backfillUpcomingHypes(options?: { limit?: number; delayMs?: number }) {
+    try {
+      const { data: authData } = await igdbAuth();
+      const { access_token: token } = authData;
+
+      if (!token) {
+        this.logger.warn(`There is no token to backfill hypes`);
+        return;
+      }
+
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const where = `first_release_date > ${nowSeconds} & hypes != null`;
+      const limit = options?.limit || 500;
+      const delayMs = options?.delayMs ?? 0;
+      const url = "https://api.igdb.com/v4/games";
+
+      const { data: countData } = await igdbAgent<{ count: number }>(
+        `${url}/count`,
+        token,
+        buildIgdbQueryParams(undefined, { where })
+      );
+      const total = countData.count;
+
+      let offset = 0;
+      let matched = 0;
+      let modified = 0;
+
+      while (offset < total) {
+        const { data } = await igdbAgent<{ id: number; hypes: number }[]>(
+          url,
+          token,
+          buildIgdbQueryParams("id, hypes", {
+            where,
+            sort: "hypes desc",
+            limit,
+            offset,
+          })
+        );
+
+        if (!data?.length) {
+          break;
+        }
+
+        const ops = data
+          .filter((item) => typeof item.hypes === "number")
+          .map((item) => ({
+            updateOne: {
+              filter: { "igdb.gameId": item.id },
+              update: { $set: { "igdb.hypes": item.hypes } },
+            },
+          }));
+
+        if (ops.length) {
+          const res = await this.Games.bulkWrite(ops);
+          matched += res.matchedCount;
+          modified += res.modifiedCount;
+        }
+
+        offset += limit;
+
+        if (delayMs) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+
+      return { total, matched, modified };
+    } catch (err) {
+      this.logger.error(err, `Failed to backfill upcoming hypes`);
+      throw err;
+    }
+  }
+
   async syncUpdatedGames(options?: { limit?: number; delayMs?: number }) {
     try {
       const { data: authData } = await igdbAuth();
@@ -479,7 +556,7 @@ export class IGDBService {
             this.IGDBGamesModel,
             items
           );
-          changedIds.push(...items.map((item) => item._id));
+          changedIds.push(...items.map((item) => item.id));
           checkpoint = getMaxUpdatedAt(items, checkpoint);
           await this.setSyncCheckpoint("games", checkpoint);
         },
@@ -498,6 +575,12 @@ export class IGDBService {
 
   @Cron(IGDB_GAMES_SYNC_CRON, IGDB_GAMES_SYNC_CRON_OPTIONS)
   async syncUpdatedGamesCron() {
+    return runInCronLogContext(this.pino, "igdb-games-sync", () =>
+      this.runSyncUpdatedGamesCron()
+    );
+  }
+
+  private async runSyncUpdatedGamesCron() {
     if (this.isSyncUpdatedGamesCronRunning) {
       this.logger.warn("IGDB games sync cron is already running");
       return;
@@ -668,6 +751,7 @@ export class IGDBService {
                 gameId: game._id,
                 total_rating: game.total_rating,
                 total_rating_count: game.total_rating_count,
+                hypes: game.hypes,
               },
               createdAt: existed?.createdAt || now,
               updatedAt: now,

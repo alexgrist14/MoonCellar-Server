@@ -9,6 +9,7 @@ export const IGDBSchema = z.object({
   gameId: z.number(),
   total_rating: z.number().optional(),
   total_rating_count: z.number().optional(),
+  hypes: z.number().optional(),
 });
 
 export const HltbSchema = z.object({
@@ -16,6 +17,22 @@ export const HltbSchema = z.object({
   mainStory: z.number().nullable().optional(),
   mainExtra: z.number().nullable().optional(),
   completionist: z.number().nullable().optional(),
+  allStyles: z.number().nullable().optional(),
+  coop: z.number().nullable().optional(),
+  multiplayer: z.number().nullable().optional(),
+  mainStoryCount: z.number().nullable().optional(),
+  mainExtraCount: z.number().nullable().optional(),
+  completionistCount: z.number().nullable().optional(),
+  allStylesCount: z.number().nullable().optional(),
+  coopCount: z.number().nullable().optional(),
+  multiplayerCount: z.number().nullable().optional(),
+  reviewScore: z.number().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
+  platforms: z.string().array().optional(),
+  releaseYear: z.number().nullable().optional(),
+  similarity: z.number().nullable().optional(),
+  alias: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
   sourceName: z.string().optional(),
   updatedAt: z.string(),
 });

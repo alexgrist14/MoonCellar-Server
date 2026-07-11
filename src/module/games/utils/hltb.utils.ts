@@ -4,9 +4,22 @@ import { HLTB_STRONG_TITLE_SIMILARITY } from "../constants/hltb";
 export type HltbSearchEntry = {
   id: number;
   name: string;
+  alias?: string;
+  type?: string;
   mainTime?: number;
   mainExtraTime?: number;
   completionistTime?: number;
+  allStylesTime?: number;
+  coopTime?: number;
+  multiplayerTime?: number;
+  mainCount?: number;
+  mainExtraCount?: number;
+  completionistCount?: number;
+  allStylesCount?: number;
+  coopCount?: number;
+  multiplayerCount?: number;
+  imageUrl?: string;
+  reviewScore?: number;
   similarity?: number;
   platforms?: string[];
   releaseYear?: number | null;
@@ -375,11 +388,30 @@ export const buildHltbSearchQueries = (name: string): string[] => {
   return queries.slice(0, 5);
 };
 
+const countOrNull = (count?: number | null): number | null =>
+  count != null && count > 0 ? count : null;
+
 export const mapHltbEntryToField = (entry: HltbSearchEntry): IHltbField => ({
   hltbId: String(entry.id),
   mainStory: secondsToHours(entry.mainTime),
   mainExtra: secondsToHours(entry.mainExtraTime),
   completionist: secondsToHours(entry.completionistTime),
+  allStyles: secondsToHours(entry.allStylesTime),
+  coop: secondsToHours(entry.coopTime),
+  multiplayer: secondsToHours(entry.multiplayerTime),
+  mainStoryCount: countOrNull(entry.mainCount),
+  mainExtraCount: countOrNull(entry.mainExtraCount),
+  completionistCount: countOrNull(entry.completionistCount),
+  allStylesCount: countOrNull(entry.allStylesCount),
+  coopCount: countOrNull(entry.coopCount),
+  multiplayerCount: countOrNull(entry.multiplayerCount),
+  reviewScore: entry.reviewScore != null && entry.reviewScore > 0 ? entry.reviewScore : null,
+  imageUrl: entry.imageUrl || null,
+  platforms: entry.platforms ?? [],
+  releaseYear: entry.releaseYear ?? null,
+  similarity: entry.similarity ?? null,
+  alias: entry.alias || null,
+  type: entry.type || null,
   sourceName: entry.name,
   updatedAt: new Date().toISOString(),
 });

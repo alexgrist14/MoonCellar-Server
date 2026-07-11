@@ -65,4 +65,4 @@ export class Game {
 
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
-GameDatabaseSchema.index({ "hltb.updatedAt": 1 }, { sparse: true });
+GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });

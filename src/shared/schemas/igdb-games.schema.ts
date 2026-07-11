@@ -45,6 +45,8 @@ export class IGDBGames {
   @Prop()
   total_rating_count: number;
   @Prop()
+  hypes: number;
+  @Prop()
   updated_at: number;
   @Prop()
   aggregated_rating: number;

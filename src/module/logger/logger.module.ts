@@ -45,6 +45,7 @@ export const pinoConfig: LoggerModuleAsyncParams = {
               json: true,
               batch: true,
               labels: { app: "nestjs-loki-grafana" },
+              propsToLabels: ["job", "cron"],
             },
           }
         : {

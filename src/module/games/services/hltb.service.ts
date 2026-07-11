@@ -5,6 +5,7 @@ import { HowLongToBeatService } from "howlongtobeat-ts";
 import { FilterQuery, Model } from "mongoose";
 import { PinoLogger } from "nestjs-pino";
 import { sleep } from "src/shared/utils";
+import { runInCronLogContext } from "src/shared/cron-logging";
 import { Game, GameDocument } from "../schemas/game.schema";
 import { Platform, PlatformDocument } from "../schemas/platform.schema";
 import {
@@ -65,16 +66,18 @@ export class HltbService {
 
   @Cron(HLTB_SYNC_CRON, HLTB_SYNC_CRON_OPTIONS)
   async syncHltbCron() {
-    try {
-      return await this.syncAllGames({
-        limit: HLTB_CRON_MAX_GAMES,
-        delayMs: HLTB_CRON_DELAY_MS,
-        staleDays: HLTB_STALE_DAYS,
-      });
-    } catch (err) {
-      this.logger.error(err, "Failed to run HLTB sync cron");
-      throw err;
-    }
+    return runInCronLogContext(this.logger, "hltb-sync", async () => {
+      try {
+        return await this.syncAllGames({
+          limit: HLTB_CRON_MAX_GAMES,
+          delayMs: HLTB_CRON_DELAY_MS,
+          staleDays: HLTB_STALE_DAYS,
+        });
+      } catch (err) {
+        this.logger.error(err, "Failed to run HLTB sync cron");
+        throw err;
+      }
+    });
   }
 
   async syncAllGames(options?: HltbSyncOptions): Promise<HltbSyncResult> {
@@ -111,6 +114,11 @@ export class HltbService {
     const pageSize = HLTB_DEFAULT_BATCH_SIZE;
     const filter = this.buildSyncFilter(options);
     const syncMode = this.describeSyncMode(options);
+    const orderByStaleness =
+      options?.staleDays != null && !options?.onlyMissing;
+    const sortSpec = orderByStaleness
+      ? ({ "hltb.updatedAt": 1, _id: 1 } as const)
+      : ({ _id: 1 } as const);
 
     const queuedTotal = await this.gamesModel.countDocuments(filter);
     const targetTotal =
@@ -123,7 +131,7 @@ export class HltbService {
     if (queuedTotal === 0) {
       const message =
         syncMode === "missing only"
-          ? 'No games without HLTB found. Try without onlyMissing=true or use staleDays=30.'
+          ? "No games without HLTB found. Try without onlyMissing=true or use staleDays=30."
           : "No games matched the sync filter";
 
       this.logger.info(`HLTB sync finished: ${message}`);
@@ -150,7 +158,8 @@ export class HltbService {
       failed: 0,
     };
 
-    let skip = 0;
+    let lastId: unknown = null;
+    let lastUpdatedAt: string | null = null;
     let batchNumber = 0;
 
     while (true) {
@@ -162,16 +171,22 @@ export class HltbService {
         maxToProcess != null ? maxToProcess - result.processed : pageSize;
       const currentLimit = Math.min(pageSize, remaining);
 
+      const pageFilter = this.buildPageFilter(
+        filter,
+        orderByStaleness,
+        lastId,
+        lastUpdatedAt
+      );
+
       batchNumber += 1;
       this.logger.info(
-        `HLTB sync batch #${batchNumber}: loading up to ${currentLimit} games (offset=${skip})`
+        `HLTB sync batch #${batchNumber}: loading up to ${currentLimit} games (after ${orderByStaleness ? `updatedAt=${lastUpdatedAt ?? "never"}` : `_id=${lastId ?? "start"}`})`
       );
 
       const games = await this.gamesModel
-        .find(filter)
+        .find(pageFilter)
         .select("_id name hltb platformIds release_dates first_release")
-        .sort({ _id: 1 })
-        .skip(skip)
+        .sort(sortSpec)
         .limit(currentLimit)
         .lean();
 
@@ -238,10 +253,7 @@ export class HltbService {
           );
         } catch (err) {
           result.failed += 1;
-          this.logger.warn(
-            err,
-            `${progress} failed "${game.name}"`
-          );
+          this.logger.warn(err, `${progress} failed "${game.name}"`);
         }
 
         if (delayMs > 0) {
@@ -256,7 +268,11 @@ export class HltbService {
         );
       }
 
-      skip += games.length;
+      const lastGame = games[games.length - 1];
+      lastId = lastGame._id;
+      lastUpdatedAt = orderByStaleness
+        ? (lastGame.hltb?.updatedAt ?? null)
+        : null;
 
       this.logger.info(
         `HLTB sync progress: processed=${result.processed}, updated=${result.updated}, skipped=${result.skipped}, failed=${result.failed}, elapsed=${this.formatElapsed(startedAt)}`
@@ -318,6 +334,44 @@ export class HltbService {
     }
 
     return {};
+  }
+
+  private buildPageFilter(
+    filter: FilterQuery<GameDocument>,
+    orderByStaleness: boolean,
+    lastId: unknown,
+    lastUpdatedAt: string | null
+  ): FilterQuery<GameDocument> {
+    if (lastId == null) {
+      return filter;
+    }
+
+    if (!orderByStaleness) {
+      return { $and: [filter, { _id: { $gt: lastId } }] };
+    }
+
+    const cursor =
+      lastUpdatedAt == null
+        ? {
+            $or: [
+              {
+                "hltb.updatedAt": { $exists: false },
+                _id: { $gt: lastId },
+              },
+              { "hltb.updatedAt": { $exists: true } },
+            ],
+          }
+        : {
+            $or: [
+              { "hltb.updatedAt": { $gt: lastUpdatedAt } },
+              {
+                "hltb.updatedAt": lastUpdatedAt,
+                _id: { $gt: lastId },
+              },
+            ],
+          };
+
+    return { $and: [filter, cursor] };
   }
 
   /** Removes the `hltb` field from every game so the catalogue can be rebuilt
@@ -388,7 +442,9 @@ export class HltbService {
 
     for (let i = 0; i < queries.length; i += 1) {
       const query = queries[i];
-      this.logger.debug(`Searching HLTB for "${ctx.name}" with query "${query}"`);
+      this.logger.debug(
+        `Searching HLTB for "${ctx.name}" with query "${query}"`
+      );
 
       const results = await this.search(query);
       for (const entry of results) {
@@ -425,9 +481,22 @@ export class HltbService {
     return response.data.map((entry) => ({
       id: entry.id,
       name: entry.name,
+      alias: entry.alias,
+      type: entry.type,
       mainTime: entry.mainTime,
       mainExtraTime: entry.mainExtraTime,
       completionistTime: entry.completionistTime,
+      allStylesTime: entry.allStylesTime,
+      coopTime: entry.coopTime,
+      multiplayerTime: entry.multiplayerTime,
+      mainCount: entry.mainCount,
+      mainExtraCount: entry.mainExtraCount,
+      completionistCount: entry.completionistCount,
+      allStylesCount: entry.allStylesCount,
+      coopCount: entry.coopCount,
+      multiplayerCount: entry.multiplayerCount,
+      imageUrl: entry.imageUrl,
+      reviewScore: entry.reviewScore,
       similarity: entry.similarity,
       platforms: entry.platforms,
       releaseYear: entry.releaseYear,

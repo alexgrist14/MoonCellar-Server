@@ -82,7 +82,7 @@ const getLink = (type: ParserType) => {
 const getFields = (type: ParserType) => {
   switch (type) {
     case "games":
-      return "name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, game_type, storyline, summary, first_release_date, involved_companies, websites, release_dates, url, total_rating_count, updated_at";
+      return "name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, game_type, storyline, summary, first_release_date, involved_companies, websites, release_dates, url, total_rating_count, hypes, updated_at";
     case "covers":
       return "url, game, width, height";
     case "genres":
@@ -209,7 +209,7 @@ const parser = async <T>({
     );
   };
 
-  const hui = async (): Promise<T[]> => {
+  const parse = async (): Promise<T[]> => {
     try {
       if (offset >= total) {
         return items;
@@ -218,7 +218,7 @@ const parser = async <T>({
       const response = await fetch();
 
       if (response.status !== 200) {
-        return hui();
+        return parse();
       } else {
         page++;
 
@@ -244,15 +244,15 @@ const parser = async <T>({
         if (!!options?.delayMs) {
           await wait(options.delayMs);
         }
-        return hui();
+        return parse();
       }
     } catch (e) {
       console.log(e);
-      return hui();
+      return parse();
     }
   };
 
-  return hui();
+  return parse();
 };
 
 export const igdbParser = <T>({

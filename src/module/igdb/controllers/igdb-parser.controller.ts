@@ -83,6 +83,23 @@ export class IgdbParserController {
 
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
+  @Post("/games/backfill-hypes")
+  @ApiOperation({ summary: "Backfill IGDB hypes for upcoming games" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  @ApiQuery({ name: "limit", required: false })
+  @ApiQuery({ name: "delayMs", required: false })
+  async backfillUpcomingHypes(
+    @Query("limit") limitQuery?: string,
+    @Query("delayMs") delayMsQuery?: string
+  ) {
+    return this.service.backfillUpcomingHypes({
+      limit: Number(limitQuery) || undefined,
+      delayMs: Number(delayMsQuery) || undefined,
+    });
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
   @Post("/games/sync-updated")
   @ApiOperation({ summary: "Sync only updated IGDB games" })
   @ApiResponse({ status: 200, description: "Successfully started" })
