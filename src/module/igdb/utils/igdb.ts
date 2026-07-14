@@ -145,7 +145,7 @@ const parser = async <T>({
     );
   };
 
-  const hui = async (): Promise<T[]> => {
+  const parse = async (): Promise<T[]> => {
     try {
       if (offset >= total) {
         return items;
@@ -154,7 +154,7 @@ const parser = async <T>({
       const response = await fetch();
 
       if (response.status !== 200) {
-        return hui();
+        return parse();
       } else {
         page++;
 
@@ -180,15 +180,15 @@ const parser = async <T>({
         if (!!options?.delayMs) {
           await wait(options.delayMs);
         }
-        return hui();
+        return parse();
       }
     } catch (e) {
       console.log(e);
-      return hui();
+      return parse();
     }
   };
 
-  return hui();
+  return parse();
 };
 
 export const igdbParser = <T>({

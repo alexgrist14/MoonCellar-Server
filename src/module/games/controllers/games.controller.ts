@@ -94,6 +94,34 @@ export class GamesController {
     return this.games.getTotalGamesCountByGenre();
   }
 
+  @Get("/upcoming")
+  @ApiOperation({ summary: "Get upcoming releases grouped by quarter" })
+  @ApiCreatedResponse({
+    description: "Array of quarter groups with games",
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          label: { type: "string" },
+          year: { type: "number" },
+          quarter: { type: "number" },
+          games: { type: "array", items: { type: "object" } },
+        },
+      },
+    },
+  })
+  async getUpcomingReleases() {
+    return this.games.getUpcomingReleases();
+  }
+
+  @Get("/recent")
+  @ApiOperation({ summary: "Get recently released games" })
+  @ApiCreatedResponse({ type: GetGamesResponseDto })
+  async getRecentReleases() {
+    return this.games.getRecentReleases();
+  }
+
   @Post("/")
   @ApiOperation({ summary: "Get games" })
   @ApiCreatedResponse({ type: GetGamesResponseDto })

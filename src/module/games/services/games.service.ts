@@ -217,6 +217,102 @@ export class GamesService {
     }
   }
 
+  async getUpcomingReleases() {
+    try {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+
+      const groups = await this.Games.aggregate([
+        {
+          $match: {
+            first_release: { $gt: nowSeconds },
+            cover: { $ne: null },
+          },
+        },
+        { $sort: { "igdb.hypes": -1, first_release: 1 } },
+        {
+          $addFields: {
+            _releaseDate: {
+              $toDate: { $multiply: ["$first_release", 1000] },
+            },
+          },
+        },
+        {
+          $addFields: {
+            _year: { $year: "$_releaseDate" },
+            _quarter: {
+              $ceil: { $divide: [{ $month: "$_releaseDate" }, 3] },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { year: "$_year", quarter: "$_quarter" },
+            games: { $push: "$$ROOT" },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.quarter": 1 } },
+        { $limit: 4 },
+        {
+          $project: {
+            _id: 0,
+            year: "$_id.year",
+            quarter: "$_id.quarter",
+            label: {
+              $concat: ["Q", { $toString: "$_id.quarter" }, " ", { $toString: "$_id.year" }],
+            },
+            games: {
+              $map: {
+                input: { $slice: ["$games", 12] },
+                as: "game",
+                in: {
+                  $unsetField: {
+                    field: "_releaseDate",
+                    input: {
+                      $unsetField: {
+                        field: "_year",
+                        input: {
+                          $unsetField: { field: "_quarter", input: "$$game" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      ]);
+
+      return groups;
+    } catch (err) {
+      this.logger.error(err, `Failed to get upcoming releases`);
+      throw err;
+    }
+  }
+
+  async getRecentReleases() {
+    try {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const windowStart = nowSeconds - 45 * 86400;
+
+      const games = await this.Games.aggregate([
+        {
+          $match: {
+            first_release: { $gte: windowStart, $lte: nowSeconds },
+            cover: { $ne: null },
+          },
+        },
+        { $sort: { first_release: -1 } },
+        { $limit: 18 },
+      ]);
+
+      return games;
+    } catch (err) {
+      this.logger.error(err, `Failed to get recent releases`);
+      throw err;
+    }
+  }
+
   async parseFieldsToJson() {
     try {
       const games = await this.Games.find().select(
