@@ -32,6 +32,20 @@ services:
       retries: 5
     restart: unless-stopped
 
+  alloy:
+    image: grafana/alloy:latest
+    ports:
+      - "12347:12347"
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./monitoring/faro.alloy:/etc/alloy/config.alloy:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
