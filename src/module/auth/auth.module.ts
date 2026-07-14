@@ -9,10 +9,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtStrategy } from "./jwt.strategy";
 import { UserProfileController } from "../user/controllers/user-profile.controller";
 import { UserProfileService } from "../user/services/user-profile.service";
-import {
-  IGDBGames,
-  IGDBGamesSchema,
-} from "src/shared/schemas/igdb-games.schema";
 import { UserFiltersService } from "../user/services/user-filters.service";
 import { UserFollowingsService } from "../user/services/user-followings.service";
 import { UserLogsService } from "../user/services/user-logs.service";
@@ -24,7 +20,6 @@ import { FileService } from "../user/services/file-upload.service";
   imports: [
     MongooseModule.forFeature([
       { name: "User", schema: UserSchema },
-      { name: IGDBGames.name, schema: IGDBGamesSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
     ]),
 

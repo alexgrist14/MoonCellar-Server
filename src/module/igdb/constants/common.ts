@@ -1,24 +1,3 @@
-import { ParserType } from "../interface/common.interface";
-
-export const parserTypes: ParserType[] = [
-  "companies",
-  "involved_companies",
-  "websites",
-  "platform_logos",
-  "families",
-  "platforms",
-  "genres",
-  "covers",
-  "modes",
-  "screenshots",
-  "keywords",
-  "themes",
-  "artworks",
-  "release_dates",
-  "games",
-  "game_types",
-];
-
 export const categories = {
   main_game: 0,
   dlc_addon: 1,

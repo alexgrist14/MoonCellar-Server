@@ -1,13 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
-import { ParserType } from "../interface/common.interface";
 
-export type IGDBSyncStateDocument = HydratedDocument<IGDBSyncState>;
+export type SyncStateDocument = HydratedDocument<SyncState>;
 
-@Schema()
-export class IGDBSyncState {
+@Schema({ collection: "igdbsyncstates" })
+export class SyncState {
   @Prop({ required: true, unique: true, type: String })
-  parserType: ParserType;
+  parserType: string;
 
   @Prop({ default: 0 })
   lastUpdatedAt: number;
@@ -28,5 +27,4 @@ export class IGDBSyncState {
   updatedAt: string;
 }
 
-export const IGDBSyncStateSchema =
-  SchemaFactory.createForClass(IGDBSyncState);
+export const SyncStateSchema = SchemaFactory.createForClass(SyncState);

@@ -3,10 +3,6 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { UserSchema } from "./schemas/user.schema";
 import { UserProfileController } from "./controllers/user-profile.controller";
 import { UserProfileService } from "./services/user-profile.service";
-import {
-  IGDBGames,
-  IGDBGamesSchema,
-} from "src/shared/schemas/igdb-games.schema";
 import { UserFiltersService } from "./services/user-filters.service";
 import { UserFollowingsService } from "./services/user-followings.service";
 import { UserFiltersController } from "./controllers/user-filters.controller";
@@ -30,7 +26,6 @@ import { UserRatingsService } from "./services/user-ratings.service";
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: IGDBGames.name, schema: IGDBGamesSchema },
       { name: "User", schema: UserSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
       { name: Rating.name, schema: UserRatingsDatabaseSchema },

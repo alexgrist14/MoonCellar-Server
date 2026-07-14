@@ -12,6 +12,7 @@ type IGDBQueryOptions = {
 export type IGDBParserOptions = IGDBQueryOptions & {
   delayMs?: number;
   isCollectItems?: boolean;
+  fields?: string;
 };
 
 type IGDBPage<T> = {
@@ -42,77 +43,12 @@ export const igdbAgent = <T>(url: string, token: string, query?: string) => {
   });
 };
 
-const getLink = (type: ParserType) => {
+export const getLink = (type: ParserType) => {
   switch (type) {
     case "games":
       return "https://api.igdb.com/v4/games";
-    case "covers":
-      return "https://api.igdb.com/v4/covers";
-    case "genres":
-      return "https://api.igdb.com/v4/genres";
-    case "modes":
-      return "https://api.igdb.com/v4/game_modes";
     case "platforms":
       return "https://api.igdb.com/v4/platforms";
-    case "families":
-      return "https://api.igdb.com/v4/platform_families";
-    case "keywords":
-      return "https://api.igdb.com/v4/keywords";
-    case "themes":
-      return "https://api.igdb.com/v4/themes";
-    case "screenshots":
-      return "https://api.igdb.com/v4/screenshots";
-    case "artworks":
-      return "https://api.igdb.com/v4/artworks";
-    case "platform_logos":
-      return "https://api.igdb.com/v4/platform_logos";
-    case "websites":
-      return "https://api.igdb.com/v4/websites";
-    case "involved_companies":
-      return "https://api.igdb.com/v4/involved_companies";
-    case "companies":
-      return "https://api.igdb.com/v4/companies";
-    case "release_dates":
-      return "https://api.igdb.com/v4/release_dates";
-    case "game_types":
-      return "https://api.igdb.com/v4/game_types";
-  }
-};
-
-const getFields = (type: ParserType) => {
-  switch (type) {
-    case "games":
-      return "name, cover, screenshots, slug, total_rating, artworks, game_modes, genres, platforms, keywords, themes, aggregated_rating, game_type, storyline, summary, first_release_date, involved_companies, websites, release_dates, url, total_rating_count, updated_at";
-    case "covers":
-      return "url, game, width, height";
-    case "genres":
-      return "name, slug";
-    case "modes":
-      return "name, slug";
-    case "platforms":
-      return "name, slug, platform_family, platform_logo, created_at, generation";
-    case "families":
-      return "name, slug";
-    case "keywords":
-      return "name, slug";
-    case "themes":
-      return "name, slug";
-    case "screenshots":
-      return "url, width, height";
-    case "artworks":
-      return "url, width, height";
-    case "platform_logos":
-      return "url, width, height";
-    case "websites":
-      return "category, url";
-    case "involved_companies":
-      return "company, developer, publisher, supporting, porting";
-    case "companies":
-      return "name, slug, description, start_date, published, developed, logo, url, country";
-    case "release_dates":
-      return "category, date, human, m, y, platform, region";
-    case "game_types":
-      return "type";
   }
 };
 
@@ -166,7 +102,7 @@ export const runWithConcurrency = async <T, R>(
   return results;
 };
 
-const wait = (delayMs: number) =>
+export const wait = (delayMs: number) =>
   new Promise((resolve) => setTimeout(resolve, delayMs));
 
 const parser = async <T>({
@@ -182,7 +118,7 @@ const parser = async <T>({
 }): Promise<T[]> => {
   const url = getLink(type);
   const limit = options?.limit || 500;
-  const fields = getFields(type);
+  const fields = options?.fields;
 
   const { data } = await igdbAgent<{ count: number }>(
     url + "/count",

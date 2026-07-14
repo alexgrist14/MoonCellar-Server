@@ -1,17 +1,1 @@
-export type ParserType =
-  | "games"
-  | "genres"
-  | "covers"
-  | "modes"
-  | "platforms"
-  | "families"
-  | "screenshots"
-  | "keywords"
-  | "themes"
-  | "artworks"
-  | "websites"
-  | "involved_companies"
-  | "companies"
-  | "release_dates"
-  | "platform_logos"
-  | "game_types";
+export type ParserType = "games" | "platforms";
