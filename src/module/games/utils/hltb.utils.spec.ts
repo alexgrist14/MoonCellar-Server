@@ -185,11 +185,35 @@ describe("hltb.utils", () => {
         ctx({
           name: "Final Fantasy III",
           platformKeys: buildPlatformKeySet(["PlayStation Portable"]),
-          years: new Set([2012]),
+          years: new Set([2006, 2012]),
         })
       );
 
       expect(result?.id).toBe(3497);
+    });
+
+    it("rejects a same-title, same-platform entry from a different year", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 700003,
+            name: "Mixtape",
+            platforms: ["PC", "Xbox Series X/S"],
+            releaseYear: 2018,
+            similarity: 1,
+          },
+        ],
+        ctx({
+          name: "Mixtape",
+          platformKeys: buildPlatformKeySet([
+            "PC (Microsoft Windows)",
+            "Xbox Series X|S",
+          ]),
+          years: new Set([2026]),
+        })
+      );
+
+      expect(result).toBeNull();
     });
 
 
@@ -284,6 +308,38 @@ describe("hltb.utils", () => {
       expect(result).toBeNull();
     });
 
+    it("rejects a unique exact title whose release year conflicts with ours", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 700001,
+            name: "Mixtape",
+            releaseYear: 2018,
+            similarity: 1,
+          },
+        ],
+        ctx({ name: "Mixtape", years: new Set([2026]) })
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("accepts a unique exact title when the years line up", () => {
+      const result = pickBestHltbMatch(
+        [
+          {
+            id: 700002,
+            name: "Mixtape",
+            releaseYear: 2018,
+            similarity: 1,
+          },
+        ],
+        ctx({ name: "Mixtape", years: new Set([2018]) })
+      );
+
+      expect(result?.id).toBe(700002);
+    });
+
     it("accepts a unique exact title even without corroboration", () => {
       const result = pickBestHltbMatch(
         [
@@ -353,6 +409,22 @@ describe("hltb.utils", () => {
         mainStory: 34.5,
         mainExtra: 61,
         completionist: 93.5,
+        allStyles: null,
+        coop: null,
+        multiplayer: null,
+        mainStoryCount: null,
+        mainExtraCount: null,
+        completionistCount: null,
+        allStylesCount: null,
+        coopCount: null,
+        multiplayerCount: null,
+        reviewScore: null,
+        imageUrl: null,
+        platforms: [],
+        releaseYear: null,
+        similarity: null,
+        alias: null,
+        type: null,
         sourceName: "Nioh",
         updatedAt: expect.any(String),
       });

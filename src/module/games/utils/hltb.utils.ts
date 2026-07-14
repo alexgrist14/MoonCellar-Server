@@ -255,6 +255,7 @@ type HltbEntryEvaluation = {
   strongTitle: boolean;
   platformMatch: boolean;
   yearMatch: boolean;
+  yearConflict: boolean;
 };
 
 const evaluateEntry = (
@@ -287,7 +288,21 @@ const evaluateEntry = (
     ctx.years.size > 0 &&
     [...ctx.years].some((year) => Math.abs(year - entry.releaseYear!) <= 1);
 
-  return { entry, titleExact, titleScore, strongTitle, platformMatch, yearMatch };
+  // Both sides know a year, yet none of ours lines up with the entry's. For
+  // same-title games (e.g. two "Mixtape" releases years apart) this is the
+  // signal that the entry belongs to a *different* game, not to ours.
+  const yearConflict =
+    entry.releaseYear != null && ctx.years.size > 0 && !yearMatch;
+
+  return {
+    entry,
+    titleExact,
+    titleScore,
+    strongTitle,
+    platformMatch,
+    yearMatch,
+    yearConflict,
+  };
 };
 
 const rankEvaluations = (
@@ -310,6 +325,13 @@ const rankEvaluations = (
  *    guard is what prevents picking a random "The Incredible Hulk" when several
  *    share the title and none can be confirmed.
  *
+ * A release-year conflict vetoes both tiers: when our game and the entry both
+ * carry release years and none of ours lines up with the entry's, the entry
+ * belongs to a *different* game and platform overlap is not enough to accept it
+ * (e.g. two same-titled "Mixtape" games released years apart, both on the same
+ * platform). Re-releases named with an edition/version marker are exempt — for
+ * them a year gap against HLTB's base entry is expected, not a conflict.
+ *
  * Anything else returns null — we would rather store no time than a wrong one.
  */
 export const selectHltbMatch = (
@@ -320,17 +342,28 @@ export const selectHltbMatch = (
     return null;
   }
 
+  const isReRelease = normalizeTitle(ctx.name) !== normalizeCoreTitle(ctx.name);
+  const blockedByYear = (item: HltbEntryEvaluation): boolean =>
+    item.yearConflict && !isReRelease;
+
   const evaluations = results.map((entry) => evaluateEntry(entry, ctx));
 
   const confirmed = evaluations
-    .filter((item) => item.strongTitle && (item.platformMatch || item.yearMatch))
+    .filter(
+      (item) =>
+        item.strongTitle &&
+        (item.platformMatch || item.yearMatch) &&
+        !blockedByYear(item)
+    )
     .sort(rankEvaluations);
 
   if (confirmed.length) {
     return { entry: confirmed[0].entry, tier: "confirmed" };
   }
 
-  const exactTitle = evaluations.filter((item) => item.titleExact);
+  const exactTitle = evaluations.filter(
+    (item) => item.titleExact && !blockedByYear(item)
+  );
 
   if (exactTitle.length === 1) {
     return { entry: exactTitle[0].entry, tier: "exact-title" };
