@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { IGDBService } from "./igdb.service";
 import { IgdbParserController } from "./controllers/igdb-parser.controller";
-import { RAConsole, RAConsoleSchema } from "../retroach/schemas/console.schema";
 import { Game, GameDatabaseSchema } from "../games/schemas/game.schema";
 import {
   Platform,
@@ -18,7 +17,6 @@ import { SyncState, SyncStateSchema } from "../games/schemas/sync-state.schema";
   imports: [
     HttpModule,
     MongooseModule.forFeature([
-      { name: RAConsole.name, schema: RAConsoleSchema },
       { name: Game.name, schema: GameDatabaseSchema },
       { name: Platform.name, schema: PlatformDatabaseSchema },
       { name: SyncState.name, schema: SyncStateSchema },

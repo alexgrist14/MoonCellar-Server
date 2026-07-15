@@ -19,7 +19,6 @@ import { ParserType } from "./interface/common.interface";
 import { getImageLink } from "src/shared/utils";
 import { Game, GameDocument } from "../games/schemas/game.schema";
 import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
-import { RAConsole } from "../retroach/schemas/console.schema";
 import { FileService } from "../user/services/file-upload.service";
 import { HttpService } from "@nestjs/axios";
 import {
@@ -192,8 +191,6 @@ export class IGDBService {
     private Games: Model<GameDocument>,
     @InjectModel(Platform.name)
     private Platforms: Model<PlatformDocument>,
-    @InjectModel(RAConsole.name)
-    private RAPlatforms: Model<RAConsole>,
     private fileService: FileService,
     private httpService: HttpService,
     private readonly pino: PinoLogger
@@ -641,7 +638,6 @@ export class IGDBService {
       }
     }
 
-    const ra = await this.RAPlatforms.findOne({ igdbIds: platform.id });
     const now = new Date().toISOString();
 
     const update: Record<string, unknown> = {
@@ -658,7 +654,6 @@ export class IGDBService {
         logo: getImageLink(platform.platform_logo.url, "thumb"),
       }),
       igdbId: platform.id,
-      raId: ra?._id || null,
       updateAt: now,
     };
 

@@ -3,7 +3,7 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { RetroachievementsService } from "../services/retroach.service";
 
 @ApiTags("RetroAchievements")
-@Controller("/ra-parse")
+@Controller("/ra")
 export class RetroachievementsController {
   constructor(
     private readonly retroachievementsService: RetroachievementsService
@@ -18,6 +18,13 @@ export class RetroachievementsController {
   @ApiQuery({ name: "type", enum: ["consoles", "games", "both"] })
   parse(@Query("type") type: "consoles" | "games" | "both") {
     return this.retroachievementsService.parse(type);
+  }
+
+  @Post("/match-platforms")
+  @ApiOperation({ summary: "Match RA consoles to IGDB platforms by name" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  matchPlatforms() {
+    return this.retroachievementsService.matchConsolesToPlatforms();
   }
 
   @Post("/sync")

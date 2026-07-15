@@ -17,7 +17,7 @@ import {
 import { HltbService } from "../services/hltb.service";
 
 @ApiTags("HLTB")
-@Controller("games/hltb")
+@Controller("hltb")
 export class HltbController {
   constructor(private readonly hltb: HltbService) {}
 
@@ -44,7 +44,7 @@ export class HltbController {
     });
   }
 
-  @Delete("/")
+  @Delete("/remove-all")
   @ApiOperation({ summary: "Remove stored HLTB times from all games" })
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
