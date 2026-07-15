@@ -15,7 +15,6 @@ import {
 } from "@nestjs/swagger";
 import { IGDBService } from "../igdb.service";
 import { AuthGuard } from "@nestjs/passport";
-import { ParseImagesDto } from "src/shared/zod/dto/igdb.dto";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -49,11 +48,18 @@ export class IgdbParserController {
     type: Boolean,
   })
   @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "forceParse",
+    default: false,
+    required: false,
+    type: Boolean,
+  })
   async parseGame(
     @Query("igdbId") igdbIdQuery?: string,
     @Query("slug") slug?: string,
     @Query("parseImages") parseImagesQuery?: string,
-    @Query("field") field?: string
+    @Query("field") field?: string,
+    @Query("forceParse") forceParseQuery?: string
   ) {
     if (!igdbIdQuery && !slug) {
       throw new BadRequestException("Either igdbId or slug must be provided");
@@ -68,6 +74,7 @@ export class IgdbParserController {
         parseImages:
           parseImagesQuery === undefined ? true : parseImagesQuery === "true",
         field,
+        forceParse: forceParseQuery === "true",
       }
     );
   }
@@ -89,12 +96,19 @@ export class IgdbParserController {
     type: Boolean,
   })
   @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "forceParse",
+    default: false,
+    required: false,
+    type: Boolean,
+  })
   async backfillGames(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,
     @Query("parseImages") parseImagesQuery?: string,
-    @Query("field") field?: string
+    @Query("field") field?: string,
+    @Query("forceParse") forceParseQuery?: string
   ) {
     return this.service.backfillGamesFromIgdb({
       limit: Number(limitQuery) || undefined,
@@ -102,6 +116,7 @@ export class IgdbParserController {
       concurrency: Number(concurrencyQuery) || undefined,
       parseImages: parseImagesQuery === "true",
       field,
+      forceParse: forceParseQuery === "true",
     });
   }
 
@@ -140,12 +155,19 @@ export class IgdbParserController {
     type: Boolean,
   })
   @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "forceParse",
+    default: false,
+    required: false,
+    type: Boolean,
+  })
   async syncGamesDirect(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,
     @Query("parseImages") parseImagesQuery?: string,
-    @Query("field") field?: string
+    @Query("field") field?: string,
+    @Query("forceParse") forceParseQuery?: string
   ) {
     return this.service.syncGamesFromIgdb({
       limit: Number(limitQuery) || undefined,
@@ -154,88 +176,8 @@ export class IgdbParserController {
       parseImages:
         parseImagesQuery === undefined ? true : parseImagesQuery === "true",
       field,
+      forceParse: forceParseQuery === "true",
     });
-  }
-
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
-  @Post("/parse-images")
-  @ApiOperation({ summary: "Parse images" })
-  @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiQuery({ name: "parseType", enum: ["covers", "artworks", "screenshots"] })
-  @ApiQuery({ name: "limit", required: false, default: 50 })
-  @ApiQuery({ name: "timeout", required: false, default: 2000 })
-  @ApiQuery({ name: "concurrency", required: false, default: 3 })
-  @ApiQuery({
-    name: "isForceParse",
-    default: false,
-    required: false,
-    type: Boolean,
-  })
-  async parseImages(@Query() dto: ParseImagesDto) {
-    const { isForceParse, parseType, timeout, concurrency } = dto;
-    const limit = dto.limit || 50;
-    const count = await this.service.getImagesToParseCount({
-      parseType,
-      isForceParse,
-    });
-    const totalPages = Math.ceil(count / limit);
-    let page = 0;
-
-    const callback = (isStop?: boolean) => {
-      page += 1;
-      if (page <= totalPages) {
-        this.service
-          .parseImagesToS3(page, limit, {
-            parseType,
-            isForceParse,
-            concurrency,
-          })
-          .then(() => {
-            console.log(
-              `${Math.min(page * limit, count)}/${count} games parsed\n`
-            );
-            !isStop && setTimeout(() => callback(), timeout || 2000);
-          })
-          .catch(() => {});
-      }
-    };
-
-    callback();
-  }
-
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
-  @Post("/parse-images/game")
-  @ApiOperation({ summary: "Parse images for a single game by slug or id" })
-  @ApiResponse({ status: 200, description: "Successfully parsed" })
-  @ApiQuery({ name: "slug", required: false })
-  @ApiQuery({ name: "id", required: false })
-  @ApiQuery({ name: "parseType", enum: ["covers", "artworks", "screenshots"] })
-  @ApiQuery({
-    name: "isForceParse",
-    default: true,
-    required: false,
-    type: Boolean,
-  })
-  async parseImagesForGame(
-    @Query("slug") slug?: string,
-    @Query("id") id?: string,
-    @Query("parseType") parseType?: "covers" | "screenshots" | "artworks",
-    @Query("isForceParse") isForceParseQuery?: string
-  ) {
-    if (!slug && !id) {
-      throw new BadRequestException("Either slug or id must be provided");
-    }
-
-    return this.service.parseImagesForGame(
-      { slug, id },
-      {
-        parseType,
-        isForceParse:
-          isForceParseQuery === undefined ? true : isForceParseQuery === "true",
-      }
-    );
   }
 
   @ApiCookieAuth()

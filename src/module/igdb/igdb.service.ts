@@ -40,7 +40,6 @@ import {
 const DEFAULT_IGDB_SYNC_LIMIT = 100;
 const DEFAULT_IGDB_SYNC_DELAY_MS = 1000;
 const DEFAULT_GAMES_SYNC_CONCURRENCY = 5;
-const DEFAULT_IMAGE_PARSE_CONCURRENCY = 3;
 
 const SINGLE_GAME_QUERY_FIELDS = [
   "name",
@@ -163,7 +162,14 @@ const UPDATABLE_GAME_FIELDS = [
   "platformIds",
   "igdb",
 ] as const;
-type UpdatableGameField = (typeof UPDATABLE_GAME_FIELDS)[number];
+
+const IMAGE_FIELDS = ["cover", "screenshots", "artworks"] as const;
+type ImageField = (typeof IMAGE_FIELDS)[number];
+
+const ALL_UPDATABLE_GAME_FIELDS = [
+  ...UPDATABLE_GAME_FIELDS,
+  ...IMAGE_FIELDS,
+] as const;
 
 const UPDATABLE_PLATFORM_FIELDS = [
   "name",
@@ -292,6 +298,7 @@ export class IGDBService {
     concurrency?: number;
     parseImages?: boolean;
     field?: string;
+    forceParse?: boolean;
   }) {
     try {
       const token = await this.getIgdbToken();
@@ -331,6 +338,7 @@ export class IGDBService {
                   {
                     parseImages: options?.parseImages ?? false,
                     field: options?.field,
+                    forceParse: options?.forceParse,
                   }
                 );
                 processedCount++;
@@ -438,6 +446,7 @@ export class IGDBService {
     concurrency?: number;
     parseImages?: boolean;
     field?: string;
+    forceParse?: boolean;
   }) {
     try {
       const token = await this.getIgdbToken();
@@ -483,6 +492,7 @@ export class IGDBService {
                   {
                     parseImages: options?.parseImages ?? true,
                     field: options?.field,
+                    forceParse: options?.forceParse,
                   }
                 );
                 changedCount++;
@@ -547,79 +557,6 @@ export class IGDBService {
     }
   }
 
-  private buildParseImagesFilter(
-    parseType: "covers" | "screenshots" | "artworks",
-    isForceParse?: boolean
-  ): mongoose.FilterQuery<GameDocument> {
-    const baseFilter: mongoose.FilterQuery<GameDocument> = {
-      "igdb.gameId": { $exists: true },
-    };
-
-    if (isForceParse) return baseFilter;
-
-    if (parseType === "covers") {
-      return {
-        ...baseFilter,
-        $or: [{ cover: null }, { cover: "" }, { cover: { $exists: false } }],
-      };
-    }
-
-    if (parseType === "screenshots") {
-      return {
-        ...baseFilter,
-        $expr: {
-          $ne: [
-            { $size: { $ifNull: ["$screenshots", []] } },
-            { $ifNull: ["$igdb.screenshotsCount", 0] },
-          ],
-        },
-      };
-    }
-
-    return {
-      ...baseFilter,
-      $expr: {
-        $ne: [
-          { $size: { $ifNull: ["$artworks", []] } },
-          { $ifNull: ["$igdb.artworksCount", 0] },
-        ],
-      },
-    };
-  }
-
-  async getImagesToParseCount(options: {
-    parseType: "covers" | "screenshots" | "artworks";
-    isForceParse?: boolean;
-  }) {
-    return this.Games.countDocuments(
-      this.buildParseImagesFilter(options.parseType, options.isForceParse)
-    );
-  }
-
-  private shouldParseImages(
-    mooncellarGame: Pick<
-      GameDocument,
-      "cover" | "screenshots" | "artworks" | "igdb"
-    >,
-    parseType: "covers" | "screenshots" | "artworks"
-  ): boolean {
-    if (parseType === "covers") {
-      return !mooncellarGame.cover;
-    }
-
-    if (parseType === "screenshots") {
-      return (
-        (mooncellarGame.screenshots?.length || 0) !==
-        (mooncellarGame.igdb?.screenshotsCount || 0)
-      );
-    }
-
-    return (
-      (mooncellarGame.artworks?.length || 0) !==
-      (mooncellarGame.igdb?.artworksCount || 0)
-    );
-  }
-
   private async sendArrayToS3(
     bucketName: string,
     slug: string,
@@ -679,201 +616,6 @@ export class IGDBService {
 
     if (existingKeys.length) {
       await this.fileService.deleteFiles(existingKeys, bucketName);
-    }
-  }
-
-  private async fetchGameImagesFromIgdb(igdbGameId: number, token: string) {
-    const { data } = await igdbAgent<
-      {
-        id: number;
-        cover?: { url: string };
-        screenshots?: { url: string }[];
-        artworks?: { url: string }[];
-      }[]
-    >(
-      getLink("games"),
-      token,
-      buildIgdbQueryParams("cover.url, screenshots.url, artworks.url", {
-        where: `id = ${igdbGameId}`,
-        limit: 1,
-      })
-    );
-
-    return data?.[0];
-  }
-
-  private async parseSingleGameImages(
-    mooncellarGame: Pick<
-      GameDocument,
-      "_id" | "slug" | "cover" | "screenshots" | "artworks" | "igdb"
-    >,
-    token: string,
-    options: {
-      parseType: "covers" | "screenshots" | "artworks";
-      isForceParse?: boolean;
-    }
-  ) {
-    if (
-      !options.isForceParse &&
-      !this.shouldParseImages(mooncellarGame, options.parseType)
-    ) {
-      return mooncellarGame.slug + " skipped";
-    }
-
-    if (!mooncellarGame.igdb?.gameId) {
-      this.logger.warn(`Game has no linked IGDB id: ${mooncellarGame.slug}`);
-      return null;
-    }
-
-    const igdbGame = await this.fetchGameImagesFromIgdb(
-      mooncellarGame.igdb.gameId,
-      token
-    );
-
-    if (!igdbGame) {
-      this.logger.warn(
-        `No matching IGDB game for: ${mooncellarGame.slug} (igdb.gameId: ${mooncellarGame.igdb.gameId})`
-      );
-      return null;
-    }
-
-    if (options.parseType === "covers") {
-      await this.clearExistingImages("mooncellar-covers", mooncellarGame.slug);
-
-      const coverLink = !!igdbGame.cover?.url
-        ? getImageLink(igdbGame.cover.url, "cover_big", 2)
-        : undefined;
-      const [link] = await this.sendArrayToS3(
-        "mooncellar-covers",
-        mooncellarGame.slug,
-        [coverLink]
-      );
-
-      if (link) {
-        await this.Games.updateOne(
-          { _id: mooncellarGame._id },
-          { $set: { cover: link } }
-        );
-      }
-    }
-
-    if (options.parseType === "screenshots") {
-      await this.clearExistingImages(
-        "mooncellar-screenshots",
-        mooncellarGame.slug
-      );
-
-      const links = await this.sendArrayToS3(
-        "mooncellar-screenshots",
-        mooncellarGame.slug,
-        igdbGame.screenshots || []
-      );
-
-      await this.Games.updateOne(
-        { _id: mooncellarGame._id },
-        { $set: { screenshots: links } }
-      );
-    }
-
-    if (options.parseType === "artworks") {
-      await this.clearExistingImages(
-        "mooncellar-artworks",
-        mooncellarGame.slug
-      );
-
-      const links = await this.sendArrayToS3(
-        "mooncellar-artworks",
-        mooncellarGame.slug,
-        igdbGame.artworks || []
-      );
-
-      await this.Games.updateOne(
-        { _id: mooncellarGame._id },
-        { $set: { artworks: links } }
-      );
-    }
-
-    return mooncellarGame.slug + " parsed";
-  }
-
-  async parseImagesToS3(
-    page: number,
-    limit: number,
-    options?: {
-      parseType: "covers" | "screenshots" | "artworks";
-      isForceParse?: boolean;
-      concurrency?: number;
-    }
-  ) {
-    try {
-      const mooncellarGames = await this.Games.find(
-        this.buildParseImagesFilter(options?.parseType, options?.isForceParse)
-      )
-        .select("_id slug cover screenshots artworks igdb")
-        .skip((page - 1) * limit)
-        .limit(limit);
-
-      this.logger.log(
-        `Parsing started: ${mooncellarGames.length} games matched`
-      );
-
-      const token = await this.getIgdbToken();
-
-      return runWithConcurrency(
-        mooncellarGames.filter(Boolean),
-        options?.concurrency || DEFAULT_IMAGE_PARSE_CONCURRENCY,
-        async (mooncellarGame) => {
-          try {
-            return await this.parseSingleGameImages(mooncellarGame, token, {
-              parseType: options?.parseType,
-              isForceParse: options?.isForceParse,
-            });
-          } catch (e) {
-            this.logger.error(
-              e,
-              `Failed to parse images for game: ${mooncellarGame.slug}`
-            );
-            return null;
-          }
-        }
-      );
-    } catch (err) {
-      this.logger.error(err, `Failed to parse images to s3`);
-      throw err;
-    }
-  }
-
-  async parseImagesForGame(
-    identifier: { slug?: string; id?: string },
-    options: {
-      parseType: "covers" | "screenshots" | "artworks";
-      isForceParse?: boolean;
-    }
-  ) {
-    try {
-      const filter: mongoose.FilterQuery<GameDocument> = identifier.id
-        ? { _id: identifier.id }
-        : { slug: identifier.slug };
-
-      const mooncellarGame = await this.Games.findOne(filter).select(
-        "_id slug cover screenshots artworks igdb"
-      );
-
-      if (!mooncellarGame) {
-        throw new NotFoundException(
-          `Game not found: ${identifier.slug || identifier.id}`
-        );
-      }
-
-      const token = await this.getIgdbToken();
-
-      return this.parseSingleGameImages(mooncellarGame, token, options);
-    } catch (err) {
-      this.logger.error(
-        err,
-        `Failed to parse images for game: ${identifier.slug || identifier.id}`
-      );
-      throw err;
     }
   }
 
@@ -984,7 +726,7 @@ export class IGDBService {
   private async parseSingleGameFromIgdb(
     identifier: { igdbId?: number; slug?: string },
     token: string,
-    options?: { parseImages?: boolean; field?: string }
+    options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
   ) {
     const { data } = await igdbAgent<IGDBExpandedGame[]>(
       getLink("games"),
@@ -1012,19 +754,27 @@ export class IGDBService {
     return this.upsertGameFromIgdb(igdbGame, existingGame, {
       parseImages: options?.parseImages ?? true,
       field: options?.field,
+      forceParse: options?.forceParse,
     });
   }
 
   private async parseGameImagesFromIgdb(
     igdbGame: IGDBExpandedGame,
     slug: string,
-    existingGame?: Pick<GameDocument, "cover" | "screenshots" | "artworks">
+    existingGame?: Pick<GameDocument, "cover" | "screenshots" | "artworks">,
+    options?: { type?: ImageField; forceParse?: boolean }
   ) {
     const update: Partial<
       Pick<GameDocument, "cover" | "screenshots" | "artworks">
     > = {};
 
-    if (!existingGame?.cover && igdbGame.cover?.url) {
+    const wants = (type: ImageField) => !options?.type || options.type === type;
+
+    if (
+      wants("cover") &&
+      igdbGame.cover?.url &&
+      (options?.forceParse || !existingGame?.cover)
+    ) {
       try {
         await this.clearExistingImages("mooncellar-covers", slug);
         const [link] = await this.sendArrayToS3("mooncellar-covers", slug, [
@@ -1039,31 +789,41 @@ export class IGDBService {
       }
     }
 
-    const screenshotsCount = igdbGame.screenshots?.length || 0;
-    if ((existingGame?.screenshots?.length || 0) !== screenshotsCount) {
-      try {
-        await this.clearExistingImages("mooncellar-screenshots", slug);
-        update.screenshots = await this.sendArrayToS3(
-          "mooncellar-screenshots",
-          slug,
-          igdbGame.screenshots || []
-        );
-      } catch (e) {
-        this.logger.error(e, `Failed to parse screenshots for game: ${slug}`);
+    if (wants("screenshots")) {
+      const screenshotsCount = igdbGame.screenshots?.length || 0;
+      if (
+        options?.forceParse ||
+        (existingGame?.screenshots?.length || 0) !== screenshotsCount
+      ) {
+        try {
+          await this.clearExistingImages("mooncellar-screenshots", slug);
+          update.screenshots = await this.sendArrayToS3(
+            "mooncellar-screenshots",
+            slug,
+            igdbGame.screenshots || []
+          );
+        } catch (e) {
+          this.logger.error(e, `Failed to parse screenshots for game: ${slug}`);
+        }
       }
     }
 
-    const artworksCount = igdbGame.artworks?.length || 0;
-    if ((existingGame?.artworks?.length || 0) !== artworksCount) {
-      try {
-        await this.clearExistingImages("mooncellar-artworks", slug);
-        update.artworks = await this.sendArrayToS3(
-          "mooncellar-artworks",
-          slug,
-          igdbGame.artworks || []
-        );
-      } catch (e) {
-        this.logger.error(e, `Failed to parse artworks for game: ${slug}`);
+    if (wants("artworks")) {
+      const artworksCount = igdbGame.artworks?.length || 0;
+      if (
+        options?.forceParse ||
+        (existingGame?.artworks?.length || 0) !== artworksCount
+      ) {
+        try {
+          await this.clearExistingImages("mooncellar-artworks", slug);
+          update.artworks = await this.sendArrayToS3(
+            "mooncellar-artworks",
+            slug,
+            igdbGame.artworks || []
+          );
+        } catch (e) {
+          this.logger.error(e, `Failed to parse artworks for game: ${slug}`);
+        }
       }
     }
 
@@ -1091,14 +851,16 @@ export class IGDBService {
       | "screenshots"
       | "artworks"
     >,
-    options?: { parseImages?: boolean; field?: string }
+    options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
   ) {
     if (
       options?.field &&
-      !UPDATABLE_GAME_FIELDS.includes(options.field as UpdatableGameField)
+      !ALL_UPDATABLE_GAME_FIELDS.includes(
+        options.field as (typeof ALL_UPDATABLE_GAME_FIELDS)[number]
+      )
     ) {
       throw new BadRequestException(
-        `Unknown field: ${options.field}. Allowed: ${UPDATABLE_GAME_FIELDS.join(", ")}`
+        `Unknown field: ${options.field}. Allowed: ${ALL_UPDATABLE_GAME_FIELDS.join(", ")}`
       );
     }
 
@@ -1106,6 +868,24 @@ export class IGDBService {
       throw new NotFoundException(
         `Cannot update field "${options.field}": game not found in games yet`
       );
+    }
+
+    if (options?.field && IMAGE_FIELDS.includes(options.field as ImageField)) {
+      await this.parseGameImagesFromIgdb(
+        igdbGame,
+        igdbGame.slug,
+        existingGame,
+        {
+          type: options.field as ImageField,
+          forceParse: options.forceParse,
+        }
+      );
+
+      this.logger.log(
+        `Parsed field "${options.field}" for game from IGDB: ${igdbGame.slug}`
+      );
+
+      return igdbGame.slug + " parsed";
     }
 
     const platformIds = await this.Platforms.find({
@@ -1186,7 +966,9 @@ export class IGDBService {
     );
 
     if (options?.parseImages) {
-      await this.parseGameImagesFromIgdb(igdbGame, update.slug, existingGame);
+      await this.parseGameImagesFromIgdb(igdbGame, update.slug, existingGame, {
+        forceParse: options.forceParse,
+      });
     }
 
     this.logger.log(
@@ -1200,7 +982,7 @@ export class IGDBService {
 
   async parseGameFromIgdb(
     identifier: { igdbId?: number; slug?: string },
-    options?: { parseImages?: boolean; field?: string }
+    options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
   ) {
     try {
       if (!identifier.igdbId && !identifier.slug) {
