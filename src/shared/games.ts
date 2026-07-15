@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
 import { IGetGamesRequest } from "./zod/schemas/games.schema";
 
-export const gamesFilters = (filters: IGetGamesRequest) => {
+export const gamesFilters = (
+  filters: IGetGamesRequest,
+  searchedIds?: mongoose.Types.ObjectId[]
+) => {
   const {
     isOnlyWithAchievements,
     mode,
     years,
-    search,
     company,
     excluded,
     selected,
@@ -30,19 +32,10 @@ export const gamesFilters = (filters: IGetGamesRequest) => {
               },
             ]
           : []),
-        ...(!!search
+        ...(!!searchedIds
           ? [
-              // {
-              //   $text: {
-              //     $search: search,
-              //   },
-              // },
               {
-                name: {
-                  $regex: search.replaceAll(" ", "\\s*"),
-
-                  $options: "i",
-                },
+                _id: { $in: searchedIds },
               },
             ]
           : []),

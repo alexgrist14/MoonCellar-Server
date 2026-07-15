@@ -1,6 +1,12 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
+import * as fuzzysort from "fuzzysort";
 import {
   IAddGameRequest,
   IGetGameByIdRequest,
@@ -13,14 +19,58 @@ import { Game, GameDocument } from "../schemas/game.schema";
 import { gamesFilters } from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
 
+const SEARCH_CANDIDATES_LIMIT = 1000;
+const SEARCH_SCORE_THRESHOLD = 0.1;
+const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
+
+type SearchIndexEntry = { _id: mongoose.Types.ObjectId; name: string };
+
 @Injectable()
-export class GamesService {
+export class GamesService implements OnModuleInit {
   private readonly logger = new Logger(GamesService.name);
+  private searchIndexCache: SearchIndexEntry[] | null = null;
+  private searchIndexCachedAt = 0;
+  private searchIndexRefreshPromise: Promise<SearchIndexEntry[]> | null = null;
+
   constructor(
     @InjectModel(Game.name)
     private Games: Model<GameDocument>,
     private fileService: FileService
   ) {}
+
+  onModuleInit() {
+    this.getSearchIndex().catch((err) =>
+      this.logger.error(err, "Failed to warm up search index")
+    );
+  }
+
+  private async getSearchIndex(): Promise<SearchIndexEntry[]> {
+    const isStale = Date.now() - this.searchIndexCachedAt > SEARCH_INDEX_TTL_MS;
+
+    if (this.searchIndexCache && !isStale) {
+      return this.searchIndexCache;
+    }
+
+    if (!this.searchIndexRefreshPromise) {
+      this.searchIndexRefreshPromise = this.Games.find({
+        _id: { $exists: true },
+      })
+        .select("_id name")
+        .lean<SearchIndexEntry[]>()
+        .then((docs) => {
+          this.searchIndexCache = docs;
+          this.searchIndexCachedAt = Date.now();
+          this.searchIndexRefreshPromise = null;
+          return docs;
+        })
+        .catch((err) => {
+          this.searchIndexRefreshPromise = null;
+          throw err;
+        });
+    }
+
+    return this.searchIndexCache ?? this.searchIndexRefreshPromise;
+  }
 
   async uploadImage(
     gameId: mongoose.Types.ObjectId,
@@ -113,21 +163,40 @@ export class GamesService {
     excludeGames,
   }: IGetGamesRequest) {
     try {
+      const baseFilters = {
+        isOnlyWithAchievements,
+        selected,
+        excluded,
+        mode,
+        company,
+        years,
+        excludeGames,
+        rating,
+        votes,
+      };
+
+      let searchedIds: mongoose.Types.ObjectId[] | undefined;
+
+      if (search) {
+        const candidates = await this.getSearchIndex();
+
+        const matches = fuzzysort.go(search, candidates, {
+          key: "name",
+          limit: SEARCH_CANDIDATES_LIMIT,
+          threshold: SEARCH_SCORE_THRESHOLD,
+        });
+
+        searchedIds = matches.map((match) => match.obj._id);
+
+        if (!searchedIds.length) {
+          return { results: [], total: 0 };
+        }
+      }
+
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
       const games = await this.Games.aggregate([
-        gamesFilters({
-          isOnlyWithAchievements,
-          selected,
-          excluded,
-          search,
-          mode,
-          company,
-          years,
-          excludeGames,
-          rating,
-          votes,
-        }),
+        gamesFilters(baseFilters, searchedIds),
         {
           $sort: {
             "igdb.total_rating_count": -1,
@@ -155,7 +224,7 @@ export class GamesService {
           },
         },
       ]);
-      console.log("1");
+
       return games.pop();
     } catch (err) {
       this.logger.error(err, `Failed to get games`);
@@ -201,7 +270,7 @@ export class GamesService {
       const games = await this.Games.aggregate([
         {
           $match: {
-            "igdb.total_rating": { $exists: true, $gt: 80},
+            "igdb.total_rating": { $exists: true, $gt: 80 },
             "igdb.total_rating_count": { $exists: true, $gt: 100 },
           },
         },
@@ -258,7 +327,12 @@ export class GamesService {
             year: "$_id.year",
             quarter: "$_id.quarter",
             label: {
-              $concat: ["Q", { $toString: "$_id.quarter" }, " ", { $toString: "$_id.year" }],
+              $concat: [
+                "Q",
+                { $toString: "$_id.quarter" },
+                " ",
+                { $toString: "$_id.year" },
+              ],
             },
             games: {
               $map: {
@@ -359,7 +433,7 @@ export class GamesService {
 
   async getTotalGamesCountByGenre() {
     try {
-      const result = await this.Games.aggregate([
+      const result = (await this.Games.aggregate([
         {
           $match: {
             genres: { $exists: true, $ne: [] },
@@ -384,7 +458,7 @@ export class GamesService {
             count: 1,
           },
         },
-      ]) as unknown as {genre: string; count: number}[];
+      ])) as unknown as { genre: string; count: number }[];
 
       return result;
     } catch (err) {
