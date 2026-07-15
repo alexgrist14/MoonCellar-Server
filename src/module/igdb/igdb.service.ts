@@ -14,7 +14,6 @@ import {
   igdbAuth,
   igdbParser,
   runWithConcurrency,
-  wait,
 } from "./utils/igdb";
 import { ParserType } from "./interface/common.interface";
 import { getImageLink } from "src/shared/utils";
@@ -41,7 +40,7 @@ import {
 const DEFAULT_IGDB_SYNC_LIMIT = 100;
 const DEFAULT_IGDB_SYNC_DELAY_MS = 1000;
 const DEFAULT_GAMES_SYNC_CONCURRENCY = 5;
-const IGDB_BATCH_LIMIT = 500;
+const DEFAULT_IMAGE_PARSE_CONCURRENCY = 3;
 
 const SINGLE_GAME_QUERY_FIELDS = [
   "name",
@@ -146,6 +145,35 @@ interface IGDBExpandedPlatform {
   platform_family?: { name: string; slug: string };
   platform_logo?: { url: string };
 }
+
+const UPDATABLE_GAME_FIELDS = [
+  "slug",
+  "name",
+  "type",
+  "storyline",
+  "summary",
+  "modes",
+  "genres",
+  "keywords",
+  "themes",
+  "companies",
+  "websites",
+  "first_release",
+  "release_dates",
+  "platformIds",
+  "igdb",
+] as const;
+type UpdatableGameField = (typeof UPDATABLE_GAME_FIELDS)[number];
+
+const UPDATABLE_PLATFORM_FIELDS = [
+  "name",
+  "slug",
+  "generation",
+  "family",
+  "logo",
+  "raId",
+] as const;
+type UpdatablePlatformField = (typeof UPDATABLE_PLATFORM_FIELDS)[number];
 
 @Injectable()
 export class IGDBService {
@@ -262,6 +290,8 @@ export class IGDBService {
     limit?: number;
     delayMs?: number;
     concurrency?: number;
+    parseImages?: boolean;
+    field?: string;
   }) {
     try {
       const token = await this.getIgdbToken();
@@ -284,7 +314,7 @@ export class IGDBService {
         parsingCallback: async (items) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select("_id slug type createdAt igdb");
+          }).select("_id slug type createdAt igdb cover screenshots artworks");
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -297,7 +327,11 @@ export class IGDBService {
               try {
                 await this.upsertGameFromIgdb(
                   igdbGame,
-                  existingGamesByIgdbId.get(igdbGame.id)
+                  existingGamesByIgdbId.get(igdbGame.id),
+                  {
+                    parseImages: options?.parseImages ?? false,
+                    field: options?.field,
+                  }
                 );
                 processedCount++;
               } catch (e) {
@@ -402,6 +436,8 @@ export class IGDBService {
     limit?: number;
     delayMs?: number;
     concurrency?: number;
+    parseImages?: boolean;
+    field?: string;
   }) {
     try {
       const token = await this.getIgdbToken();
@@ -430,7 +466,7 @@ export class IGDBService {
         parsingCallback: async (items) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select("_id slug type createdAt igdb");
+          }).select("_id slug type createdAt igdb cover screenshots artworks");
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -443,7 +479,11 @@ export class IGDBService {
               try {
                 await this.upsertGameFromIgdb(
                   igdbGame,
-                  existingGamesByIgdbId.get(igdbGame.id)
+                  existingGamesByIgdbId.get(igdbGame.id),
+                  {
+                    parseImages: options?.parseImages ?? true,
+                    field: options?.field,
+                  }
                 );
                 changedCount++;
               } catch (e) {
@@ -626,7 +666,6 @@ export class IGDBService {
           "Image error: " +
             (e?.response?.status || e?.err?.message || "unknown")
         );
-        return Promise.reject();
       }
     }
 
@@ -763,6 +802,7 @@ export class IGDBService {
     options?: {
       parseType: "covers" | "screenshots" | "artworks";
       isForceParse?: boolean;
+      concurrency?: number;
     }
   ) {
     try {
@@ -779,25 +819,24 @@ export class IGDBService {
 
       const token = await this.getIgdbToken();
 
-      const queries = mooncellarGames.filter(Boolean).map(
-        (mooncellarGame) =>
-          new Promise((resolve, reject) => {
-            this.parseSingleGameImages(mooncellarGame, token, {
+      return runWithConcurrency(
+        mooncellarGames.filter(Boolean),
+        options?.concurrency || DEFAULT_IMAGE_PARSE_CONCURRENCY,
+        async (mooncellarGame) => {
+          try {
+            return await this.parseSingleGameImages(mooncellarGame, token, {
               parseType: options?.parseType,
               isForceParse: options?.isForceParse,
-            })
-              .then((res) => resolve(res))
-              .catch((e) => {
-                this.logger.error(
-                  e,
-                  `Failed to parse images for game: ${mooncellarGame.slug}`
-                );
-                reject();
-              });
-          })
+            });
+          } catch (e) {
+            this.logger.error(
+              e,
+              `Failed to parse images for game: ${mooncellarGame.slug}`
+            );
+            return null;
+          }
+        }
       );
-
-      return Promise.allSettled(queries);
     } catch (err) {
       this.logger.error(err, `Failed to parse images to s3`);
       throw err;
@@ -838,37 +877,64 @@ export class IGDBService {
     }
   }
 
-  private async upsertPlatformFromIgdb(platform: IGDBExpandedPlatform) {
+  private async upsertPlatformFromIgdb(
+    platform: IGDBExpandedPlatform,
+    field?: string
+  ) {
+    if (
+      field &&
+      !UPDATABLE_PLATFORM_FIELDS.includes(field as UpdatablePlatformField)
+    ) {
+      throw new BadRequestException(
+        `Unknown field: ${field}. Allowed: ${UPDATABLE_PLATFORM_FIELDS.join(", ")}`
+      );
+    }
+
+    if (field) {
+      const exists = await this.Platforms.exists({ igdbId: platform.id });
+      if (!exists) {
+        throw new NotFoundException(
+          `Cannot update field "${field}": platform not found in platforms yet`
+        );
+      }
+    }
+
     const ra = await this.RAPlatforms.findOne({ igdbIds: platform.id });
     const now = new Date().toISOString();
+
+    const update: Record<string, unknown> = {
+      name: platform.name,
+      slug: platform.slug,
+      generation: platform.generation || null,
+      ...(!!platform.platform_family && {
+        family: {
+          name: platform.platform_family.name,
+          slug: platform.platform_family.slug,
+        },
+      }),
+      ...(!!platform.platform_logo && {
+        logo: getImageLink(platform.platform_logo.url, "thumb"),
+      }),
+      igdbId: platform.id,
+      raId: ra?._id || null,
+      updateAt: now,
+    };
+
+    const setPayload = field
+      ? { [field]: update[field], updateAt: now }
+      : update;
 
     await this.Platforms.updateOne(
       { igdbId: platform.id },
       {
-        $set: {
-          name: platform.name,
-          slug: platform.slug,
-          generation: platform.generation || null,
-          ...(!!platform.platform_family && {
-            family: {
-              name: platform.platform_family.name,
-              slug: platform.platform_family.slug,
-            },
-          }),
-          ...(!!platform.platform_logo && {
-            logo: getImageLink(platform.platform_logo.url, "thumb"),
-          }),
-          igdbId: platform.id,
-          raId: ra?._id || null,
-          updateAt: now,
-        },
+        $set: setPayload,
         $setOnInsert: { createdAt: now },
       },
-      { upsert: true }
+      { upsert: !field }
     );
   }
 
-  async parsePlatformsFromIgdb() {
+  async parsePlatformsFromIgdb(options?: { field?: string }) {
     try {
       const token = await this.getIgdbToken();
       let count = 0;
@@ -883,7 +949,7 @@ export class IGDBService {
         parsingCallback: async (items) => {
           for (const platform of items) {
             try {
-              await this.upsertPlatformFromIgdb(platform);
+              await this.upsertPlatformFromIgdb(platform, options?.field);
               count++;
             } catch (e) {
               this.logger.error(
@@ -916,15 +982,17 @@ export class IGDBService {
   }
 
   private async parseSingleGameFromIgdb(
-    igdbGameId: number,
+    identifier: { igdbId?: number; slug?: string },
     token: string,
-    existingGame?: Pick<GameDocument, "_id" | "slug" | "type" | "createdAt">
+    options?: { parseImages?: boolean; field?: string }
   ) {
     const { data } = await igdbAgent<IGDBExpandedGame[]>(
       getLink("games"),
       token,
       buildIgdbQueryParams(SINGLE_GAME_QUERY_FIELDS, {
-        where: `id = ${igdbGameId}`,
+        where: identifier.igdbId
+          ? `id = ${identifier.igdbId}`
+          : `slug = "${identifier.slug}"`,
         limit: 1,
       })
     );
@@ -932,16 +1000,114 @@ export class IGDBService {
     const igdbGame = data?.[0];
 
     if (!igdbGame) {
-      throw new NotFoundException(`IGDB game not found for id: ${igdbGameId}`);
+      throw new NotFoundException(
+        `IGDB game not found: ${identifier.igdbId ?? identifier.slug}`
+      );
     }
 
-    return this.upsertGameFromIgdb(igdbGame, existingGame);
+    const existingGame = await this.Games.findOne({
+      "igdb.gameId": igdbGame.id,
+    }).select("_id slug type createdAt cover screenshots artworks");
+
+    return this.upsertGameFromIgdb(igdbGame, existingGame, {
+      parseImages: options?.parseImages ?? true,
+      field: options?.field,
+    });
+  }
+
+  private async parseGameImagesFromIgdb(
+    igdbGame: IGDBExpandedGame,
+    slug: string,
+    existingGame?: Pick<GameDocument, "cover" | "screenshots" | "artworks">
+  ) {
+    const update: Partial<
+      Pick<GameDocument, "cover" | "screenshots" | "artworks">
+    > = {};
+
+    if (!existingGame?.cover && igdbGame.cover?.url) {
+      try {
+        await this.clearExistingImages("mooncellar-covers", slug);
+        const [link] = await this.sendArrayToS3("mooncellar-covers", slug, [
+          getImageLink(igdbGame.cover.url, "cover_big", 2),
+        ]);
+
+        if (link) {
+          update.cover = link;
+        }
+      } catch (e) {
+        this.logger.error(e, `Failed to parse cover for game: ${slug}`);
+      }
+    }
+
+    const screenshotsCount = igdbGame.screenshots?.length || 0;
+    if ((existingGame?.screenshots?.length || 0) !== screenshotsCount) {
+      try {
+        await this.clearExistingImages("mooncellar-screenshots", slug);
+        update.screenshots = await this.sendArrayToS3(
+          "mooncellar-screenshots",
+          slug,
+          igdbGame.screenshots || []
+        );
+      } catch (e) {
+        this.logger.error(e, `Failed to parse screenshots for game: ${slug}`);
+      }
+    }
+
+    const artworksCount = igdbGame.artworks?.length || 0;
+    if ((existingGame?.artworks?.length || 0) !== artworksCount) {
+      try {
+        await this.clearExistingImages("mooncellar-artworks", slug);
+        update.artworks = await this.sendArrayToS3(
+          "mooncellar-artworks",
+          slug,
+          igdbGame.artworks || []
+        );
+      } catch (e) {
+        this.logger.error(e, `Failed to parse artworks for game: ${slug}`);
+      }
+    }
+
+    if (Object.keys(update).length) {
+      try {
+        await this.Games.updateOne(
+          { "igdb.gameId": igdbGame.id },
+          { $set: update }
+        );
+      } catch (e) {
+        this.logger.error(e, `Failed to save parsed images for game: ${slug}`);
+      }
+    }
   }
 
   private async upsertGameFromIgdb(
     igdbGame: IGDBExpandedGame,
-    existingGame?: Pick<GameDocument, "_id" | "slug" | "type" | "createdAt">
+    existingGame?: Pick<
+      GameDocument,
+      | "_id"
+      | "slug"
+      | "type"
+      | "createdAt"
+      | "cover"
+      | "screenshots"
+      | "artworks"
+    >,
+    options?: { parseImages?: boolean; field?: string }
   ) {
+    if (
+      options?.field &&
+      !UPDATABLE_GAME_FIELDS.includes(options.field as UpdatableGameField)
+    ) {
+      throw new BadRequestException(
+        `Unknown field: ${options.field}. Allowed: ${UPDATABLE_GAME_FIELDS.join(", ")}`
+      );
+    }
+
+    if (options?.field && !existingGame) {
+      throw new NotFoundException(
+        `Cannot update field "${options.field}": game not found in games yet`
+      );
+    }
+
     const platformIds = await this.Platforms.find({
       igdbId: { $in: igdbGame.platforms || [] },
     }).select("_id igdbId");
@@ -1006,131 +1172,49 @@ export class IGDBService {
       updatedAt: now,
     };
 
+    const setPayload = options?.field
+      ? {
+          [options.field]: update[options.field as keyof typeof update],
+          updatedAt: update.updatedAt,
+        }
+      : update;
+
     await this.Games.updateOne(
       { "igdb.gameId": igdbGame.id },
-      { $set: update },
-      { upsert: true }
+      { $set: setPayload },
+      { upsert: !options?.field }
     );
 
-    this.logger.log(`Parsed game from IGDB: ${update.slug}`);
+    if (options?.parseImages) {
+      await this.parseGameImagesFromIgdb(igdbGame, update.slug, existingGame);
+    }
+
+    this.logger.log(
+      options?.field
+        ? `Parsed field "${options.field}" for game from IGDB: ${update.slug}`
+        : `Parsed game from IGDB: ${update.slug}`
+    );
 
     return update.slug + " parsed";
   }
 
-  async parseGameFromIgdb(identifier: { slug?: string; id?: string }) {
+  async parseGameFromIgdb(
+    identifier: { igdbId?: number; slug?: string },
+    options?: { parseImages?: boolean; field?: string }
+  ) {
     try {
-      const filter: mongoose.FilterQuery<GameDocument> = identifier.id
-        ? { _id: identifier.id }
-        : { slug: identifier.slug };
-
-      const existingGame = await this.Games.findOne(filter);
-
-      if (!existingGame) {
-        throw new NotFoundException(
-          `Game not found: ${identifier.slug || identifier.id}`
-        );
-      }
-
-      if (!existingGame.igdb?.gameId) {
-        throw new BadRequestException(
-          `Game has no linked IGDB id: ${existingGame.slug}`
-        );
+      if (!identifier.igdbId && !identifier.slug) {
+        throw new BadRequestException("Either igdbId or slug must be provided");
       }
 
       const token = await this.getIgdbToken();
 
-      return await this.parseSingleGameFromIgdb(
-        existingGame.igdb.gameId,
-        token,
-        existingGame
-      );
+      return await this.parseSingleGameFromIgdb(identifier, token, options);
     } catch (err) {
       this.logger.error(
         err,
-        `Failed to parse game from IGDB: ${identifier.slug || identifier.id}`
+        `Failed to parse game from IGDB: ${identifier.igdbId ?? identifier.slug}`
       );
-      throw err;
-    }
-  }
-
-  async getLinkedGamesCount() {
-    return this.Games.countDocuments({ "igdb.gameId": { $exists: true } });
-  }
-
-  async parseAllGamesFromIgdb(
-    page: number,
-    limit: number,
-    options?: { concurrency?: number; delayMs?: number }
-  ) {
-    try {
-      const linkedGames = await this.Games.find({
-        "igdb.gameId": { $exists: true },
-      })
-        .select("_id slug type createdAt igdb")
-        .skip((page - 1) * limit)
-        .limit(limit);
-
-      if (!linkedGames.length) {
-        return [];
-      }
-
-      this.logger.log(
-        `Parsing games from IGDB started: ${linkedGames.length} games`
-      );
-
-      const token = await this.getIgdbToken();
-
-      const existingGamesByIgdbId = new Map(
-        linkedGames.map((game) => [game.igdb.gameId, game])
-      );
-      const igdbGameIds = linkedGames.map((game) => game.igdb.gameId);
-
-      const igdbGames: IGDBExpandedGame[] = [];
-      for (let i = 0; i < igdbGameIds.length; i += IGDB_BATCH_LIMIT) {
-        const batch = igdbGameIds.slice(i, i + IGDB_BATCH_LIMIT);
-        const { data } = await igdbAgent<IGDBExpandedGame[]>(
-          getLink("games"),
-          token,
-          buildIgdbQueryParams(SINGLE_GAME_QUERY_FIELDS, {
-            where: `id = (${batch.join(",")})`,
-            limit: batch.length,
-          })
-        );
-
-        igdbGames.push(...data);
-      }
-
-      const results = await runWithConcurrency(
-        igdbGames,
-        options?.concurrency || DEFAULT_GAMES_SYNC_CONCURRENCY,
-        async (igdbGame) => {
-          try {
-            return await this.upsertGameFromIgdb(
-              igdbGame,
-              existingGamesByIgdbId.get(igdbGame.id)
-            );
-          } catch (e) {
-            this.logger.error(
-              e,
-              `Failed to parse game from IGDB: ${igdbGame.id}`
-            );
-            return null;
-          }
-        }
-      );
-
-      if (options?.delayMs) {
-        await wait(options.delayMs);
-      }
-
-      const parsedCount = results.filter(Boolean).length;
-      this.logger.log(
-        `Parsing games from IGDB finished: ${parsedCount}/${linkedGames.length} games parsed on page ${page}`
-      );
-
-      return results;
-    } catch (err) {
-      this.logger.error(err, `Failed to parse games from IGDB`);
       throw err;
     }
   }

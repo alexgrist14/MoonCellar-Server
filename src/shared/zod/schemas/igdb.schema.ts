@@ -5,6 +5,7 @@ export const ParseImagesSchema = z.object({
   parseType: z.enum(["covers", "artworks", "screenshots"]),
   limit: z.coerce.number().optional(),
   timeout: z.coerce.number().optional(),
+  concurrency: z.coerce.number().optional(),
   isForceParse: transformBoolean(),
 });
 

@@ -36,16 +36,12 @@ import {
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
 import { GamesService } from "../services/games.service";
-import { HltbService } from "../services/hltb.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 
 @ApiTags("Games")
 @Controller("games")
 export class GamesController {
-  constructor(
-    private readonly games: GamesService,
-    private readonly hltb: HltbService
-  ) {}
+  constructor(private readonly games: GamesService) {}
 
   @Get("/by-id/:id")
   @ApiOperation({ summary: "Get games" })
@@ -200,46 +196,4 @@ export class GamesController {
       type
     );
   }
-
-  @Post("/hltb/backfill")
-  @ApiOperation({ summary: "Backfill HLTB completion times for games" })
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
-  @HttpCode(HttpStatus.OK)
-  @ApiQuery({ name: "limit", required: false })
-  @ApiQuery({ name: "delayMs", required: false })
-  @ApiQuery({ name: "onlyMissing", required: false })
-  @ApiQuery({ name: "staleDays", required: false })
-  async backfillHltb(
-    @Query("limit") limitQuery?: string,
-    @Query("delayMs") delayMsQuery?: string,
-    @Query("onlyMissing") onlyMissingQuery?: string,
-    @Query("staleDays") staleDaysQuery?: string
-  ) {
-    return this.hltb.syncAllGames({
-      limit: parsePositiveInt(limitQuery),
-      delayMs: parsePositiveInt(delayMsQuery),
-      onlyMissing: onlyMissingQuery === "true",
-      staleDays: parsePositiveInt(staleDaysQuery),
-    });
-  }
-
-  @Delete("/hltb")
-  @ApiOperation({ summary: "Remove stored HLTB times from all games" })
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
-  @HttpCode(HttpStatus.OK)
-  async clearHltb() {
-    return this.hltb.clearAllHltb();
-  }
 }
-
-const parsePositiveInt = (value?: string) => {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-};

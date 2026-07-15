@@ -17,9 +17,15 @@ import { PlatformsController } from "./controllers/platforms.controller";
 import { PlatformsService } from "./services/platforms.service";
 import { GamesService } from "./services/games.service";
 import { HltbService } from "./services/hltb.service";
+import { HltbController } from "./controllers/hltb.controller";
 
 @Module({
-  controllers: [GamesController, PlaythroughsController, PlatformsController],
+  controllers: [
+    GamesController,
+    PlaythroughsController,
+    PlatformsController,
+    HltbController,
+  ],
   providers: [
     GamesService,
     HltbService,

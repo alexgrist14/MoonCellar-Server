@@ -19,15 +19,15 @@ import {
 @Injectable()
 export class FileService {
   private readonly logger = new Logger(FileService.name);
+  private readonly s3Client = new S3Client(getS3Config());
+
   async uploadObject(
     Body: PutObjectCommandInput["Body"],
     key: string,
     bucketName: string
   ) {
     try {
-      const s3Client = new S3Client(getS3Config());
-
-      return await s3Client.send(
+      return await this.s3Client.send(
         new PutObjectCommand({
           Bucket: bucketName,
           Key: key,
@@ -48,13 +48,11 @@ export class FileService {
     isPrivate?: boolean
   ) {
     try {
-      const s3Client = new S3Client(getS3Config());
-
       if (!file) return;
 
       const ext = mimeToExt[file.mimetype || mimetype] || "";
 
-      return await s3Client.send(
+      return await this.s3Client.send(
         new PutObjectCommand({
           Bucket: bucketName,
           Key: key + `.${ext}`,
@@ -71,9 +69,7 @@ export class FileService {
 
   async getBuckets() {
     try {
-      const s3Client = new S3Client(getS3Config());
-
-      return await s3Client.send(new ListBucketsCommand());
+      return await this.s3Client.send(new ListBucketsCommand());
     } catch (err) {
       this.logger.error(err, `Failed to get buckets`);
       throw err;
@@ -89,7 +85,6 @@ export class FileService {
   ) {
     try {
       let keys = [];
-      const s3Client = new S3Client(getS3Config());
       let continuationToken = null;
 
       do {
@@ -100,7 +95,7 @@ export class FileService {
         };
 
         try {
-          const response = await s3Client.send(
+          const response = await this.s3Client.send(
             new ListObjectsV2Command(params)
           );
 
@@ -143,10 +138,9 @@ export class FileService {
 
   async getFile(params: IGetFileRequest): Promise<IGetFileResponse> {
     try {
-      const s3Client = new S3Client(getS3Config());
       const { bucketName, key, contentTo } = params;
 
-      const item = await s3Client
+      const item = await this.s3Client
         .send(new GetObjectCommand({ Bucket: bucketName, Key: key }))
         .catch((err) => {
           throw new NotFoundException(err.Code);
@@ -173,9 +167,7 @@ export class FileService {
 
   async deleteFile(key: string, bucketName: string) {
     try {
-      const s3Client = new S3Client(getS3Config());
-
-      return await s3Client.send(
+      return await this.s3Client.send(
         new DeleteObjectCommand({
           Bucket: bucketName,
           Key: key,
@@ -189,9 +181,7 @@ export class FileService {
 
   async deleteFiles(keys: string[], bucketName: string) {
     try {
-      const s3Client = new S3Client(getS3Config());
-
-      return await s3Client.send(
+      return await this.s3Client.send(
         new DeleteObjectsCommand({
           Bucket: bucketName,
           Delete: { Objects: keys.map((key) => ({ Key: key })) },
@@ -205,7 +195,6 @@ export class FileService {
 
   async removeDuplicates(bucketName: string) {
     try {
-      const s3Client = new S3Client(getS3Config());
       const etagMap = new Map<string, string[]>();
 
       let continuationToken: string | undefined = undefined;
@@ -216,7 +205,9 @@ export class FileService {
           ContinuationToken: continuationToken,
         };
 
-        const response = await s3Client.send(new ListObjectsV2Command(params));
+        const response = await this.s3Client.send(
+          new ListObjectsV2Command(params)
+        );
 
         if (response.Contents) {
           for (const item of response.Contents) {
