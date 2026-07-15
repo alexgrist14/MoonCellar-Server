@@ -58,6 +58,8 @@ export class Game {
   @Prop({ type: Object })
   hltb: IHltbField;
   @Prop()
+  hltbNotFoundAt: string;
+  @Prop()
   createdAt: string;
   @Prop()
   updatedAt: string;
@@ -66,3 +68,4 @@ export class Game {
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
 GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });
+GameDatabaseSchema.index({ hltbNotFoundAt: 1 });

@@ -11,6 +11,7 @@ export const HLTB_DEFAULT_DELAY_MS = 1500;
 export const HLTB_CRON_MAX_GAMES = 30000;
 export const HLTB_CRON_DELAY_MS = 3000;
 export const HLTB_STALE_DAYS = 30;
+export const HLTB_NOT_FOUND_RETRY_DAYS = 90;
 
 /**
  * Minimum order-independent token-set similarity for a title to count as a

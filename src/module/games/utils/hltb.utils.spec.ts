@@ -11,7 +11,7 @@ import {
   pickBestHltbMatch,
   titleSimilarity,
 } from "./hltb.utils";
-import { HLTB_STALE_DAYS } from "../constants/hltb";
+import { HLTB_NOT_FOUND_RETRY_DAYS, HLTB_STALE_DAYS } from "../constants/hltb";
 
 const ctx = (overrides: Partial<HltbMatchContext> = {}): HltbMatchContext => ({
   name: "Game",
@@ -470,69 +470,97 @@ describe("hltb.utils", () => {
   });
 
   describe("buildIncrementalHltbFilter", () => {
-    it("includes stale records older than staleDays", () => {
+    it("includes stale records and untried games missing the marker", () => {
       const now = Date.parse("2026-06-21T00:00:00.000Z");
       const filter = buildIncrementalHltbFilter(HLTB_STALE_DAYS, now);
 
       expect(filter).toEqual({
         $or: [
-          { hltb: { $exists: false } },
-          { "hltb.updatedAt": { $exists: false } },
-          { "hltb.updatedAt": { $lt: "2026-05-22T00:00:00.000Z" } },
           {
             $and: [
               {
                 $or: [
-                  { "hltb.mainStory": { $exists: false } },
-                  { "hltb.mainStory": null },
+                  { hltb: { $exists: false } },
+                  { "hltb.updatedAt": { $exists: false } },
+                  {
+                    $and: [
+                      {
+                        $or: [
+                          { "hltb.mainStory": { $exists: false } },
+                          { "hltb.mainStory": null },
+                        ],
+                      },
+                      {
+                        $or: [
+                          { "hltb.mainExtra": { $exists: false } },
+                          { "hltb.mainExtra": null },
+                        ],
+                      },
+                      {
+                        $or: [
+                          { "hltb.completionist": { $exists: false } },
+                          { "hltb.completionist": null },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
-              {
-                $or: [
-                  { "hltb.mainExtra": { $exists: false } },
-                  { "hltb.mainExtra": null },
-                ],
-              },
-              {
-                $or: [
-                  { "hltb.completionist": { $exists: false } },
-                  { "hltb.completionist": null },
-                ],
-              },
+              { hltbNotFoundAt: { $exists: false } },
             ],
           },
+          { "hltb.updatedAt": { $lt: "2026-05-22T00:00:00.000Z" } },
+          { hltbNotFoundAt: { $lt: "2026-03-23T00:00:00.000Z" } },
         ],
+      });
+    });
+
+    it("re-checks not-found games older than the retry window", () => {
+      const now = Date.parse("2026-06-21T00:00:00.000Z");
+      const filter = buildIncrementalHltbFilter(
+        HLTB_STALE_DAYS,
+        now,
+        HLTB_NOT_FOUND_RETRY_DAYS
+      );
+
+      expect(filter.$or).toContainEqual({
+        hltbNotFoundAt: { $lt: "2026-03-23T00:00:00.000Z" },
       });
     });
   });
 
   describe("buildMissingHltbFilter", () => {
-    it("matches only games without hltb data", () => {
+    it("matches games without hltb data and excludes marked not-found games", () => {
       expect(buildMissingHltbFilter()).toEqual({
-        $or: [
-          { hltb: { $exists: false } },
+        $and: [
           {
-            $and: [
+            $or: [
+              { hltb: { $exists: false } },
               {
-                $or: [
-                  { "hltb.mainStory": { $exists: false } },
-                  { "hltb.mainStory": null },
-                ],
-              },
-              {
-                $or: [
-                  { "hltb.mainExtra": { $exists: false } },
-                  { "hltb.mainExtra": null },
-                ],
-              },
-              {
-                $or: [
-                  { "hltb.completionist": { $exists: false } },
-                  { "hltb.completionist": null },
+                $and: [
+                  {
+                    $or: [
+                      { "hltb.mainStory": { $exists: false } },
+                      { "hltb.mainStory": null },
+                    ],
+                  },
+                  {
+                    $or: [
+                      { "hltb.mainExtra": { $exists: false } },
+                      { "hltb.mainExtra": null },
+                    ],
+                  },
+                  {
+                    $or: [
+                      { "hltb.completionist": { $exists: false } },
+                      { "hltb.completionist": null },
+                    ],
+                  },
                 ],
               },
             ],
           },
+          { hltbNotFoundAt: { $exists: false } },
         ],
       });
     });

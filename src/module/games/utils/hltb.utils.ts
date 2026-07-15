@@ -1,5 +1,8 @@
 import { IHltbField } from "src/shared/zod/schemas/games.schema";
-import { HLTB_STRONG_TITLE_SIMILARITY } from "../constants/hltb";
+import {
+  HLTB_NOT_FOUND_RETRY_DAYS,
+  HLTB_STRONG_TITLE_SIMILARITY,
+} from "../constants/hltb";
 
 export type HltbSearchEntry = {
   id: number;
@@ -482,18 +485,36 @@ export const getStaleBeforeIso = (staleDays: number, now = Date.now()) =>
   new Date(now - staleDays * 24 * 60 * 60 * 1000).toISOString();
 
 export const buildMissingHltbFilter = () => ({
-  $or: [{ hltb: { $exists: false } }, missingHltbTimesFilter],
+  $and: [
+    { $or: [{ hltb: { $exists: false } }, missingHltbTimesFilter] },
+    { hltbNotFoundAt: { $exists: false } },
+  ],
 });
 
-export const buildIncrementalHltbFilter = (staleDays: number, now = Date.now()) => {
+export const buildIncrementalHltbFilter = (
+  staleDays: number,
+  now = Date.now(),
+  notFoundRetryDays = HLTB_NOT_FOUND_RETRY_DAYS
+) => {
   const staleBefore = getStaleBeforeIso(staleDays, now);
+  const notFoundRetryBefore = getStaleBeforeIso(notFoundRetryDays, now);
 
   return {
     $or: [
-      { hltb: { $exists: false } },
-      { "hltb.updatedAt": { $exists: false } },
+      {
+        $and: [
+          {
+            $or: [
+              { hltb: { $exists: false } },
+              { "hltb.updatedAt": { $exists: false } },
+              missingHltbTimesFilter,
+            ],
+          },
+          { hltbNotFoundAt: { $exists: false } },
+        ],
+      },
       { "hltb.updatedAt": { $lt: staleBefore } },
-      missingHltbTimesFilter,
+      { hltbNotFoundAt: { $lt: notFoundRetryBefore } },
     ],
   };
 };

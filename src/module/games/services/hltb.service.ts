@@ -210,27 +210,28 @@ export class HltbService {
           if (!hltb || !hasHltbTimes(hltb)) {
             result.skipped += 1;
 
+            const now = new Date().toISOString();
+            const update: Record<string, unknown> = {
+              $set: { hltbNotFoundAt: now, updatedAt: now },
+            };
+
             if (game.hltb) {
-              // The previously-stored match no longer passes verification
-              // (or HLTB has no usable times) — drop it instead of keeping
-              // a potential false positive.
-              bulkOps.push({
-                updateOne: {
-                  filter: { _id: game._id },
-                  update: {
-                    $unset: { hltb: "" },
-                    $set: { updatedAt: new Date().toISOString() },
-                  },
-                },
-              });
+              update.$unset = { hltb: "" };
               this.logger.warn(
                 `${progress} cleared stale HLTB for "${game.name}" — no verified match`
               );
             } else {
               this.logger.warn(
-                `${progress} skipped "${game.name}" — no verified HLTB match`
+                `${progress} marked "${game.name}" as not found on HLTB`
               );
             }
+
+            bulkOps.push({
+              updateOne: {
+                filter: { _id: game._id },
+                update,
+              },
+            });
 
             continue;
           }
@@ -243,6 +244,7 @@ export class HltbService {
                   hltb,
                   updatedAt: new Date().toISOString(),
                 },
+                $unset: { hltbNotFoundAt: "" },
               },
             },
           });
@@ -380,8 +382,16 @@ export class HltbService {
     this.logger.warn("Clearing the HLTB field from all games");
 
     const res = await this.gamesModel.updateMany(
-      { hltb: { $exists: true } },
-      { $unset: { hltb: "" }, $set: { updatedAt: new Date().toISOString() } }
+      {
+        $or: [
+          { hltb: { $exists: true } },
+          { hltbNotFoundAt: { $exists: true } },
+        ],
+      },
+      {
+        $unset: { hltb: "", hltbNotFoundAt: "" },
+        $set: { updatedAt: new Date().toISOString() },
+      }
     );
 
     this.logger.info(
