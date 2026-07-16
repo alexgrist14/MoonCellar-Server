@@ -62,4 +62,13 @@ export class UserRatingsController {
   async getRatings(@Query() dto: GetUserRatingDto) {
     return await this.userRatingsService.getRatings(dto);
   }
+
+  @Post("/recalculate")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @ApiOperation({ summary: "Recalculate average rating for all games" })
+  @ApiResponse({ status: 200, description: "Success" })
+  async recalculateAllAverageRatings() {
+    return await this.userRatingsService.recalculateAllAverageRatings();
+  }
 }

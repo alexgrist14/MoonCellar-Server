@@ -98,6 +98,9 @@ export const GameSchema = z.object({
   platformIds: z.string().array(),
   rating: z.number().optional(),
   ratingCount: z.number().optional(),
+  averageRating: z.number().nullable().optional(),
+  isStopParsingPictures: z.boolean().default(false),
+  isCustom: z.boolean().default(false),
   retroachievements: RetroachievementsSchema.array().optional(),
   igdb: IGDBSchema.optional(),
   hltb: HltbSchema.optional(),
@@ -160,12 +163,16 @@ export const AddGameRequestSchema = GameSchema.omit({
   _id: true,
   updatedAt: true,
   createdAt: true,
+  averageRating: true,
+  isCustom: true,
 });
 
 export const UpdateGameRequestSchema = GameSchema.omit({
   _id: true,
   updatedAt: true,
   createdAt: true,
+  averageRating: true,
+  isCustom: true,
 }).partial();
 
 export const GetCustomGameResponseSchema = GameSchema.array();

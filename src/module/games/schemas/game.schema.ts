@@ -53,6 +53,12 @@ export class Game {
   rating: number;
   @Prop()
   ratingCount: number;
+  @Prop()
+  averageRating: number;
+  @Prop({ default: false })
+  isStopParsingPictures: boolean;
+  @Prop({ default: false })
+  isCustom: boolean;
   @Prop({ type: Object })
   igdb: IGDBField;
   @Prop({ type: Object })

@@ -23,6 +23,7 @@ import {
 import { UserRatingsController } from "./controllers/user-ratings.controller";
 import { UserRatingsService } from "./services/user-ratings.service";
 import { MetricsModule } from "../metrics/metrics.module";
+import { Game, GameDatabaseSchema } from "../games/schemas/game.schema";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MetricsModule } from "../metrics/metrics.module";
       { name: "User", schema: UserSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
       { name: Rating.name, schema: UserRatingsDatabaseSchema },
+      { name: Game.name, schema: GameDatabaseSchema },
     ]),
     MetricsModule,
   ],

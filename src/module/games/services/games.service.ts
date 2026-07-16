@@ -104,9 +104,11 @@ export class GamesService implements OnModuleInit {
 
   async getGameBySlug({ slug }: IGetGameBySlugRequest) {
     try {
-      const game = this.Games.aggregate([{ $match: { slug } }]);
+      const game = (await this.Games.aggregate([{ $match: { slug } }])).pop();
 
-      return (await game).pop();
+      if (!game) throw new NotFoundException(`Game not found: ${slug}`);
+
+      return game;
     } catch (err) {
       this.logger.error(err, `Failed to get game by slug: ${slug}`);
       throw err;
@@ -115,9 +117,11 @@ export class GamesService implements OnModuleInit {
 
   async getGameById({ _id }: IGetGameByIdRequest) {
     try {
-      const game = this.Games.aggregate([{ $match: { _id } }]);
+      const game = (await this.Games.aggregate([{ $match: { _id } }])).pop();
 
-      return (await game).pop();
+      if (!game) throw new NotFoundException(`Game not found: ${_id}`);
+
+      return game;
     } catch (err) {
       this.logger.error(err, `Failed to get game by id: ${_id}`);
       throw err;
@@ -246,7 +250,14 @@ export class GamesService implements OnModuleInit {
 
   async addGame(data: IAddGameRequest) {
     try {
-      return this.Games.create(data);
+      const now = new Date().toISOString();
+
+      return await this.Games.create({
+        ...data,
+        isCustom: true,
+        createdAt: now,
+        updatedAt: now,
+      });
     } catch (err) {
       this.logger.error(err, `Failed to add game: ${JSON.stringify(data)}`);
       throw err;
@@ -255,13 +266,15 @@ export class GamesService implements OnModuleInit {
 
   async updateGame(_id: mongoose.Types.ObjectId, data: IUpdateGameRequest) {
     try {
-      return this.Games.findOneAndUpdate(
+      const game = await this.Games.findOneAndUpdate(
         { _id },
         { ...data, updatedAt: new Date().toISOString() },
-        {
-          new: true,
-        }
+        { new: true }
       );
+
+      if (!game) throw new NotFoundException(`Game not found: ${_id}`);
+
+      return game;
     } catch (err) {
       this.logger.error(err, `Failed to update game: ${_id}`);
       throw err;
@@ -270,7 +283,11 @@ export class GamesService implements OnModuleInit {
 
   async deleteGame(_id: mongoose.Types.ObjectId) {
     try {
-      return this.Games.findOneAndDelete({ _id });
+      const game = await this.Games.findOneAndDelete({ _id });
+
+      if (!game) throw new NotFoundException(`Game not found: ${_id}`);
+
+      return game;
     } catch (err) {
       this.logger.error(err, `Failed to delete game: ${_id}`);
       throw err;

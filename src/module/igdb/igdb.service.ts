@@ -320,7 +320,9 @@ export class IGDBService {
         parsingCallback: async (items) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select("_id slug type createdAt igdb cover screenshots artworks");
+          }).select(
+            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures"
+          );
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -474,7 +476,9 @@ export class IGDBService {
         parsingCallback: async (items) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select("_id slug type createdAt igdb cover screenshots artworks");
+          }).select(
+            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures"
+          );
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -750,7 +754,9 @@ export class IGDBService {
 
     const existingGame = await this.Games.findOne({
       "igdb.gameId": igdbGame.id,
-    }).select("_id slug type createdAt cover screenshots artworks");
+    }).select(
+      "_id slug type createdAt cover screenshots artworks isStopParsingPictures"
+    );
 
     return this.upsertGameFromIgdb(igdbGame, existingGame, {
       parseImages: options?.parseImages ?? true,
@@ -762,9 +768,16 @@ export class IGDBService {
   private async parseGameImagesFromIgdb(
     igdbGame: IGDBExpandedGame,
     slug: string,
-    existingGame?: Pick<GameDocument, "cover" | "screenshots" | "artworks">,
+    existingGame?: Pick<
+      GameDocument,
+      "cover" | "screenshots" | "artworks" | "isStopParsingPictures"
+    >,
     options?: { type?: ImageField; forceParse?: boolean }
   ) {
+    if (existingGame?.isStopParsingPictures) {
+      return;
+    }
+
     const update: Partial<
       Pick<GameDocument, "cover" | "screenshots" | "artworks">
     > = {};
@@ -851,6 +864,7 @@ export class IGDBService {
       | "cover"
       | "screenshots"
       | "artworks"
+      | "isStopParsingPictures"
     >,
     options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
   ) {
