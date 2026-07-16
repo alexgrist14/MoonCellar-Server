@@ -13,6 +13,7 @@ import { User } from "../user/schemas/user.schema";
 import { Model } from "mongoose";
 import * as bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
+import { BusinessMetricsService } from "../metrics/business-metrics.service";
 import { LoginDto } from "./dto/login.dto";
 import { Response } from "express";
 import {
@@ -27,7 +28,8 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private readonly metrics: BusinessMetricsService
   ) {}
 
   private async generateTokensAndUpdateUser(
@@ -76,6 +78,8 @@ export class AuthService {
         email,
         password: hashedPassword,
       });
+
+      this.metrics.recordRegistration();
 
       return this.generateTokensAndUpdateUser(user);
     } catch (err) {

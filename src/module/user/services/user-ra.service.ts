@@ -9,11 +9,15 @@ import {
 import { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
 import { RA_MAIN_USER_NAME } from "src/shared/constants";
+import { BusinessMetricsService } from "../../metrics/business-metrics.service";
 
 @Injectable()
 export class UserRAService {
   private readonly logger = new Logger(UserRAService.name);
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private readonly metrics: BusinessMetricsService
+  ) {}
   private readonly username = RA_MAIN_USER_NAME;
   private readonly webApiKey = process.env.RETROACHIEVEMENTS_API_KEY;
   private readonly authorization = buildAuthorization({
@@ -33,6 +37,8 @@ export class UserRAService {
           toDate: new Date("2026-01-01"),
         }
       );
+
+      this.metrics.recordAchievements(achievements.length);
 
       return achievements;
     } catch (err) {

@@ -24,6 +24,7 @@ services:
       - loki
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
     healthcheck:
       test:
         ["CMD-SHELL", "wget -q --tries=1 -O- http://localhost:3001/api/health"]
@@ -63,12 +64,28 @@ services:
     networks:
       - mongodb_network
 
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: [monitoring]
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=512MB
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    mem_limit: 256m
+    restart: unless-stopped
+
 volumes:
   mongodb-data:
     driver: local
     name: mongo-data
   loki_data:
   grafana_data:
+  prometheus_data:
 
 networks:
   mongodb_network:
