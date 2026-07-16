@@ -197,15 +197,27 @@ export class GamesService implements OnModuleInit {
 
       const games = await this.Games.aggregate([
         gamesFilters(baseFilters, searchedIds),
-        {
-          $sort: {
-            "igdb.total_rating_count": -1,
-          },
-        },
+        ...(searchedIds
+          ? [
+              {
+                $addFields: {
+                  searchRank: { $indexOfArray: [searchedIds, "$_id"] },
+                },
+              },
+              { $sort: { searchRank: 1 as const } },
+            ]
+          : [
+              {
+                $sort: {
+                  "igdb.total_rating_count": -1 as const,
+                },
+              },
+            ]),
         {
           $facet: {
             results: [
               ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
+              ...(searchedIds ? [{ $unset: "searchRank" }] : []),
             ],
             totalCount: [{ $count: "count" }],
           },
