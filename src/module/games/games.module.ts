@@ -18,6 +18,7 @@ import { PlatformsService } from "./services/platforms.service";
 import { GamesService } from "./services/games.service";
 import { HltbService } from "./services/hltb.service";
 import { HltbController } from "./controllers/hltb.controller";
+import { MetricsModule } from "../metrics/metrics.module";
 
 @Module({
   controllers: [
@@ -41,6 +42,7 @@ import { HltbController } from "./controllers/hltb.controller";
       { name: Playthrough.name, schema: PlaythroughDatabaseSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
     ]),
+    MetricsModule,
   ],
 })
 export class GamesModule {}

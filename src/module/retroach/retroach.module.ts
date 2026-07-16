@@ -9,6 +9,7 @@ import {
   Platform,
   PlatformDatabaseSchema,
 } from "../games/schemas/platform.schema";
+import { MetricsModule } from "../metrics/metrics.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import {
     MongooseModule.forFeature([
       { name: Platform.name, schema: PlatformDatabaseSchema },
     ]),
+    MetricsModule,
   ],
 
   controllers: [RetroachievementsController],

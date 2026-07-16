@@ -14,6 +14,7 @@ import { PinoLogger } from "nestjs-pino";
 import { updateOrInsertValues } from "src/shared/db";
 import { sleep } from "src/shared/utils";
 import { runInCronLogContext } from "src/shared/cron-logging";
+import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
 
 import { Game, GameDocument } from "src/module/games/schemas/game.schema";
 import {
@@ -46,7 +47,8 @@ export class RetroachievementsService {
     private games: Model<GameDocument>,
     @InjectModel(Platform.name)
     private platforms: Model<PlatformDocument>,
-    private readonly logger: PinoLogger
+    private readonly logger: PinoLogger,
+    private readonly metrics: BusinessMetricsService
   ) {
     this.logger.setContext(RetroachievementsService.name);
   }
@@ -234,7 +236,7 @@ export class RetroachievementsService {
         `Matched ${Object.values(gameIds).flat().length} RA games to ${Object.keys(gameIds).length} games`
       );
 
-      await this.games.bulkWrite(
+      const raSyncResult = await this.games.bulkWrite(
         Object.keys(gameIds).map((key) => ({
           updateOne: {
             filter: {
@@ -261,6 +263,12 @@ export class RetroachievementsService {
         }))
       );
 
+      this.metrics.recordGames(
+        "ra",
+        "updated",
+        raSyncResult.modifiedCount ?? 0
+      );
+
       this.logger.info("RA games parsing finished");
       return "Success";
     } catch (err) {
@@ -272,7 +280,7 @@ export class RetroachievementsService {
   @Cron(CronExpression.EVERY_WEEK, RA_SYNC_CRON_OPTIONS)
   async syncCron() {
     return runInCronLogContext(this.logger, "ra-sync", () =>
-      this.runSyncCron()
+      this.metrics.trackSync("ra-sync", () => this.runSyncCron())
     );
   }
 
