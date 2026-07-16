@@ -22,6 +22,7 @@ export const pinoConfig: LoggerModuleAsyncParams = {
           return {
             method: req.method,
             url: req.url,
+            ip: req.ip || req.socket?.remoteAddress,
           };
         },
         res(res) {

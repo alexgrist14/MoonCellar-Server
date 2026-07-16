@@ -28,6 +28,7 @@ import {
 import { Cron } from "@nestjs/schedule";
 import { PinoLogger } from "nestjs-pino";
 import { runInCronLogContext } from "src/shared/cron-logging";
+import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
 import {
   IGDB_GAMES_SYNC_CRON,
   IGDB_GAMES_SYNC_CRON_OPTIONS,
@@ -193,7 +194,8 @@ export class IGDBService {
     private Platforms: Model<PlatformDocument>,
     private fileService: FileService,
     private httpService: HttpService,
-    private readonly pino: PinoLogger
+    private readonly pino: PinoLogger,
+    private readonly metrics: BusinessMetricsService
   ) {}
 
   private async getSyncCheckpoint(type: ParserType) {
@@ -483,14 +485,16 @@ export class IGDBService {
             options?.concurrency || DEFAULT_GAMES_SYNC_CONCURRENCY,
             async (igdbGame) => {
               try {
-                await this.upsertGameFromIgdb(
-                  igdbGame,
-                  existingGamesByIgdbId.get(igdbGame.id),
-                  {
-                    parseImages: options?.parseImages ?? true,
-                    field: options?.field,
-                    forceParse: options?.forceParse,
-                  }
+                const existingGame = existingGamesByIgdbId.get(igdbGame.id);
+                await this.upsertGameFromIgdb(igdbGame, existingGame, {
+                  parseImages: options?.parseImages ?? true,
+                  field: options?.field,
+                  forceParse: options?.forceParse,
+                });
+                this.metrics.recordGames(
+                  "igdb",
+                  existingGame ? "updated" : "added",
+                  1
                 );
                 changedCount++;
               } catch (e) {
@@ -517,7 +521,9 @@ export class IGDBService {
   @Cron(IGDB_GAMES_SYNC_CRON, IGDB_GAMES_SYNC_CRON_OPTIONS)
   async syncUpdatedGamesCron() {
     return runInCronLogContext(this.pino, "igdb-games-sync", () =>
-      this.runSyncUpdatedGamesCron()
+      this.metrics.trackSync("igdb-games-sync", () =>
+        this.runSyncUpdatedGamesCron()
+      )
     );
   }
 

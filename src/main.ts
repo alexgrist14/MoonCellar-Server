@@ -11,6 +11,7 @@ import { Logger } from "nestjs-pino";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set("trust proxy", true);
 
   patchNestjsSwagger();
 

@@ -9,20 +9,24 @@ import { IgdbModule } from "./module/igdb/igdb.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { RetroachievementsModule } from "./module/retroach/retroach.module";
 import { GamesModule } from "./module/games/games.module";
-import { APP_PIPE } from "@nestjs/core";
+import { APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "@anatine/zod-nestjs";
 import { AdminModule } from "./module/admin/admin.module";
 import { FaroModule } from "./module/faro/faro.module";
 import { LoggerModule } from "nestjs-pino";
 import { pinoConfig } from "./module/logger/logger.module";
+import { MetricsModule } from "./module/metrics/metrics.module";
+import { HttpMetricsInterceptor } from "./module/metrics/http-metrics.interceptor";
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     LoggerModule.forRootAsync(pinoConfig),
+    MetricsModule,
     ScheduleModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING, {
       dbName: "games",
+      monitorCommands: true,
     }),
     AuthModule,
     UserModule,
@@ -40,6 +44,10 @@ import { pinoConfig } from "./module/logger/logger.module";
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpMetricsInterceptor,
     },
   ],
 })

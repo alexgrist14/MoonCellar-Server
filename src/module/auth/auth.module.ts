@@ -15,6 +15,7 @@ import { UserLogsService } from "../user/services/user-logs.service";
 import { UserLogs, UserLogsSchema } from "../user/schemas/user-logs.schema";
 import { JwtRefreshStrategy } from "./jwt-refresh.strategy";
 import { FileService } from "../user/services/file-upload.service";
+import { MetricsModule } from "../metrics/metrics.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { FileService } from "../user/services/file-upload.service";
       { name: UserLogs.name, schema: UserLogsSchema },
     ]),
 
+    MetricsModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
