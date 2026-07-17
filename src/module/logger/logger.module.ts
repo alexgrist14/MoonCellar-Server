@@ -6,6 +6,12 @@ export const pinoConfig: LoggerModuleAsyncParams = {
   useFactory: () => ({
     pinoHttp: {
       level: "info",
+      autoLogging: {
+        ignore: (req) => {
+          const url = req.url || "";
+          return url.startsWith("/metrics") || url.startsWith("/faro");
+        },
+      },
       customLogLevel: (req, res, err) => {
         if (err && err instanceof Error) return "error";
         if (res?.statusCode >= 500) return "error";
