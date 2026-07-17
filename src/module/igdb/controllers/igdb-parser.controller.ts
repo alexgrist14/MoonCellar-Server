@@ -102,13 +102,29 @@ export class IgdbParserController {
     required: false,
     type: Boolean,
   })
+  @ApiQuery({
+    name: "releaseAfter",
+    required: false,
+    description:
+      "Unix timestamp (seconds); only games with first_release_date after this are backfilled",
+  })
+  @ApiQuery({
+    name: "skipCheckpoint",
+    default: false,
+    required: false,
+    type: Boolean,
+    description:
+      "Skip full-catalog checkpoint bookkeeping; use for partial/filtered runs (e.g. field=hypes with releaseAfter)",
+  })
   async backfillGames(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,
     @Query("parseImages") parseImagesQuery?: string,
     @Query("field") field?: string,
-    @Query("forceParse") forceParseQuery?: string
+    @Query("forceParse") forceParseQuery?: string,
+    @Query("releaseAfter") releaseAfterQuery?: string,
+    @Query("skipCheckpoint") skipCheckpointQuery?: string
   ) {
     return this.service.backfillGamesFromIgdb({
       limit: Number(limitQuery) || undefined,
@@ -117,29 +133,14 @@ export class IgdbParserController {
       parseImages: parseImagesQuery === "true",
       field,
       forceParse: forceParseQuery === "true",
+      releaseAfter: Number(releaseAfterQuery) || undefined,
+      skipCheckpoint: skipCheckpointQuery === "true",
     });
   }
 
   @ApiCookieAuth()
   @UseGuards(AuthGuard("jwt"))
-  @Post("/games/backfill-hypes")
-  @ApiOperation({ summary: "Backfill IGDB hypes for upcoming games" })
-  @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiQuery({ name: "limit", required: false })
-  @ApiQuery({ name: "delayMs", required: false })
-  async backfillUpcomingHypes(
-    @Query("limit") limitQuery?: string,
-    @Query("delayMs") delayMsQuery?: string
-  ) {
-    return this.service.backfillUpcomingHypes({
-      limit: Number(limitQuery) || undefined,
-      delayMs: Number(delayMsQuery) || undefined,
-    });
-  }
-
-  @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
-  @Post("/games/sync-direct")
+  @Post("/games/sync")
   @ApiOperation({
     summary:
       "Sync changed IGDB games directly into games, bypassing the local IGDB mirror",
@@ -161,7 +162,7 @@ export class IgdbParserController {
     required: false,
     type: Boolean,
   })
-  async syncGamesDirect(
+  async syncGames(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,

@@ -50,6 +50,7 @@ const SINGLE_GAME_QUERY_FIELDS = [
   "first_release_date",
   "total_rating",
   "total_rating_count",
+  "hypes",
   "updated_at",
   "cover.id",
   "cover.url",
@@ -95,6 +96,7 @@ interface IGDBExpandedGame {
   first_release_date?: number;
   total_rating?: number;
   total_rating_count?: number;
+  hypes?: number;
   updated_at?: number;
   cover?: { id: number; url: string };
   screenshots?: { id: number; url: string }[];
@@ -166,9 +168,12 @@ const UPDATABLE_GAME_FIELDS = [
 const IMAGE_FIELDS = ["cover", "screenshots", "artworks"] as const;
 type ImageField = (typeof IMAGE_FIELDS)[number];
 
+const HYPES_FIELD = "hypes" as const;
+
 const ALL_UPDATABLE_GAME_FIELDS = [
   ...UPDATABLE_GAME_FIELDS,
   ...IMAGE_FIELDS,
+  HYPES_FIELD,
 ] as const;
 
 const UPDATABLE_PLATFORM_FIELDS = [
@@ -298,6 +303,8 @@ export class IGDBService {
     parseImages?: boolean;
     field?: string;
     forceParse?: boolean;
+    releaseAfter?: number;
+    skipCheckpoint?: boolean;
   }) {
     try {
       const token = await this.getIgdbToken();
@@ -305,7 +312,9 @@ export class IGDBService {
       let processedCount = 0;
       let checkpoint = 0;
 
-      await this.markGamesBackfillStarted();
+      if (!options?.skipCheckpoint) {
+        await this.markGamesBackfillStarted();
+      }
 
       await igdbParser<IGDBExpandedGame>({
         token,
@@ -315,6 +324,10 @@ export class IGDBService {
           delayMs: options?.delayMs ?? DEFAULT_IGDB_SYNC_DELAY_MS,
           sort: "updated_at asc",
           fields: SINGLE_GAME_QUERY_FIELDS,
+          where:
+            typeof options?.releaseAfter === "number"
+              ? `first_release_date > ${options.releaseAfter}`
+              : undefined,
           isCollectItems: false,
         },
         parsingCallback: async (items) => {
@@ -352,12 +365,16 @@ export class IGDBService {
             }
           );
 
-          checkpoint = getMaxUpdatedAt(items, checkpoint);
-          await this.setGamesBackfillProgress(checkpoint);
+          if (!options?.skipCheckpoint) {
+            checkpoint = getMaxUpdatedAt(items, checkpoint);
+            await this.setGamesBackfillProgress(checkpoint);
+          }
         },
       });
 
-      await this.markGamesBackfillCompleted(checkpoint);
+      if (!options?.skipCheckpoint) {
+        await this.markGamesBackfillCompleted(checkpoint);
+      }
 
       return {
         processedCount,
@@ -365,78 +382,6 @@ export class IGDBService {
       };
     } catch (err) {
       this.logger.error(err, `Failed to backfill games from IGDB`);
-      throw err;
-    }
-  }
-
-  async backfillUpcomingHypes(options?: { limit?: number; delayMs?: number }) {
-    try {
-      const { data: authData } = await igdbAuth();
-      const { access_token: token } = authData;
-
-      if (!token) {
-        this.logger.warn(`There is no token to backfill hypes`);
-        return;
-      }
-
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      const where = `first_release_date > ${nowSeconds} & hypes != null`;
-      const limit = options?.limit || 500;
-      const delayMs = options?.delayMs ?? 0;
-      const url = "https://api.igdb.com/v4/games";
-
-      const { data: countData } = await igdbAgent<{ count: number }>(
-        `${url}/count`,
-        token,
-        buildIgdbQueryParams(undefined, { where })
-      );
-      const total = countData.count;
-
-      let offset = 0;
-      let matched = 0;
-      let modified = 0;
-
-      while (offset < total) {
-        const { data } = await igdbAgent<{ id: number; hypes: number }[]>(
-          url,
-          token,
-          buildIgdbQueryParams("id, hypes", {
-            where,
-            sort: "hypes desc",
-            limit,
-            offset,
-          })
-        );
-
-        if (!data?.length) {
-          break;
-        }
-
-        const ops = data
-          .filter((item) => typeof item.hypes === "number")
-          .map((item) => ({
-            updateOne: {
-              filter: { "igdb.gameId": item.id },
-              update: { $set: { "igdb.hypes": item.hypes } },
-            },
-          }));
-
-        if (ops.length) {
-          const res = await this.Games.bulkWrite(ops);
-          matched += res.matchedCount;
-          modified += res.modifiedCount;
-        }
-
-        offset += limit;
-
-        if (delayMs) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-
-      return { total, matched, modified };
-    } catch (err) {
-      this.logger.error(err, `Failed to backfill upcoming hypes`);
       throw err;
     }
   }
@@ -903,6 +848,24 @@ export class IGDBService {
       return igdbGame.slug + " parsed";
     }
 
+    if (options?.field === HYPES_FIELD) {
+      await this.Games.updateOne(
+        { "igdb.gameId": igdbGame.id },
+        {
+          $set: {
+            "igdb.hypes": igdbGame.hypes,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+
+      this.logger.log(
+        `Parsed field "${options.field}" for game from IGDB: ${igdbGame.slug}`
+      );
+
+      return igdbGame.slug + " parsed";
+    }
+
     const platformIds = await this.Platforms.find({
       igdbId: { $in: igdbGame.platforms || [] },
     }).select("_id igdbId");
@@ -946,6 +909,7 @@ export class IGDBService {
         gameId: igdbGame.id,
         total_rating: igdbGame.total_rating,
         total_rating_count: igdbGame.total_rating_count,
+        hypes: igdbGame.hypes,
         screenshotsCount: igdbGame.screenshots?.length || 0,
         artworksCount: igdbGame.artworks?.length || 0,
         genres: (igdbGame.genres || []).map((genre) => genre.id),
