@@ -116,7 +116,7 @@ export class IgdbParserController {
     description:
       "Skip full-catalog checkpoint bookkeeping; use for partial/filtered runs (e.g. field=hypes with releaseAfter)",
   })
-  async backfillGames(
+  backfillGames(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,
@@ -126,16 +126,20 @@ export class IgdbParserController {
     @Query("releaseAfter") releaseAfterQuery?: string,
     @Query("skipCheckpoint") skipCheckpointQuery?: string
   ) {
-    return this.service.backfillGamesFromIgdb({
-      limit: Number(limitQuery) || undefined,
-      delayMs: Number(delayMsQuery) || undefined,
-      concurrency: Number(concurrencyQuery) || undefined,
-      parseImages: parseImagesQuery === "true",
-      field,
-      forceParse: forceParseQuery === "true",
-      releaseAfter: Number(releaseAfterQuery) || undefined,
-      skipCheckpoint: skipCheckpointQuery === "true",
-    });
+    void this.service
+      .backfillGamesFromIgdb({
+        limit: Number(limitQuery) || undefined,
+        delayMs: Number(delayMsQuery) || undefined,
+        concurrency: Number(concurrencyQuery) || undefined,
+        parseImages: parseImagesQuery === "true",
+        field,
+        forceParse: forceParseQuery === "true",
+        releaseAfter: Number(releaseAfterQuery) || undefined,
+        skipCheckpoint: skipCheckpointQuery === "true",
+      })
+      .catch(() => undefined);
+
+    return { message: "Backfill started" };
   }
 
   @ApiCookieAuth()
