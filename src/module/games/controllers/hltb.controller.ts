@@ -28,7 +28,12 @@ export class HltbController {
   @HttpCode(HttpStatus.OK)
   @ApiQuery({ name: "limit", required: false })
   @ApiQuery({ name: "delayMs", required: false })
-  @ApiQuery({ name: "onlyMissing", required: false })
+  @ApiQuery({
+    name: "onlyMissing",
+    required: false,
+    default: false,
+    type: Boolean,
+  })
   @ApiQuery({ name: "staleDays", required: false })
   async backfillHltb(
     @Query("limit") limitQuery?: string,
@@ -36,12 +41,14 @@ export class HltbController {
     @Query("onlyMissing") onlyMissingQuery?: string,
     @Query("staleDays") staleDaysQuery?: string
   ) {
-    return this.hltb.syncAllGames({
+    await this.hltb.syncAllGames({
       limit: parsePositiveInt(limitQuery),
       delayMs: parsePositiveInt(delayMsQuery),
       onlyMissing: onlyMissingQuery === "true",
       staleDays: parsePositiveInt(staleDaysQuery),
     });
+
+    return { message: "HLTB backfill started" };
   }
 
   @Delete("/remove-all")
