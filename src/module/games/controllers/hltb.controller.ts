@@ -41,7 +41,7 @@ export class HltbController {
     @Query("onlyMissing") onlyMissingQuery?: string,
     @Query("staleDays") staleDaysQuery?: string
   ) {
-    await this.hltb.syncAllGames({
+    this.hltb.syncAllGames({
       limit: parsePositiveInt(limitQuery),
       delayMs: parsePositiveInt(delayMsQuery),
       onlyMissing: onlyMissingQuery === "true",
