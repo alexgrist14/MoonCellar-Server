@@ -6,9 +6,19 @@ faro.receiver "frontend" {
   }
 
   output {
-    logs   = [loki.write.default.receiver]
+    logs   = [loki.process.frontend.receiver]
     traces = []
   }
+}
+
+loki.process "frontend" {
+  stage.static_labels {
+    values = {
+      service_name = "mooncellar-frontend",
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
 }
 
 loki.write "default" {
