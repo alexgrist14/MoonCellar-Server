@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import mongoose, { Model } from "mongoose";
+import mongoose, { FilterQuery, Model } from "mongoose";
 import {
   IGetPlaythroughsRequest,
   ISavePlaythroughRequest,
@@ -44,15 +44,17 @@ export class PlaythroughsService {
   async getPlaythroughs(data: IGetPlaythroughsRequest) {
     return await this.GamesPlaythrouhgs.find({
       ...data,
-      userId: new mongoose.Types.ObjectId(data.userId),
-    });
+      userId: data.userId,
+    } as FilterQuery<IPlaythroughDocument>);
   }
 
   async getPlaythroughsMinimal(data: IGetPlaythroughsRequest) {
     return await this.GamesPlaythrouhgs.find({
       ...data,
-      userId: new mongoose.Types.ObjectId(data.userId),
-    }).select("_id category gameId isMastered updatedAt");
+      userId: data.userId,
+    } as FilterQuery<IPlaythroughDocument>).select(
+      "_id category gameId isMastered updatedAt"
+    );
   }
 
   async savePlaythrough(data: ISavePlaythroughRequest) {
@@ -61,7 +63,7 @@ export class PlaythroughsService {
         ...data,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      } as Parameters<Model<IPlaythroughDocument>["create"]>[0]);
 
       const { text } = await this.getAdditionalInfo({
         play,

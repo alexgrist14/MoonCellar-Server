@@ -45,7 +45,7 @@ export class AuthController {
       await this.userProfileService.findByString({
         searchString: signUpDto.userName,
       })
-    ).id;
+    )._id.toString();
 
     this.authService.setCookies(
       res,
@@ -73,7 +73,7 @@ export class AuthController {
       await this.userProfileService.findByString({
         searchString: loginDto.email,
       })
-    ).id;
+    )._id.toString();
 
     this.authService.setCookies(
       res,

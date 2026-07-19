@@ -12,6 +12,6 @@ export const updateOrInsertValues = <T>(model: Model<T>, items: unknown) => {
         update: { $set: { ...item, id: undefined, _id: item.id } },
         upsert: true,
       },
-    }))
+    })) as Parameters<Model<T>["bulkWrite"]>[0]
   );
 };

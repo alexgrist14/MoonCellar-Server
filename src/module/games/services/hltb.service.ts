@@ -355,7 +355,9 @@ export class HltbService {
     }
 
     if (!orderByStaleness) {
-      return { $and: [filter, { _id: { $gt: lastId } }] };
+      return {
+        $and: [filter, { _id: { $gt: lastId } }],
+      } as FilterQuery<GameDocument>;
     }
 
     const cursor =
@@ -379,7 +381,7 @@ export class HltbService {
             ],
           };
 
-    return { $and: [filter, cursor] };
+    return { $and: [filter, cursor] } as FilterQuery<GameDocument>;
   }
 
   /** Removes the `hltb` field from every game so the catalogue can be rebuilt

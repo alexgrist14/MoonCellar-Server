@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { FilterQuery, Model } from "mongoose";
 import { User } from "../user/schemas/user.schema";
 import { UserLogs } from "../user/schemas/user-logs.schema";
 import { Rating } from "../user/schemas/user-ratings.schema";
@@ -92,9 +92,11 @@ export class AdminService {
       }
 
       await Promise.all([
-        this.userLogsModel.deleteMany({ userId }).exec(),
-        this.ratingModel.deleteMany({ userId }).exec(),
-        this.playthroughModel.deleteMany({ userId }).exec(),
+        this.userLogsModel.deleteMany({ userId } as FilterQuery<UserLogs>).exec(),
+        this.ratingModel.deleteMany({ userId } as FilterQuery<Rating>).exec(),
+        this.playthroughModel
+          .deleteMany({ userId } as FilterQuery<Playthrough>)
+          .exec(),
         this.userModel.findByIdAndDelete(userId).exec(),
       ]);
 

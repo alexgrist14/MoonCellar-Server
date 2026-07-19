@@ -32,7 +32,7 @@ import { MetricsModule } from "../metrics/metrics.module";
         return {
           secret: config.get<string>("JWT_SECRET"),
           signOptions: {
-            expiresIn: config.get<string | number>("JWT_EXPIRE"),
+            expiresIn: config.get("JWT_EXPIRE") as number | `${number}${"s" | "m" | "h" | "d"}`,
           },
         };
       },
