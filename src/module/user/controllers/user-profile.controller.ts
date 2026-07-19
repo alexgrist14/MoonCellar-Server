@@ -25,6 +25,7 @@ import {
   GetUserByIdDto,
   GetUserByStringDto,
   UpdateDescriptionDto,
+  UpdateSettingsDto,
   UpdateUserEmailDto,
   UpdateUserPasswordDto,
 } from "src/shared/zod/dto/user.dto";
@@ -148,6 +149,18 @@ export class UserProfileController {
       userId,
       descriptionDto
     );
+  }
+
+  @Patch("settings/:userId")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Update user settings" })
+  @ApiResponse({ status: 200, description: "Success" })
+  async updateSettings(
+    @Param("userId") userId: string,
+    @Body() settingsDto: UpdateSettingsDto
+  ) {
+    return await this.userProfileService.updateSettings(userId, settingsDto);
   }
 
   @Patch("profile-time/:userId")

@@ -3,6 +3,7 @@ import {
   GetUserByIdSchema,
   GetUserByStringSchema,
   UpdateDescriptionSchema,
+  UpdateSettingsSchema,
   UpdateUserEmailSchema,
   UpdateUserPasswordSchema,
 } from "../schemas/user.schema";
@@ -16,3 +17,4 @@ export class UpdateUserPasswordDto extends createZodDto(
 export class UpdateDescriptionDto extends createZodDto(
   UpdateDescriptionSchema
 ) {}
+export class UpdateSettingsDto extends createZodDto(UpdateSettingsSchema) {}

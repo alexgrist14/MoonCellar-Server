@@ -14,6 +14,7 @@ import {
   IUpdateUserDescriptionRequest,
   IUpdateUserEmailRequest,
   IUpdateUserPasswordRequest,
+  IUpdateUserSettingsRequest,
 } from "src/shared/zod/schemas/user.schema";
 import { FileService } from "./file-upload.service";
 
@@ -178,6 +179,21 @@ export class UserProfileService {
       return user;
     } catch (err) {
       this.logger.error(err, `Failed to update user description: ${userId}`);
+      throw err;
+    }
+  }
+
+  async updateSettings(
+    userId: string,
+    { hideAdultContent }: IUpdateUserSettingsRequest
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      user.settings = { ...(user.settings ?? {}), hideAdultContent };
+      await user.save();
+      return user;
+    } catch (err) {
+      this.logger.error(err, `Failed to update user settings: ${userId}`);
       throw err;
     }
   }
