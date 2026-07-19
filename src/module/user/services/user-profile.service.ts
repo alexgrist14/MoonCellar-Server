@@ -185,11 +185,11 @@ export class UserProfileService {
 
   async updateSettings(
     userId: string,
-    { hideAdultContent }: IUpdateUserSettingsRequest
+    { showAdultContent }: IUpdateUserSettingsRequest
   ) {
     try {
       const user = await this.userModel.findById(userId);
-      user.settings = { ...(user.settings ?? {}), hideAdultContent };
+      user.settings = { ...(user.settings ?? {}), showAdultContent };
       await user.save();
       return user;
     } catch (err) {

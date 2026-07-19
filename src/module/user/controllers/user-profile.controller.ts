@@ -22,7 +22,6 @@ import {
 } from "@nestjs/swagger";
 import { RolesGuard } from "src/module/roles/roles.guard";
 import {
-  GetUserByIdDto,
   GetUserByStringDto,
   UpdateDescriptionDto,
   UpdateSettingsDto,

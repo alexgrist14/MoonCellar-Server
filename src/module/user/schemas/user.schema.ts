@@ -35,8 +35,8 @@ export class User extends Document {
   avatar: string;
   @Prop()
   background: string;
-  @Prop({ type: Object, default: { hideAdultContent: false } })
-  settings: { hideAdultContent: boolean };
+  @Prop({ type: Object, default: { showAdultContent: false } })
+  settings: { showAdultContent: boolean };
   @Prop()
   updatedAt: Date;
 }

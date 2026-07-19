@@ -21,7 +21,9 @@ export const UserSchemaZod = z.object({
   roles: RoleSchema.array().default(["user"]),
   avatar: z.string().url().nullable(),
   background: z.string().url().nullable(),
-  settings: z.object({ hideAdultContent: z.boolean() }).default({ hideAdultContent: false }),
+  settings: z
+    .object({ showAdultContent: z.boolean() })
+    .default({ showAdultContent: false }),
   updatedAt: z.date(),
 });
 
@@ -44,7 +46,7 @@ export const UpdateUserPasswordSchema = z.object({
 export const UpdateDescriptionSchema = UserSchemaZod.pick({
   description: true,
 });
-export const UpdateSettingsSchema = z.object({ hideAdultContent: z.boolean() });
+export const UpdateSettingsSchema = z.object({ showAdultContent: z.boolean() });
 
 export type IUser = z.infer<typeof UserSchemaZod>;
 export type IGetUserByStringRequest = z.infer<typeof GetUserByStringSchema>;
