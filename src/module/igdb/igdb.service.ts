@@ -36,6 +36,7 @@ import {
   IGDB_GAMES_SYNC_UPDATED_DELAY_MS,
   IGDB_GAMES_SYNC_UPDATED_LIMIT,
 } from "./constants/sync";
+import { categoryTypeNames } from "./constants/common";
 
 const DEFAULT_IGDB_SYNC_LIMIT = 100;
 const DEFAULT_IGDB_SYNC_DELAY_MS = 1000;
@@ -913,7 +914,9 @@ export class IGDBService {
       name: igdbGame.name,
       type:
         igdbGame.game_type?.type ||
-        igdbGame.category ||
+        (igdbGame.category !== undefined
+          ? categoryTypeNames[igdbGame.category]
+          : undefined) ||
         existingGame?.type ||
         null,
       storyline: igdbGame.storyline,

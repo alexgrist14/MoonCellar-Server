@@ -23,12 +23,21 @@ const SEARCH_CANDIDATES_LIMIT = 1000;
 const SEARCH_SCORE_THRESHOLD = 0.1;
 const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
 
+const SORT_FIELD_MAP: Record<string, string> = {
+  total_rating: "igdb.total_rating",
+  total_rating_count: "igdb.total_rating_count",
+  first_release: "first_release",
+  name: "name",
+  rating: "rating",
+  createdAt: "createdAt",
+};
+
 const TRIM_IGDB_STAGE = {
   $addFields: {
     igdb: {
       $cond: [
         { $ifNull: ["$igdb", false] },
-        { gameId: "$igdb.gameId" },
+        { gameId: "$igdb.gameId", total_rating: "$igdb.total_rating" },
         "$$REMOVE",
       ],
     },
@@ -182,6 +191,8 @@ export class GamesService implements OnModuleInit {
     rating,
     votes,
     excludeGames,
+    sortBy,
+    sortOrder = "desc",
   }: IGetGamesRequest) {
     try {
       const baseFilters = {
@@ -216,6 +227,9 @@ export class GamesService implements OnModuleInit {
 
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
+      const sortField = sortBy ? SORT_FIELD_MAP[sortBy] : "igdb.total_rating_count";
+      const sortDirection = sortOrder === "asc" ? 1 : -1;
+
       const games = await this.Games.aggregate([
         gamesFilters(baseFilters, searchedIds),
         ...(searchedIds
@@ -230,7 +244,7 @@ export class GamesService implements OnModuleInit {
           : [
               {
                 $sort: {
-                  "igdb.total_rating_count": -1 as const,
+                  [sortField]: sortDirection as 1 | -1,
                 },
               },
             ]),

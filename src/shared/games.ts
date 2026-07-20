@@ -1,6 +1,20 @@
 import mongoose from "mongoose";
 import { IGetGamesRequest } from "./zod/schemas/games.schema";
 
+const startOfYear = (year: number) => new Date(year, 0, 1).getTime() / 1000;
+
+const buildYearsFilter = (years: IGetGamesRequest["years"]) => {
+  if (!years) return [];
+
+  const [start, end] = years.length === 1 ? [years[0], years[0]] : years;
+
+  const range: Record<string, number> = {};
+  if (start !== null) range.$gte = startOfYear(+start);
+  if (end !== null) range.$lt = startOfYear(+end + 1);
+
+  return Object.keys(range).length ? [{ first_release: range }] : [];
+};
+
 export const gamesFilters = (
   filters: IGetGamesRequest,
   searchedIds?: mongoose.Types.ObjectId[]
@@ -68,19 +82,7 @@ export const gamesFilters = (
               },
             ]
           : []),
-        ...(!!years
-          ? [
-              {
-                first_release: {
-                  $gte: new Date(+years[0], 0, 0).getTime() / 1000,
-                  $lte:
-                    (new Date(+years[1] + 1, 0, 0).getTime() -
-                      24 * 60 * 60 * 1000) /
-                    1000,
-                },
-              },
-            ]
-          : []),
+        ...buildYearsFilter(years),
         ...(!!company
           ? [
               {

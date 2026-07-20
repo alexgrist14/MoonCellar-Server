@@ -15,3 +15,21 @@ export const categories = {
   pack: 13,
   update: 14,
 };
+
+export const categoryTypeNames: Record<number, string> = {
+  0: "Main Game",
+  1: "DLC",
+  2: "Expansion",
+  3: "Bundle",
+  4: "Standalone Expansion",
+  5: "Mod",
+  6: "Episode",
+  7: "Season",
+  8: "Remake",
+  9: "Remaster",
+  10: "Expanded Game",
+  11: "Port",
+  12: "Fork",
+  13: "Pack / Addon",
+  14: "Update",
+};
