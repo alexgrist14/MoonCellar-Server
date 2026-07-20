@@ -1,6 +1,9 @@
 import axios from "axios";
+import { Logger } from "@nestjs/common";
 import { IGDBAuth } from "../interface/auth.interface";
 import { ParserType } from "../interface/common.interface";
+
+const logger = new Logger("IGDBParser");
 
 type IGDBQueryOptions = {
   limit?: number;
@@ -130,7 +133,7 @@ const parser = async <T>({
   let page = 0;
   const items = [];
 
-  console.log(`Start parsing ${total} items with type: ${type}`);
+  logger.log(`Start parsing ${total} items with type: ${type}`);
 
   const fetch = async () => {
     return igdbAgent<T[]>(
@@ -174,7 +177,11 @@ const parser = async <T>({
           }
         }
 
-        console.log(page, items.length);
+        if (response.data.length) {
+          logger.log(
+            `Page ${page}: received ${response.data.length} items with type: ${type}`
+          );
+        }
 
         offset += limit;
         if (!!options?.delayMs) {
@@ -183,7 +190,7 @@ const parser = async <T>({
         return parse();
       }
     } catch (e) {
-      console.log(e);
+      logger.error(e);
       return parse();
     }
   };

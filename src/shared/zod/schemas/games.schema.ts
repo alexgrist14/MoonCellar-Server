@@ -24,6 +24,8 @@ export const IGDBSchema = z.object({
   cover: z.number().array().optional(),
   screenshots: z.number().array().optional(),
   artworks: z.number().array().optional(),
+  franchises: z.number().array().optional(),
+  videos: z.number().array().optional(),
 });
 
 export const HltbSchema = z.object({
@@ -91,6 +93,8 @@ export const GameSchema = z.object({
   themes: z.string().array().optional(),
   screenshots: z.string().array().optional(),
   artworks: z.string().array().optional(),
+  franchises: z.string().array().optional(),
+  videos: z.string().array().optional(),
   companies: CompanySchema.array().optional(),
   websites: z.string().array().optional(),
   first_release: z.number().optional(),

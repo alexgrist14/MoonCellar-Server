@@ -37,6 +37,10 @@ export class Game {
   screenshots: string[];
   @Prop()
   artworks: string[];
+  @Prop()
+  franchises: string[];
+  @Prop()
+  videos: string[];
   @Prop({ type: [Object] })
   companies: ICompanyField[];
   @Prop()

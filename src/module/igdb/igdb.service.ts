@@ -58,6 +58,10 @@ const SINGLE_GAME_QUERY_FIELDS = [
   "screenshots.url",
   "artworks.id",
   "artworks.url",
+  "franchises.id",
+  "franchises.name",
+  "videos.id",
+  "videos.video_id",
   "genres.id",
   "genres.name",
   "keywords.id",
@@ -101,6 +105,8 @@ interface IGDBExpandedGame {
   cover?: { id: number; url: string };
   screenshots?: { id: number; url: string }[];
   artworks?: { id: number; url: string }[];
+  franchises?: { id: number; name: string }[];
+  videos?: { id: number; video_id: string }[];
   genres?: { id: number; name: string }[];
   keywords?: { id: number; name: string }[];
   themes?: { id: number; name: string }[];
@@ -159,6 +165,8 @@ const UPDATABLE_GAME_FIELDS = [
   "themes",
   "companies",
   "websites",
+  "franchises",
+  "videos",
   "first_release",
   "release_dates",
   "platformIds",
@@ -330,7 +338,7 @@ export class IGDBService {
               : undefined,
           isCollectItems: false,
         },
-        parsingCallback: async (items) => {
+        parsingCallback: async (items, page) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
           }).select(
@@ -365,6 +373,10 @@ export class IGDBService {
             }
           );
 
+          this.logger.log(
+            `IGDB games backfill progress: page ${page.page}, processed ${processedCount}/${page.total}`
+          );
+
           if (!options?.skipCheckpoint) {
             checkpoint = getMaxUpdatedAt(items, checkpoint);
             await this.setGamesBackfillProgress(checkpoint);
@@ -375,6 +387,10 @@ export class IGDBService {
       if (!options?.skipCheckpoint) {
         await this.markGamesBackfillCompleted(checkpoint);
       }
+
+      this.logger.log(
+        `IGDB games backfill finished, processed ${processedCount} games`
+      );
 
       return {
         processedCount,
@@ -894,6 +910,10 @@ export class IGDBService {
         supporting: comp.supporting,
       })),
       websites: (igdbGame.websites || []).map((site) => site.url),
+      franchises: (igdbGame.franchises || []).map((franchise) => franchise.name),
+      videos: (igdbGame.videos || []).map(
+        (video) => `https://www.youtube.com/watch?v=${video.video_id}`
+      ),
       first_release: igdbGame.first_release_date,
       release_dates: (igdbGame.release_dates || []).map((date) => ({
         date: date.date,
@@ -926,6 +946,8 @@ export class IGDBService {
         cover: igdbGame.cover ? [igdbGame.cover.id] : [],
         screenshots: (igdbGame.screenshots || []).map((s) => s.id),
         artworks: (igdbGame.artworks || []).map((a) => a.id),
+        franchises: (igdbGame.franchises || []).map((f) => f.id),
+        videos: (igdbGame.videos || []).map((v) => v.id),
       },
       createdAt: existingGame?.createdAt || now,
       updatedAt: now,
