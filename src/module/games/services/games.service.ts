@@ -439,42 +439,36 @@ export class GamesService implements OnModuleInit {
 
   async parseFieldsToJson() {
     try {
-      const games = await this.Games.find().select(
-        "modes genres keywords themes companies type"
+      this.logger.log("Started parsing common fields to json");
+
+      const fieldsToParse: Record<string, string> = {
+        modes: "modes",
+        genres: "genres",
+        keywords: "keywords",
+        themes: "themes",
+        franchises: "franchises",
+        type: "type",
+        companies: "companies.name",
+      };
+
+      const entries = await Promise.all(
+        Object.entries(fieldsToParse).map(async ([key, field]) => {
+          const values = await this.Games.distinct(field);
+          return [key, values.filter(Boolean)] as const;
+        })
       );
 
-      const result = {};
+      const result = Object.fromEntries(entries);
 
-      for (const game of games) {
-        const fieldsToParse = [
-          "modes",
-          "genres",
-          "keywords",
-          "themes",
-          "companies",
-          "type",
-        ];
-
-        for (const field of fieldsToParse) {
-          const values =
-            typeof game[field] === "string" ? [game[field]] : game[field];
-          const parsedValues = values?.filter(
-            (value: string) => !result[field]?.includes(value)
-          );
-
-          if (parsedValues?.length && game[field]) {
-            !result[field]?.length
-              ? (result[field] = parsedValues)
-              : result[field].push(...parsedValues);
-          }
-        }
-      }
-
-      return this.fileService.uploadObject(
+      const uploaded = await this.fileService.uploadObject(
         JSON.stringify(result),
         "filters",
         "mooncellar-common"
       );
+
+      this.logger.log("Finished parsing common fields to json");
+
+      return uploaded;
     } catch (err) {
       this.logger.error(err, `Failed to parse fields to json`);
       throw err;
