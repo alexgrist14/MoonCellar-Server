@@ -23,6 +23,18 @@ const SEARCH_CANDIDATES_LIMIT = 1000;
 const SEARCH_SCORE_THRESHOLD = 0.1;
 const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
 
+const TRIM_IGDB_STAGE = {
+  $addFields: {
+    igdb: {
+      $cond: [
+        { $ifNull: ["$igdb", false] },
+        { gameId: "$igdb.gameId" },
+        "$$REMOVE",
+      ],
+    },
+  },
+};
+
 type SearchIndexEntry = { _id: mongoose.Types.ObjectId; name: string };
 
 @Injectable()
@@ -104,7 +116,9 @@ export class GamesService implements OnModuleInit {
 
   async getGameBySlug({ slug }: IGetGameBySlugRequest) {
     try {
-      const game = (await this.Games.aggregate([{ $match: { slug } }])).pop();
+      const game = (
+        await this.Games.aggregate([{ $match: { slug } }, TRIM_IGDB_STAGE])
+      ).pop();
 
       if (!game) throw new NotFoundException(`Game not found: ${slug}`);
 
@@ -117,7 +131,9 @@ export class GamesService implements OnModuleInit {
 
   async getGameById({ _id }: IGetGameByIdRequest) {
     try {
-      const game = (await this.Games.aggregate([{ $match: { _id } }])).pop();
+      const game = (
+        await this.Games.aggregate([{ $match: { _id } }, TRIM_IGDB_STAGE])
+      ).pop();
 
       if (!game) throw new NotFoundException(`Game not found: ${_id}`);
 
@@ -144,6 +160,7 @@ export class GamesService implements OnModuleInit {
             },
           },
         },
+        TRIM_IGDB_STAGE,
       ]);
     } catch (err) {
       this.logger.error(err, `Failed to get games by ids: ${dto._ids}`);
@@ -222,6 +239,7 @@ export class GamesService implements OnModuleInit {
             results: [
               ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
               ...(searchedIds ? [{ $unset: "searchRank" }] : []),
+              TRIM_IGDB_STAGE,
             ],
             totalCount: [{ $count: "count" }],
           },
@@ -306,6 +324,7 @@ export class GamesService implements OnModuleInit {
         {
           $sample: { size: 3 },
         },
+        TRIM_IGDB_STAGE,
       ]);
 
       return games;
@@ -327,6 +346,7 @@ export class GamesService implements OnModuleInit {
           },
         },
         { $sort: { "igdb.hypes": -1, first_release: 1 } },
+        TRIM_IGDB_STAGE,
         {
           $addFields: {
             _releaseDate: {
@@ -407,6 +427,7 @@ export class GamesService implements OnModuleInit {
         },
         { $sort: { first_release: -1 } },
         { $limit: 18 },
+        TRIM_IGDB_STAGE,
       ]);
 
       return games;

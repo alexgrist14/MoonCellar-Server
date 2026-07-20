@@ -151,6 +151,35 @@ export const gamesFilters = (
               },
             ]
           : []),
+        ...(!!selected?.franchises?.length
+          ? [
+              {
+                franchises:
+                  mode === "any"
+                    ? {
+                        $in: Array.isArray(selected.franchises)
+                          ? selected.franchises
+                          : [selected.franchises],
+                      }
+                    : {
+                        $all: Array.isArray(selected.franchises)
+                          ? selected.franchises
+                          : [selected.franchises],
+                      },
+              },
+            ]
+          : []),
+        ...(!!excluded?.franchises?.length
+          ? [
+              {
+                franchises: {
+                  $nin: Array.isArray(excluded.franchises)
+                    ? excluded.franchises
+                    : [excluded.franchises],
+                },
+              },
+            ]
+          : []),
         ...(!!selected?.genres?.length
           ? [
               {

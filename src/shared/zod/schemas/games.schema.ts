@@ -68,6 +68,7 @@ export const GameFiltersSchema = z.object({
   keywords: z.string().array().or(z.string().nullish()).optional(),
   themes: z.string().array().or(z.string().nullish()).optional(),
   types: z.string().array().or(z.string().nullish()).optional(),
+  franchises: z.string().array().or(z.string().nullish()).optional(),
 });
 
 export const ReleaseDateSchema = z.object({
