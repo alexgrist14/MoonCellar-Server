@@ -184,6 +184,13 @@ const ALL_UPDATABLE_GAME_FIELDS = [
   HYPES_FIELD,
 ] as const;
 
+const isFieldValueEmpty = (value: unknown) => {
+  if (value === undefined || value === null) return true;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "string") return value.length === 0;
+  return false;
+};
+
 const UPDATABLE_PLATFORM_FIELDS = [
   "name",
   "slug",
@@ -342,15 +349,28 @@ export class IGDBService {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
           }).select(
-            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures"
+            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures" +
+              (options?.field ? ` ${options.field}` : "")
           );
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
           );
 
+          const itemsToProcess =
+            options?.field && !options?.forceParse
+              ? items.filter((igdbGame) => {
+                  const existingGame = existingGamesByIgdbId.get(igdbGame.id);
+                  return !existingGame || isFieldValueEmpty(
+                    (existingGame as unknown as Record<string, unknown>)[
+                      options.field
+                    ]
+                  );
+                })
+              : items;
+
           await runWithConcurrency(
-            items,
+            itemsToProcess,
             options?.concurrency || DEFAULT_GAMES_SYNC_CONCURRENCY,
             async (igdbGame) => {
               try {

@@ -86,25 +86,53 @@ export class IgdbParserController {
     summary: "Backfill the full IGDB games catalog directly into games",
   })
   @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiQuery({ name: "limit", required: false })
-  @ApiQuery({ name: "delayMs", required: false })
-  @ApiQuery({ name: "concurrency", required: false })
+  @ApiQuery({
+    name: "limit",
+    default: 100,
+    required: false,
+    type: Number,
+    description: "Page size for each IGDB request batch",
+  })
+  @ApiQuery({
+    name: "delayMs",
+    default: 1000,
+    required: false,
+    type: Number,
+    description: "Delay in milliseconds between IGDB request batches",
+  })
+  @ApiQuery({
+    name: "concurrency",
+    default: 5,
+    required: false,
+    type: Number,
+    description: "Number of games upserted concurrently per batch",
+  })
   @ApiQuery({
     name: "parseImages",
     default: false,
     required: false,
     type: Boolean,
+    description:
+      "Download cover/screenshots/artworks and upload them to S3 while backfilling",
   })
-  @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "field",
+    required: false,
+    description:
+      "Update only this single field on existing games instead of a full upsert (e.g. franchises, videos, hypes, cover). The game must already exist; unknown fields are rejected",
+  })
   @ApiQuery({
     name: "forceParse",
     default: false,
     required: false,
     type: Boolean,
+    description:
+      "When field is set, also overwrite games where the field is already filled (by default only empty/missing values are backfilled). For image fields, also re-download images that are already present",
   })
   @ApiQuery({
     name: "releaseAfter",
     required: false,
+    type: Number,
     description:
       "Unix timestamp (seconds); only games with first_release_date after this are backfilled",
   })
