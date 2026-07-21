@@ -84,7 +84,7 @@ export const getImageLink = (
   multiply?: number
 ) => {
   return (
-    (url.includes("http") ? url : "https:") +
+    (url.includes("http") ? "" : "https:") +
     url.replace("thumb", !!multiply ? `${size}_${multiply}x` : size)
   );
 };

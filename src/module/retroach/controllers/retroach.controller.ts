@@ -40,4 +40,11 @@ export class RetroachievementsController {
   raUnrecognised() {
     return this.retroachievementsService.getUnrecognised();
   }
+
+  @Post("/awards/parse")
+  @ApiOperation({ summary: "Parse RA awards for all linked users" })
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  parseUsersAwards() {
+    return this.retroachievementsService.parseUsersAwards();
+  }
 }

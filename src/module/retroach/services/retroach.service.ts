@@ -7,9 +7,10 @@ import {
   GameList,
   getConsoleIds,
   getGameList,
+  getUserAwards,
 } from "@retroachievements/api";
 import mongoose, { Model } from "mongoose";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import { PinoLogger } from "nestjs-pino";
 import { updateOrInsertValues } from "src/shared/db";
 import { sleep } from "src/shared/utils";
@@ -21,11 +22,14 @@ import {
   Platform,
   PlatformDocument,
 } from "src/module/games/schemas/platform.schema";
+import { User } from "src/module/user/schemas/user.schema";
 import { RA_MAIN_USER_NAME } from "src/shared/constants";
 import { RAConsole } from "../schemas/console.schema";
 import { RAGame } from "../schemas/retroach.schema";
 import {
+  RA_AWARDS_FETCH_DELAY_MS,
   RA_GAMES_FETCH_DELAY_MS,
+  RA_SYNC_CRON,
   RA_SYNC_CRON_OPTIONS,
 } from "../constants/sync";
 import {
@@ -47,6 +51,8 @@ export class RetroachievementsService {
     private games: Model<GameDocument>,
     @InjectModel(Platform.name)
     private platforms: Model<PlatformDocument>,
+    @InjectModel(User.name)
+    private users: Model<User>,
     private readonly logger: PinoLogger,
     private readonly metrics: BusinessMetricsService
   ) {
@@ -277,7 +283,7 @@ export class RetroachievementsService {
     }
   }
 
-  @Cron(CronExpression.EVERY_WEEK, RA_SYNC_CRON_OPTIONS)
+  @Cron(RA_SYNC_CRON, RA_SYNC_CRON_OPTIONS)
   async syncCron() {
     return runInCronLogContext(this.logger, "ra-sync", () =>
       this.metrics.trackSync("ra-sync", () => this.runSyncCron())
@@ -296,6 +302,7 @@ export class RetroachievementsService {
       await this.parse("both");
       await this.matchConsolesToPlatforms();
       const result = await this.parseRAGames();
+      await this.parseUsersAwards();
 
       this.logger.info("RA sync cron finished");
       return result;
@@ -308,4 +315,41 @@ export class RetroachievementsService {
   }
 
   async getUnrecognised() {}
+
+  async parseUsersAwards() {
+    try {
+      const authorization = this.buildAuth();
+      const users = await this.users.find({
+        raUsername: { $exists: true, $ne: null },
+      });
+
+      let updated = 0;
+
+      for (const user of users) {
+        try {
+          const userAwards = await getUserAwards(authorization, {
+            username: user.raUsername,
+          });
+
+          user.raAwards = userAwards.visibleUserAwards;
+          await user.save();
+          updated++;
+        } catch (err) {
+          this.logger.error(
+            err,
+            `Failed to parse RA awards for user: ${user.raUsername}`
+          );
+        }
+
+        await sleep(RA_AWARDS_FETCH_DELAY_MS);
+      }
+
+      this.logger.info(`Parsed RA awards for ${updated}/${users.length} users`);
+
+      return `Parsed RA awards for ${updated}/${users.length} users`;
+    } catch (err) {
+      this.logger.error(err, "Failed to parse RA awards for all users");
+      throw err;
+    }
+  }
 }

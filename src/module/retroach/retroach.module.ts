@@ -9,6 +9,7 @@ import {
   Platform,
   PlatformDatabaseSchema,
 } from "../games/schemas/platform.schema";
+import { User, UserSchema } from "../user/schemas/user.schema";
 import { MetricsModule } from "../metrics/metrics.module";
 
 @Module({
@@ -23,6 +24,7 @@ import { MetricsModule } from "../metrics/metrics.module";
     MongooseModule.forFeature([
       { name: Platform.name, schema: PlatformDatabaseSchema },
     ]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MetricsModule,
   ],
 
