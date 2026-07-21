@@ -10,7 +10,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { RetroachievementsModule } from "./module/retroach/retroach.module";
 import { GamesModule } from "./module/games/games.module";
 import { APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
-import { ZodValidationPipe } from "@anatine/zod-nestjs";
+import { ZodValidationPipe } from "nestjs-zod";
 import { AdminModule } from "./module/admin/admin.module";
 import { FaroModule } from "./module/faro/faro.module";
 import { LoggerModule } from "nestjs-pino";

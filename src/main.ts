@@ -6,14 +6,12 @@ import { ValidationPipe } from "@nestjs/common";
 import * as cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { rootDir } from "./shared/constants";
-import { patchNestjsSwagger } from "@anatine/zod-nestjs";
+import { cleanupOpenApiDoc } from "nestjs-zod";
 import { Logger } from "nestjs-pino";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set("trust proxy", true);
-
-  patchNestjsSwagger();
 
   app.useStaticAssets(`${rootDir}/uploads/photos`);
   app.use(cookieParser());
@@ -35,7 +33,7 @@ async function bootstrap() {
     .addCookieAuth("accessMoonToken")
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));
 
   SwaggerModule.setup("api", app, document, {
     swaggerOptions: {

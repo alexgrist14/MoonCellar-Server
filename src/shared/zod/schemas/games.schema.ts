@@ -188,7 +188,7 @@ export const GetGamesRequestSchema = z.object({
           ? false
           : Boolean(val)
     )
-    .describe("Return only games with a non-empty retroachievements array")
+    .describe("Return only games that have retroachievements")
     .optional(),
   page: z.coerce.number().min(1).describe("Page number").default(1).optional(),
   selected: GameFiltersSchema.describe(
