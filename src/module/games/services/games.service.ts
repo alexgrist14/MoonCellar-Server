@@ -20,7 +20,7 @@ import { gamesFilters } from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
-const SEARCH_SCORE_THRESHOLD = 0.1;
+const SEARCH_SCORE_THRESHOLD = 0.3;
 const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
 
 const SORT_FIELD_MAP: Record<string, string> = {
@@ -229,10 +229,11 @@ export class GamesService implements OnModuleInit {
 
       const sortField = sortBy ? SORT_FIELD_MAP[sortBy] : "igdb.total_rating_count";
       const sortDirection = sortOrder === "asc" ? 1 : -1;
+      const useSearchRank = Boolean(searchedIds) && !sortBy;
 
       const games = await this.Games.aggregate([
         gamesFilters(baseFilters, searchedIds),
-        ...(searchedIds
+        ...(useSearchRank
           ? [
               {
                 $addFields: {
@@ -252,7 +253,7 @@ export class GamesService implements OnModuleInit {
           $facet: {
             results: [
               ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
-              ...(searchedIds ? [{ $unset: "searchRank" }] : []),
+              ...(useSearchRank ? [{ $unset: "searchRank" }] : []),
               TRIM_IGDB_STAGE,
             ],
             totalCount: [{ $count: "count" }],
