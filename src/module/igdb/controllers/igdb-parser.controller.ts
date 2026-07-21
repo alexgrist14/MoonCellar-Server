@@ -15,6 +15,9 @@ import {
 } from "@nestjs/swagger";
 import { IGDBService } from "../igdb.service";
 import { AuthGuard } from "@nestjs/passport";
+import { RolesEnum } from "src/shared/zod/schemas/role.schema";
+import { RolesGuard } from "../../roles/roles.guard";
+import { Roles } from "../../roles/roles.decorator";
 
 @ApiTags("IGDB")
 @Controller("igdb")
@@ -22,16 +25,25 @@ export class IgdbParserController {
   constructor(private readonly service: IGDBService) {}
 
   @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
   @Post("/platforms/parse")
   @ApiOperation({ summary: "Parse platforms directly from IGDB" })
   @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "field",
+    required: false,
+    description:
+      "Update only this single field on existing platforms instead of a full upsert",
+  })
   async parsePlatforms(@Query("field") field?: string) {
     return this.service.parsePlatformsFromIgdb({ field });
   }
 
   @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
   @Post("/games/parse")
   @ApiOperation({
@@ -39,20 +51,37 @@ export class IgdbParserController {
       "Parse a game directly from IGDB by IGDB id or slug (creates it if not present yet)",
   })
   @ApiResponse({ status: 200, description: "Successfully parsed" })
-  @ApiQuery({ name: "igdbId", required: false })
-  @ApiQuery({ name: "slug", required: false })
+  @ApiQuery({
+    name: "igdbId",
+    required: false,
+    description: "IGDB id of the game to parse",
+  })
+  @ApiQuery({
+    name: "slug",
+    required: false,
+    description: "IGDB slug of the game to parse",
+  })
   @ApiQuery({
     name: "parseImages",
     default: true,
     required: false,
     type: Boolean,
+    description:
+      "Download cover/screenshots/artworks and upload them to S3 while parsing",
   })
-  @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "field",
+    required: false,
+    description:
+      "Update only this single field on the game instead of a full upsert (e.g. franchises, videos, hypes, cover). The game must already exist; unknown fields are rejected",
+  })
   @ApiQuery({
     name: "forceParse",
     default: false,
     required: false,
     type: Boolean,
+    description:
+      "When field is set, also overwrite the field if it is already filled. For image fields, also re-download images that are already present",
   })
   async parseGame(
     @Query("igdbId") igdbIdQuery?: string,
@@ -80,6 +109,8 @@ export class IgdbParserController {
   }
 
   @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
   @Post("/games/backfill")
   @ApiOperation({
@@ -171,6 +202,8 @@ export class IgdbParserController {
   }
 
   @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
   @Post("/games/sync")
   @ApiOperation({
@@ -178,21 +211,48 @@ export class IgdbParserController {
       "Sync changed IGDB games directly into games, bypassing the local IGDB mirror",
   })
   @ApiResponse({ status: 200, description: "Successfully started" })
-  @ApiQuery({ name: "limit", required: false })
-  @ApiQuery({ name: "delayMs", required: false })
-  @ApiQuery({ name: "concurrency", required: false })
+  @ApiQuery({
+    name: "limit",
+    default: 100,
+    required: false,
+    type: Number,
+    description: "Page size for each IGDB request batch",
+  })
+  @ApiQuery({
+    name: "delayMs",
+    default: 1000,
+    required: false,
+    type: Number,
+    description: "Delay in milliseconds between IGDB request batches",
+  })
+  @ApiQuery({
+    name: "concurrency",
+    default: 5,
+    required: false,
+    type: Number,
+    description: "Number of games upserted concurrently per batch",
+  })
   @ApiQuery({
     name: "parseImages",
     default: true,
     required: false,
     type: Boolean,
+    description:
+      "Download cover/screenshots/artworks and upload them to S3 while syncing",
   })
-  @ApiQuery({ name: "field", required: false })
+  @ApiQuery({
+    name: "field",
+    required: false,
+    description:
+      "Update only this single field on existing games instead of a full upsert (e.g. franchises, videos, hypes, cover). The game must already exist; unknown fields are rejected",
+  })
   @ApiQuery({
     name: "forceParse",
     default: false,
     required: false,
     type: Boolean,
+    description:
+      "When field is set, also overwrite games where the field is already filled (by default only empty/missing values are synced). For image fields, also re-download images that are already present",
   })
   async syncGames(
     @Query("limit") limitQuery?: string,
@@ -214,6 +274,8 @@ export class IgdbParserController {
   }
 
   @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
   @Get("/token")
   @ApiOperation({ summary: "Get IGDB token" })
