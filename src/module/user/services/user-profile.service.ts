@@ -9,6 +9,7 @@ import * as bcrypt from "bcryptjs";
 import { Query as ExpressQuery } from "express-serve-static-core";
 import mongoose, { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
+import { mimeToExt } from "src/shared/constants";
 import {
   IGetUserByStringRequest,
   IUpdateUserDescriptionRequest,
@@ -127,12 +128,13 @@ export class UserProfileService {
     try {
       const user = await this.userModel.findById(userId);
       const avatarId = new mongoose.Types.ObjectId().toString();
+      const ext = mimeToExt[file.mimetype];
 
       if (!user) throw new NotFoundException("User not found");
 
       await this.fileService.uploadFile(file, avatarId, "mooncellar-avatars");
 
-      user.avatar = `https://mooncellar-avatars.s3.regru.cloud/${avatarId}`;
+      user.avatar = `https://mooncellar-avatars.s3.regru.cloud/${avatarId}${ext ? `.${ext}` : ""}`;
 
       return user.save();
     } catch (err) {
@@ -147,9 +149,9 @@ export class UserProfileService {
   ): Promise<User> {
     try {
       const user = await this.userModel.findById(userId);
-      const backgroundId =
-        file.originalname + "." + new mongoose.Types.ObjectId().toString();
-      console.log(file);
+      const backgroundId = new mongoose.Types.ObjectId().toString();
+      const ext = mimeToExt[file.mimetype];
+
       if (!user) throw new NotFoundException("User not found");
 
       await this.fileService.uploadFile(
@@ -158,7 +160,7 @@ export class UserProfileService {
         "mooncellar-backgrounds"
       );
 
-      user.background = `https://mooncellar-backgrounds.s3.regru.cloud/${backgroundId}`;
+      user.background = `https://mooncellar-backgrounds.s3.regru.cloud/${backgroundId}${ext ? `.${ext}` : ""}`;
 
       return user.save();
     } catch (err) {
