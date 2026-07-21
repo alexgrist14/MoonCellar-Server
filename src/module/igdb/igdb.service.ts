@@ -332,6 +332,17 @@ export class IGDBService {
         await this.markGamesBackfillStarted();
       }
 
+      let alreadyFilledCount = 0;
+      if (options?.field && !options?.forceParse) {
+        const filledFilter: mongoose.FilterQuery<GameDocument> = {
+          [options.field]: { $nin: [null, "", []] },
+        };
+        if (typeof options?.releaseAfter === "number") {
+          filledFilter.first_release = { $gt: options.releaseAfter };
+        }
+        alreadyFilledCount = await this.Games.countDocuments(filledFilter);
+      }
+
       await igdbParser<IGDBExpandedGame>({
         token,
         action: "games",
@@ -394,8 +405,9 @@ export class IGDBService {
             }
           );
 
+          const remainingTotal = Math.max(page.total - alreadyFilledCount, 0);
           this.logger.log(
-            `IGDB games backfill progress: page ${page.page}, processed ${processedCount}/${page.total}`
+            `IGDB games backfill progress: page ${page.page}, processed ${processedCount}/${remainingTotal}`
           );
 
           if (!options?.skipCheckpoint) {
