@@ -12,6 +12,7 @@ import {
   Playthrough,
   PlaythroughDatabaseSchema,
 } from "../games/schemas/playthroughs.schema";
+import { Game, GameDatabaseSchema } from "../games/schemas/game.schema";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import {
       { name: UserLogs.name, schema: UserLogsSchema },
       { name: Rating.name, schema: UserRatingsDatabaseSchema },
       { name: Playthrough.name, schema: PlaythroughDatabaseSchema },
+      { name: Game.name, schema: GameDatabaseSchema },
     ]),
   ],
   controllers: [AdminController],

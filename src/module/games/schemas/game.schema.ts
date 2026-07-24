@@ -62,6 +62,8 @@ export class Game {
   @Prop({ default: false })
   isStopParsingPictures: boolean;
   @Prop({ default: false })
+  isStopParsing: boolean;
+  @Prop({ default: false })
   isCustom: boolean;
   @Prop({ type: Object })
   igdb: IGDBField;

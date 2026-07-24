@@ -5,6 +5,7 @@ import { User } from "../user/schemas/user.schema";
 import { UserLogs } from "../user/schemas/user-logs.schema";
 import { Rating } from "../user/schemas/user-ratings.schema";
 import { Playthrough } from "../games/schemas/playthroughs.schema";
+import { Game, GameDocument } from "../games/schemas/game.schema";
 import type { IRole } from "src/shared/zod/schemas/role.schema";
 
 @Injectable()
@@ -14,7 +15,8 @@ export class AdminService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(UserLogs.name) private userLogsModel: Model<UserLogs>,
     @InjectModel(Rating.name) private ratingModel: Model<Rating>,
-    @InjectModel(Playthrough.name) private playthroughModel: Model<Playthrough>
+    @InjectModel(Playthrough.name) private playthroughModel: Model<Playthrough>,
+    @InjectModel(Game.name) private Games: Model<GameDocument>
   ) {}
 
   async getAllUsers() {
@@ -109,5 +111,13 @@ export class AdminService {
       this.logger.error(error, `Error deleting user ${userId}`);
       throw error;
     }
+  }
+
+  async getGameById(gameId: string) {
+    const game = await this.Games.findById(gameId).lean();
+
+    if (!game) throw new NotFoundException(`Game not found: ${gameId}`);
+
+    return game;
   }
 }

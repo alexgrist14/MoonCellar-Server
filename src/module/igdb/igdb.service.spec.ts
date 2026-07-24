@@ -18,3 +18,62 @@ describe("IGDBService cron configuration", () => {
     expect(IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY).toBe(2);
   });
 });
+
+import { IGDBService } from "./igdb.service";
+
+const createService = () => {
+  const updateOne = jest.fn().mockResolvedValue({});
+  const games = { updateOne, find: jest.fn(), findOne: jest.fn() };
+  const platforms = { find: jest.fn().mockReturnValue({ select: jest.fn().mockResolvedValue([]) }) };
+  const service = new IGDBService(
+    {} as never,
+    games as never,
+    platforms as never,
+    {} as never,
+    {} as never,
+    {} as never,
+    {} as never
+  );
+  return { service, updateOne, platforms };
+};
+
+const igdbGame = { id: 1234, slug: "doom", name: "Doom" } as never;
+
+describe("IGDBService isStopParsing guard", () => {
+  it("skips a game flagged with isStopParsing and writes nothing", async () => {
+    const { service, updateOne, platforms } = createService();
+
+    const result = await service["upsertGameFromIgdb"](igdbGame, {
+      slug: "doom",
+      isStopParsing: true,
+    } as never);
+
+    expect(result).toBe("doom skipped");
+    expect(updateOne).not.toHaveBeenCalled();
+    expect(platforms.find).not.toHaveBeenCalled();
+  });
+
+  it("skips the single-field image path too", async () => {
+    const { service, updateOne } = createService();
+
+    const result = await service["upsertGameFromIgdb"](
+      igdbGame,
+      { slug: "doom", isStopParsing: true } as never,
+      { field: "cover" }
+    );
+
+    expect(result).toBe("doom skipped");
+    expect(updateOne).not.toHaveBeenCalled();
+  });
+
+  it("writes normally when the flag is absent", async () => {
+    const { service, updateOne } = createService();
+
+    await service["upsertGameFromIgdb"](igdbGame, {
+      slug: "doom",
+      isStopParsing: false,
+    } as never);
+
+    expect(updateOne).toHaveBeenCalledTimes(1);
+  });
+});

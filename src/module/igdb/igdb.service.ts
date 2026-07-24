@@ -361,7 +361,7 @@ export class IGDBService {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
           }).select(
-            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures" +
+            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing" +
               (options?.field ? ` ${options.field}` : "")
           );
 
@@ -471,7 +471,7 @@ export class IGDBService {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
           }).select(
-            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures"
+            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing"
           );
 
           const existingGamesByIgdbId = new Map(
@@ -749,7 +749,7 @@ export class IGDBService {
     const existingGame = await this.Games.findOne({
       "igdb.gameId": igdbGame.id,
     }).select(
-      "_id slug type createdAt cover screenshots artworks isStopParsingPictures"
+      "_id slug type createdAt cover screenshots artworks isStopParsingPictures isStopParsing"
     );
 
     return this.upsertGameFromIgdb(igdbGame, existingGame, {
@@ -859,9 +859,15 @@ export class IGDBService {
       | "screenshots"
       | "artworks"
       | "isStopParsingPictures"
+      | "isStopParsing"
     >,
     options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
   ) {
+    if (existingGame?.isStopParsing) {
+      this.logger.log(`Skipped game with isStopParsing: ${existingGame.slug}`);
+      return existingGame.slug + " skipped";
+    }
+
     if (
       options?.field &&
       !ALL_UPDATABLE_GAME_FIELDS.includes(

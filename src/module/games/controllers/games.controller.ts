@@ -37,6 +37,9 @@ import {
 } from "src/shared/zod/dto/games.dto";
 import { GamesService } from "../services/games.service";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { RolesGuard } from "../../roles/roles.guard";
+import { Roles } from "../../roles/roles.decorator";
+import { RolesEnum } from "src/shared/zod/schemas/role.schema";
 
 @ApiTags("Games")
 @Controller("games")
@@ -129,7 +132,8 @@ export class GamesController {
   @ApiOperation({ summary: "Add game" })
   @ApiCreatedResponse({ type: GameResponseDto })
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @HttpCode(HttpStatus.OK)
   async addGame(@Body() dto: AddGameDto) {
     return this.games.addGame(dto);
@@ -139,7 +143,8 @@ export class GamesController {
   @ApiOperation({ summary: "Update game" })
   @ApiCreatedResponse({ type: GameResponseDto })
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @HttpCode(HttpStatus.OK)
   async updateGame(@Param("id") id: string, @Body() dto: UpdateGameDto) {
     return this.games.updateGame(new mongoose.Types.ObjectId(id), dto);
@@ -149,7 +154,8 @@ export class GamesController {
   @ApiOperation({ summary: "Delete game" })
   @ApiCreatedResponse({ type: GameResponseDto })
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @HttpCode(HttpStatus.OK)
   async deleteGame(@Param("id") id: string) {
     return this.games.deleteGame(new mongoose.Types.ObjectId(id));
@@ -165,7 +171,8 @@ export class GamesController {
   @ApiOperation({ summary: "Upload image" })
   @ApiCreatedResponse({ type: String })
   @ApiCookieAuth()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles(RolesEnum.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file"))

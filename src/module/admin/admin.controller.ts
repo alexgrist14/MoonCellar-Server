@@ -32,6 +32,11 @@ export class AdminController {
     return this.adminService.getUserById(userId);
   }
 
+  @Get("games/:gameId")
+  async getGameById(@Param("gameId") gameId: string) {
+    return this.adminService.getGameById(gameId);
+  }
+
   @Patch("users/:userId/role/:role")
   async addUserRole(
     @Param("userId") userId: string,
