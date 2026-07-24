@@ -231,8 +231,11 @@ export class GamesService implements OnModuleInit {
       const sortDirection = sortOrder === "asc" ? 1 : -1;
       const useSearchRank = Boolean(searchedIds) && !sortBy;
 
-      const games = await this.Games.aggregate([
-        gamesFilters(baseFilters, searchedIds),
+      const matchStage = gamesFilters(baseFilters, searchedIds);
+      const matchFilter = matchStage.$match;
+
+      const results = await this.Games.aggregate([
+        matchStage,
         ...(useSearchRank
           ? [
               {
@@ -249,32 +252,18 @@ export class GamesService implements OnModuleInit {
                 },
               },
             ]),
-        {
-          $facet: {
-            results: [
-              ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
-              ...(useSearchRank ? [{ $unset: "searchRank" }] : []),
-              TRIM_IGDB_STAGE,
-            ],
-            totalCount: [{ $count: "count" }],
-          },
-        },
-        {
-          $addFields: {
-            total: {
-              $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
-            },
-          },
-        },
-        {
-          $project: {
-            results: 1,
-            total: 1,
-          },
-        },
+        ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
+        ...(useSearchRank ? [{ $unset: "searchRank" }] : []),
+        TRIM_IGDB_STAGE,
       ]);
 
-      return games.pop();
+      const total = searchedIds
+        ? searchedIds.length
+        : Object.keys(matchFilter).length === 0
+          ? await this.Games.estimatedDocumentCount()
+          : await this.Games.countDocuments(matchFilter);
+
+      return { results, total };
     } catch (err) {
       this.logger.error(err, `Failed to get games`);
       throw err;

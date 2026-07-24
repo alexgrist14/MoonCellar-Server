@@ -31,10 +31,7 @@ export const gamesFilters = (
     votes,
   } = filters;
 
-  return {
-    $match: {
-      $and: [
-        { _id: { $exists: true } },
+  const conditions = [
         ...(isOnlyWithAchievements === true
           ? [
               {
@@ -288,7 +285,9 @@ export const gamesFilters = (
               },
             ]
           : []),
-      ],
-    },
+  ];
+
+  return {
+    $match: conditions.length ? { $and: conditions } : {},
   };
 };
