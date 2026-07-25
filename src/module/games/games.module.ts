@@ -19,6 +19,11 @@ import { GamesService } from "./services/games.service";
 import { HltbService } from "./services/hltb.service";
 import { HltbController } from "./controllers/hltb.controller";
 import { MetricsModule } from "../metrics/metrics.module";
+import { User, UserSchema } from "../user/schemas/user.schema";
+import {
+  Rating,
+  UserRatingsDatabaseSchema,
+} from "../user/schemas/user-ratings.schema";
 
 @Module({
   controllers: [
@@ -41,6 +46,8 @@ import { MetricsModule } from "../metrics/metrics.module";
       { name: Platform.name, schema: PlatformDatabaseSchema },
       { name: Playthrough.name, schema: PlaythroughDatabaseSchema },
       { name: UserLogs.name, schema: UserLogsSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Rating.name, schema: UserRatingsDatabaseSchema },
     ]),
     MetricsModule,
   ],

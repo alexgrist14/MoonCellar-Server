@@ -15,9 +15,20 @@ import {
   IGetGamesRequest,
   IUpdateGameRequest,
 } from "src/shared/zod/schemas/games.schema";
+import {
+  IGetGameFollowingsStatusRequest,
+  IGetGameFollowingsStatusResponse,
+} from "src/shared/zod/schemas/game-followings-status.schema";
 import { Game, GameDocument } from "../schemas/game.schema";
+import {
+  IPlaythroughDocument,
+  Playthrough,
+} from "../schemas/playthroughs.schema";
 import { gamesFilters } from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
+import { User } from "src/module/user/schemas/user.schema";
+import { Rating } from "src/module/user/schemas/user-ratings.schema";
+import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
 const SEARCH_SCORE_THRESHOLD = 0.3;
@@ -56,6 +67,12 @@ export class GamesService implements OnModuleInit {
   constructor(
     @InjectModel(Game.name)
     private Games: Model<GameDocument>,
+    @InjectModel(User.name)
+    private users: Model<User>,
+    @InjectModel(Playthrough.name)
+    private playthroughs: Model<IPlaythroughDocument>,
+    @InjectModel(Rating.name)
+    private ratings: Model<Rating>,
     private fileService: FileService
   ) {}
 
@@ -513,5 +530,74 @@ export class GamesService implements OnModuleInit {
       this.logger.error(err, `Failed to get total games count by genre`);
       throw err;
     }
+  }
+
+  async getFollowingsStatus(
+    gameId: string,
+    { userId }: IGetGameFollowingsStatusRequest
+  ): Promise<IGetGameFollowingsStatusResponse> {
+    const viewer = await this.users.findById(userId).select("followings").lean();
+    if (!viewer?.followings?.length) return [];
+
+    const followingIds = viewer.followings.map(
+      (id) => new mongoose.Types.ObjectId(String(id))
+    );
+    const gameObjectId = new mongoose.Types.ObjectId(gameId);
+
+    const [plays, ratings, followingUsers] = await Promise.all([
+      this.playthroughs
+        .find({
+          gameId: gameObjectId,
+          userId: { $in: followingIds },
+        })
+        .select("userId category isMastered")
+        .lean(),
+      this.ratings
+        .find({
+          gameId: gameObjectId,
+          userId: { $in: followingIds },
+        })
+        .select("userId rating")
+        .lean(),
+      this.users
+        .find({ _id: { $in: followingIds } })
+        .select("_id userName avatar")
+        .lean(),
+    ]);
+
+    const usersById = new Map(
+      followingUsers.map((user) => [String(user._id), user])
+    );
+    const ratingByUserId = new Map(
+      ratings.map((rating) => [String(rating.userId), rating.rating ?? null])
+    );
+
+    const playsByUserId = new Map<string, typeof plays>();
+    for (const play of plays) {
+      const key = String(play.userId);
+      const list = playsByUserId.get(key) || [];
+      list.push(play);
+      playsByUserId.set(key, list);
+    }
+
+    const result: IGetGameFollowingsStatusResponse = [];
+
+    for (const [followingUserId, userPlays] of playsByUserId) {
+      const picked = pickFollowingsStatus(userPlays);
+      const user = usersById.get(followingUserId);
+      if (!picked || !user) continue;
+
+      result.push({
+        userId: followingUserId,
+        userName: user.userName,
+        avatar: user.avatar || "",
+        category: picked.category,
+        count: picked.count,
+        rating: ratingByUserId.get(followingUserId) ?? null,
+      });
+    }
+
+    result.sort((a, b) => a.userName.localeCompare(b.userName));
+    return result;
   }
 }

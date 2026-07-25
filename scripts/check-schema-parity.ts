@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const SCHEMA_FILES = [
   "files.schema.ts",
+  "game-followings-status.schema.ts",
   "games.schema.ts",
   "platforms.schema.ts",
   "playthroughs.schema.ts",

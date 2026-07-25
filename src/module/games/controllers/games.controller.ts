@@ -35,16 +35,33 @@ import {
   GetGamesResponseDto,
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
+import {
+  GetGameFollowingsStatusRequestDto,
+  GetGameFollowingsStatusResponseDto,
+} from "src/shared/zod/dto/game-followings-status.dto";
 import { GamesService } from "../services/games.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { RolesGuard } from "../../roles/roles.guard";
 import { Roles } from "../../roles/roles.decorator";
 import { RolesEnum } from "src/shared/zod/schemas/role.schema";
+import { UserIdGuard } from "src/module/auth/user.guard";
 
 @ApiTags("Games")
 @Controller("games")
 export class GamesController {
   constructor(private readonly games: GamesService) {}
+
+  @Get("/:gameId/followings-status")
+  @ApiCookieAuth()
+  @UseGuards(AuthGuard("jwt"), UserIdGuard)
+  @ApiOperation({ summary: "Get followings status for a game" })
+  @ApiCreatedResponse({ type: GetGameFollowingsStatusResponseDto })
+  async getFollowingsStatus(
+    @Param("gameId") gameId: string,
+    @Query() dto: GetGameFollowingsStatusRequestDto
+  ) {
+    return this.games.getFollowingsStatus(gameId, dto);
+  }
 
   @Get("/by-id/:id")
   @ApiOperation({ summary: "Get games" })
