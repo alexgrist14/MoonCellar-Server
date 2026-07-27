@@ -57,7 +57,7 @@ export class FileService {
           Bucket: bucketName,
           Key: key + `.${ext}`,
           Body: file.buffer,
-          ContentType: file.mimetype,
+          ContentType: file.mimetype || mimetype,
           ACL: isPrivate ? "private" : "public-read",
         })
       );
