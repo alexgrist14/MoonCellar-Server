@@ -263,7 +263,9 @@ export class GamesService implements OnModuleInit {
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
       const isCombinedRatingSort = sortBy === "rating";
-      const sortField = sortBy ? SORT_FIELD_MAP[sortBy] : "igdb.total_rating_count";
+      const sortField = sortBy
+        ? SORT_FIELD_MAP[sortBy]
+        : "igdb.total_rating_count";
       const sortDirection = sortOrder === "asc" ? 1 : -1;
       const useSearchRank = Boolean(searchedIds) && !sortBy;
 
@@ -466,6 +468,20 @@ export class GamesService implements OnModuleInit {
     }
   }
 
+  async getAllSlugs() {
+    try {
+      return (
+        await this.Games.find()
+          .select("slug")
+          .sort({ ["igdb.total_rating_count"]: -1 })
+          .limit(49000)
+      ).map((game) => game.slug);
+    } catch (err) {
+      this.logger.error(err, `Failed to get all game slugs`);
+      throw err;
+    }
+  }
+
   async getRecentReleases() {
     try {
       const nowSeconds = Math.floor(Date.now() / 1000);
@@ -568,7 +584,10 @@ export class GamesService implements OnModuleInit {
     gameId: string,
     { userId }: IGetGameFollowingsStatusRequest
   ): Promise<IGetGameFollowingsStatusResponse> {
-    const viewer = await this.users.findById(userId).select("followings").lean();
+    const viewer = await this.users
+      .findById(userId)
+      .select("followings")
+      .lean();
     if (!viewer?.followings?.length) return [];
 
     const followingIds = viewer.followings.map(

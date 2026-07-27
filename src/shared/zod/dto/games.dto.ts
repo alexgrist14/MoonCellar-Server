@@ -6,6 +6,7 @@ import {
   GetGameBySlugSchema,
   GetGamesByIdsSchema,
   GetGamesRequestSchema,
+  GetGameSlugsResponseSchema,
   UpdateGameRequestSchema,
 } from "../schemas/games.schema";
 
@@ -19,3 +20,6 @@ export class UpdateGameDto extends createZodDto(UpdateGameRequestSchema) {}
 export class GameResponseDto extends createZodDto(GameSchema) {}
 export class GetGameResponseDto extends createZodDto(GameSchema) {}
 export class GetGamesResponseDto extends createZodDto(GameSchema.array()) {}
+export class GetGameSlugsResponseDto extends createZodDto(
+  GetGameSlugsResponseSchema
+) {}

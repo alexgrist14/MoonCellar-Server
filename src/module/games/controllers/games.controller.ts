@@ -33,6 +33,7 @@ import {
   GetGamesByIdsDto,
   GetGamesDto,
   GetGamesResponseDto,
+  GetGameSlugsResponseDto,
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
 import {
@@ -129,6 +130,13 @@ export class GamesController {
   })
   async getUpcomingReleases() {
     return this.games.getUpcomingReleases();
+  }
+
+  @Get("/slugs")
+  @ApiOperation({ summary: "Get slugs of all games" })
+  @ApiCreatedResponse({ type: GetGameSlugsResponseDto })
+  async getAllSlugs() {
+    return this.games.getAllSlugs();
   }
 
   @Get("/recent")
