@@ -7,7 +7,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import { User } from "src/module/user/schemas/user.schema";
-import { followersLookup } from "src/shared/utils";
+import { followListLookup } from "src/shared/utils";
 
 @Injectable()
 export class UserFollowingsService {
@@ -21,13 +21,14 @@ export class UserFollowingsService {
       throw new ConflictException(`User already in following list`);
     try {
       user.followings.push(new mongoose.Types.ObjectId(followingId));
-      await user.save();
+      followingUser.followers.push(new mongoose.Types.ObjectId(userId));
+      await Promise.all([user.save(), followingUser.save()]);
       return (
         await this.userModel.aggregate([
           {
             $match: { _id: new mongoose.Types.ObjectId(userId) },
           },
-          ...followersLookup(),
+          ...followListLookup("followings"),
         ])
       ).pop();
     } catch (err) {
@@ -44,13 +45,16 @@ export class UserFollowingsService {
       user.followings = user.followings.filter(
         (user) => user.toString() !== followingId
       );
-      await user.save();
+      followingUser.followers = followingUser.followers.filter(
+        (follower) => follower.toString() !== userId
+      );
+      await Promise.all([user.save(), followingUser.save()]);
       return (
         await this.userModel.aggregate([
           {
             $match: { _id: new mongoose.Types.ObjectId(userId) },
           },
-          ...followersLookup(),
+          ...followListLookup("followings"),
         ])
       ).pop();
     } catch (err) {
@@ -68,7 +72,7 @@ export class UserFollowingsService {
           {
             $match: { _id: new mongoose.Types.ObjectId(userId) },
           },
-          ...followersLookup(),
+          ...followListLookup("followings"),
         ])
       ).pop();
       if (!result) {
@@ -78,6 +82,58 @@ export class UserFollowingsService {
       return result;
     } catch (err) {
       this.logger.error(err, `Failed to get user followings: ${userId}`);
+      throw err;
+    }
+  }
+
+  async recalculateAllFollowers() {
+    try {
+      const followerLists = await this.userModel.aggregate([
+        { $unwind: "$followings" },
+        { $group: { _id: "$followings", followers: { $push: "$_id" } } },
+      ]);
+
+      await this.userModel.updateMany({}, { $set: { followers: [] } });
+
+      if (followerLists.length) {
+        await this.userModel.bulkWrite(
+          followerLists.map(({ _id, followers }) => ({
+            updateOne: {
+              filter: { _id },
+              update: { $set: { followers } },
+            },
+          }))
+        );
+      }
+
+      this.logger.log(`Recalculated followers for ${followerLists.length} users`);
+
+      return { recalculatedUsers: followerLists.length };
+    } catch (err) {
+      this.logger.error(err, "Failed to recalculate followers");
+      throw err;
+    }
+  }
+
+  async getUserFollowers(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException("User not found");
+    try {
+      const result = (
+        await this.userModel.aggregate([
+          {
+            $match: { _id: new mongoose.Types.ObjectId(userId) },
+          },
+          ...followListLookup("followers"),
+        ])
+      ).pop();
+      if (!result) {
+        this.logger.warn(`No followers found for user: ${userId}`);
+        return { followers: [] };
+      }
+      return result;
+    } catch (err) {
+      this.logger.error(err, `Failed to get user followers: ${userId}`);
       throw err;
     }
   }

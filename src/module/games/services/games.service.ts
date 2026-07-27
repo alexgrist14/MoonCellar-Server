@@ -28,6 +28,7 @@ import { gamesFilters } from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
 import { User } from "src/module/user/schemas/user.schema";
 import { Rating } from "src/module/user/schemas/user-ratings.schema";
+import { UserLogs } from "src/module/user/schemas/user-logs.schema";
 import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
@@ -39,8 +40,23 @@ const SORT_FIELD_MAP: Record<string, string> = {
   total_rating_count: "igdb.total_rating_count",
   first_release: "first_release",
   name: "name",
-  rating: "rating",
   createdAt: "createdAt",
+};
+
+const COMBINED_RATING_FIELD = "_combinedRating";
+
+const COMBINED_RATING_STAGE = {
+  $addFields: {
+    [COMBINED_RATING_FIELD]: {
+      $avg: {
+        $filter: {
+          input: ["$igdb.total_rating", "$hltb.reviewScore", "$averageRating"],
+          as: "value",
+          cond: { $ne: ["$$value", null] },
+        },
+      },
+    },
+  },
 };
 
 const TRIM_IGDB_STAGE = {
@@ -73,6 +89,8 @@ export class GamesService implements OnModuleInit {
     private playthroughs: Model<IPlaythroughDocument>,
     @InjectModel(Rating.name)
     private ratings: Model<Rating>,
+    @InjectModel(UserLogs.name)
+    private userLogs: Model<UserLogs>,
     private fileService: FileService
   ) {}
 
@@ -202,7 +220,7 @@ export class GamesService implements OnModuleInit {
     selected,
     excluded,
     search,
-    mode = "any",
+    mode,
     company,
     years,
     rating,
@@ -244,6 +262,7 @@ export class GamesService implements OnModuleInit {
 
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
+      const isCombinedRatingSort = sortBy === "rating";
       const sortField = sortBy ? SORT_FIELD_MAP[sortBy] : "igdb.total_rating_count";
       const sortDirection = sortOrder === "asc" ? 1 : -1;
       const useSearchRank = Boolean(searchedIds) && !sortBy;
@@ -253,6 +272,7 @@ export class GamesService implements OnModuleInit {
 
       const results = await this.Games.aggregate([
         matchStage,
+        ...(isCombinedRatingSort ? [COMBINED_RATING_STAGE] : []),
         ...(useSearchRank
           ? [
               {
@@ -265,12 +285,14 @@ export class GamesService implements OnModuleInit {
           : [
               {
                 $sort: {
-                  [sortField]: sortDirection as 1 | -1,
+                  [isCombinedRatingSort ? COMBINED_RATING_FIELD : sortField]:
+                    sortDirection as 1 | -1,
                 },
               },
             ]),
         ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
         ...(useSearchRank ? [{ $unset: "searchRank" }] : []),
+        ...(isCombinedRatingSort ? [{ $unset: COMBINED_RATING_FIELD }] : []),
         TRIM_IGDB_STAGE,
       ]);
 
@@ -325,6 +347,16 @@ export class GamesService implements OnModuleInit {
       const game = await this.Games.findOneAndDelete({ _id });
 
       if (!game) throw new NotFoundException(`Game not found: ${_id}`);
+
+      await Promise.all([
+        this.playthroughs.deleteMany({ gameId: _id }),
+        this.ratings.deleteMany({ gameId: _id }),
+        this.userLogs.deleteMany({ gameId: _id }),
+        this.users.updateMany(
+          { "presets.preset": _id.toString() },
+          { $pull: { "presets.$[].preset": _id.toString() } }
+        ),
+      ]);
 
       return game;
     } catch (err) {

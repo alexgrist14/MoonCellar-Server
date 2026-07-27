@@ -18,6 +18,8 @@ export class User extends Document {
   refreshToken?: string;
   @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
   followings: mongoose.Types.ObjectId[];
+  @Prop({ type: [{ type: mongoose.Types.ObjectId, ref: "User" }], default: [] })
+  followers: mongoose.Types.ObjectId[];
   @Prop({ type: [Object] })
   filters: { name: string; filter: string }[];
   @Prop({ type: [Object] })

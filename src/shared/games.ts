@@ -31,6 +31,9 @@ export const gamesFilters = (
     votes,
   } = filters;
 
+  const modeFor = (field: keyof NonNullable<IGetGamesRequest["mode"]>) =>
+    mode?.[field] === "all" ? "all" : "any";
+
   const conditions = [
         ...(isOnlyWithAchievements === true
           ? [
@@ -54,7 +57,7 @@ export const gamesFilters = (
           ? [
               {
                 type:
-                  mode === "any"
+                  modeFor("types") === "any"
                     ? {
                         $in: Array.isArray(selected.types)
                           ? selected.types
@@ -107,7 +110,7 @@ export const gamesFilters = (
           ? [
               {
                 keywords:
-                  mode === "any"
+                  modeFor("keywords") === "any"
                     ? {
                         $in: Array.isArray(selected?.keywords)
                           ? selected?.keywords
@@ -125,7 +128,7 @@ export const gamesFilters = (
           ? [
               {
                 themes:
-                  mode === "any"
+                  modeFor("themes") === "any"
                     ? {
                         $in: Array.isArray(selected.themes)
                           ? selected.themes
@@ -154,7 +157,7 @@ export const gamesFilters = (
           ? [
               {
                 franchises:
-                  mode === "any"
+                  modeFor("franchises") === "any"
                     ? {
                         $in: Array.isArray(selected.franchises)
                           ? selected.franchises
@@ -183,7 +186,7 @@ export const gamesFilters = (
           ? [
               {
                 genres:
-                  mode === "any"
+                  modeFor("genres") === "any"
                     ? {
                         $in: Array.isArray(selected.genres)
                           ? selected.genres
@@ -212,7 +215,7 @@ export const gamesFilters = (
           ? [
               {
                 platformIds:
-                  mode === "any"
+                  modeFor("platforms") === "any"
                     ? {
                         $in: Array.isArray(selected.platforms)
                           ? selected.platforms.map(
@@ -249,7 +252,7 @@ export const gamesFilters = (
           ? [
               {
                 modes:
-                  mode === "any"
+                  modeFor("modes") === "any"
                     ? {
                         $in: Array.isArray(selected.modes)
                           ? selected.modes

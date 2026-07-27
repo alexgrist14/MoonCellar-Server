@@ -88,7 +88,7 @@ const SINGLE_GAME_QUERY_FIELDS = [
   "release_dates.m",
   "release_dates.y",
   "release_dates.platform",
-  "release_dates.region",
+  "release_dates.release_region",
 ].join(", ");
 
 interface IGDBExpandedGame {
@@ -130,7 +130,7 @@ interface IGDBExpandedGame {
     m: number;
     y: number;
     platform: number;
-    region: number;
+    release_region: number;
   }[];
 }
 
@@ -963,7 +963,7 @@ export class IGDBService {
         year: date.y,
         platformId: platformIds.find((plat) => plat.igdbId === date.platform)
           ?._id,
-        region: date.region,
+        region: date.release_region,
       })),
       platformIds: platformIds.map((plat) => plat._id),
       igdb: {

@@ -42,25 +42,25 @@ export const getFormattedTitle = (title: string) => {
     .toLowerCase();
 };
 
-export const followersLookup = () => [
+export const followListLookup = (field: "followings" | "followers") => [
   {
     $lookup: {
       from: "users",
-      localField: "followings",
+      localField: field,
       foreignField: "_id",
-      as: "followings",
+      as: field,
     },
   },
   {
     $project: {
-      followings: {
+      [field]: {
         $map: {
-          input: "$followings",
-          as: "following",
+          input: `$${field}`,
+          as: "user",
           in: {
-            _id: "$$following._id",
-            userName: "$$following.userName",
-            avatar: "$$following.avatar",
+            _id: "$$user._id",
+            userName: "$$user.userName",
+            avatar: "$$user.avatar",
           },
         },
       },
