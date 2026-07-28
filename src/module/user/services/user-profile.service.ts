@@ -66,7 +66,7 @@ export class UserProfileService {
         .exec();
       return users.map((user) => ({
         userName: user.userName,
-        updatedAt: user.updatedAt,
+        updatedAt: user.updatedAt.toISOString(),
       }));
     } catch (err) {
       this.logger.error(err, "Failed to find all user logins");

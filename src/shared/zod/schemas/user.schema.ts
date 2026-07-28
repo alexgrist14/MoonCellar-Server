@@ -50,7 +50,7 @@ export const UpdateDescriptionSchema = UserSchemaZod.pick({
 export const UpdateSettingsSchema = z.object({ showAdultContent: z.boolean() });
 
 export const GetUserLoginsResponseSchema = z
-  .object({ userName: z.string(), updatedAt: z.date() })
+  .object({ userName: z.string(), updatedAt: z.string() })
   .array();
 
 export type IUser = z.infer<typeof UserSchemaZod>;
