@@ -481,12 +481,13 @@ export class GamesService implements OnModuleInit {
     try {
       return (
         await this.Games.find()
-          .select("slug updatedAt")
+          .select("slug updatedAt cover")
           .sort({ ["igdb.total_rating_count"]: -1 })
           .limit(49000)
       ).map((game) => ({
         slug: game.slug,
         updatedAt: game.updatedAt,
+        cover: game.cover,
       }));
     } catch (err) {
       this.logger.error(err, `Failed to get all game slugs`);
