@@ -12,6 +12,7 @@ import { User } from "src/module/user/schemas/user.schema";
 import { mimeToExt } from "src/shared/constants";
 import {
   IGetUserByStringRequest,
+  IGetUserLoginsResponse,
   IUpdateUserDescriptionRequest,
   IUpdateUserEmailRequest,
   IUpdateUserPasswordRequest,
@@ -57,10 +58,16 @@ export class UserProfileService {
     }
   }
 
-  async findAllLogins(): Promise<string[]> {
+  async findAllLogins(): Promise<IGetUserLoginsResponse> {
     try {
-      const users = await this.userModel.find().select("userName").exec();
-      return users.map((user) => user.userName);
+      const users = await this.userModel
+        .find()
+        .select("userName updatedAt")
+        .exec();
+      return users.map((user) => ({
+        userName: user.userName,
+        updatedAt: user.updatedAt,
+      }));
     } catch (err) {
       this.logger.error(err, "Failed to find all user logins");
       throw err;

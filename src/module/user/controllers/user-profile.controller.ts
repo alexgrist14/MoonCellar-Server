@@ -15,6 +15,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -23,11 +24,13 @@ import {
 import { RolesGuard } from "src/module/roles/roles.guard";
 import {
   GetUserByStringDto,
+  GetUserLoginsResponseDto,
   UpdateDescriptionDto,
   UpdateSettingsDto,
   UpdateUserEmailDto,
   UpdateUserPasswordDto,
 } from "src/shared/zod/dto/user.dto";
+import { IGetUserLoginsResponse } from "src/shared/zod/schemas/user.schema";
 import { UserIdGuard } from "../../auth/user.guard";
 import { User } from "../schemas/user.schema";
 import { UserProfileService } from "../services/user-profile.service";
@@ -54,7 +57,8 @@ export class UserProfileController {
     status: 200,
     description: "Success",
   })
-  async findAllLogins(): Promise<string[]> {
+  @ApiCreatedResponse({ type: GetUserLoginsResponseDto })
+  async findAllLogins(): Promise<IGetUserLoginsResponse> {
     return this.userProfileService.findAllLogins();
   }
 

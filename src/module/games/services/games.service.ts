@@ -29,6 +29,8 @@ import { FileService } from "src/module/user/services/file-upload.service";
 import { User } from "src/module/user/schemas/user.schema";
 import { Rating } from "src/module/user/schemas/user-ratings.schema";
 import { UserLogs } from "src/module/user/schemas/user-logs.schema";
+import { IndexNowService } from "src/module/indexnow/indexnow.service";
+import { FRONT_URL } from "src/shared/constants";
 import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
@@ -91,7 +93,8 @@ export class GamesService implements OnModuleInit {
     private ratings: Model<Rating>,
     @InjectModel(UserLogs.name)
     private userLogs: Model<UserLogs>,
-    private fileService: FileService
+    private fileService: FileService,
+    private indexNow: IndexNowService
   ) {}
 
   onModuleInit() {
@@ -315,12 +318,16 @@ export class GamesService implements OnModuleInit {
     try {
       const now = new Date().toISOString();
 
-      return await this.Games.create({
+      const game = await this.Games.create({
         ...data,
         isCustom: true,
         createdAt: now,
         updatedAt: now,
       });
+
+      this.indexNow.submitUrl(`${FRONT_URL}/games/${game.slug}`);
+
+      return game;
     } catch (err) {
       this.logger.error(err, `Failed to add game: ${JSON.stringify(data)}`);
       throw err;
@@ -336,6 +343,8 @@ export class GamesService implements OnModuleInit {
       );
 
       if (!game) throw new NotFoundException(`Game not found: ${_id}`);
+
+      this.indexNow.submitUrl(`${FRONT_URL}/games/${game.slug}`);
 
       return game;
     } catch (err) {
@@ -472,10 +481,13 @@ export class GamesService implements OnModuleInit {
     try {
       return (
         await this.Games.find()
-          .select("slug")
+          .select("slug updatedAt")
           .sort({ ["igdb.total_rating_count"]: -1 })
           .limit(49000)
-      ).map((game) => game.slug);
+      ).map((game) => ({
+        slug: game.slug,
+        updatedAt: game.updatedAt,
+      }));
     } catch (err) {
       this.logger.error(err, `Failed to get all game slugs`);
       throw err;

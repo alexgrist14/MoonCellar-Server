@@ -24,6 +24,7 @@ import {
   Rating,
   UserRatingsDatabaseSchema,
 } from "../user/schemas/user-ratings.schema";
+import { IndexNowModule } from "../indexnow/indexnow.module";
 
 @Module({
   controllers: [
@@ -50,6 +51,7 @@ import {
       { name: Rating.name, schema: UserRatingsDatabaseSchema },
     ]),
     MetricsModule,
+    IndexNowModule,
   ],
 })
 export class GamesModule {}

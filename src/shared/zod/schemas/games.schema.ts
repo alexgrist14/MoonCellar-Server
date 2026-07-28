@@ -278,7 +278,9 @@ export const UpdateGameRequestSchema = GameSchema.omit({
 
 export const GetCustomGameResponseSchema = GameSchema.array();
 
-export const GetGameSlugsResponseSchema = z.string().array();
+export const GetGameSlugsResponseSchema = z
+  .object({ slug: z.string(), updatedAt: z.string() })
+  .array();
 
 export const UpcomingReleaseGroupSchema = z.object({
   label: z.string(),

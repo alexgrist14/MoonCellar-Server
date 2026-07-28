@@ -19,9 +19,11 @@ import { Response } from "express";
 import {
   ACCESS_TOKEN,
   accessExpire,
+  FRONT_URL,
   REFRESH_TOKEN,
   refreshExpire,
 } from "src/shared/constants";
+import { IndexNowService } from "../indexnow/indexnow.service";
 
 @Injectable()
 export class AuthService {
@@ -29,7 +31,8 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
-    private readonly metrics: BusinessMetricsService
+    private readonly metrics: BusinessMetricsService,
+    private readonly indexNow: IndexNowService
   ) {}
 
   private async generateTokensAndUpdateUser(
@@ -80,6 +83,7 @@ export class AuthService {
       });
 
       this.metrics.recordRegistration();
+      this.indexNow.submitUrl(`${FRONT_URL}/user/${user.userName}`);
 
       return this.generateTokensAndUpdateUser(user);
     } catch (err) {
