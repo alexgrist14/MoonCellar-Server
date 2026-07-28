@@ -133,7 +133,11 @@ export class GamesController {
   }
 
   @Get("/slugs")
-  @ApiOperation({ summary: "Get slugs of all games" })
+  @ApiOperation({
+    summary: "Get slugs of all games",
+    description:
+      "Returns up to 49000 game slugs, sorted by IGDB rating count. Used for sitemap generation.",
+  })
   @ApiCreatedResponse({ type: GetGameSlugsResponseDto })
   async getAllSlugs() {
     return this.games.getAllSlugs();

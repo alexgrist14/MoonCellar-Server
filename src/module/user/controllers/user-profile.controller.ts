@@ -48,6 +48,16 @@ export class UserProfileController {
     return this.userProfileService.findByString(query);
   }
 
+  @Get("logins")
+  @ApiOperation({ summary: "Get all user logins (for sitemap generation)" })
+  @ApiResponse({
+    status: 200,
+    description: "Success",
+  })
+  async findAllLogins(): Promise<string[]> {
+    return this.userProfileService.findAllLogins();
+  }
+
   @Get(":userId")
   @ApiOperation({ summary: "Get user by ID" })
   @ApiResponse({

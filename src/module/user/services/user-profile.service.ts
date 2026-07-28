@@ -57,6 +57,16 @@ export class UserProfileService {
     }
   }
 
+  async findAllLogins(): Promise<string[]> {
+    try {
+      const users = await this.userModel.find().select("userName").exec();
+      return users.map((user) => user.userName);
+    } catch (err) {
+      this.logger.error(err, "Failed to find all user logins");
+      throw err;
+    }
+  }
+
   async findAll(query: ExpressQuery): Promise<User[]> {
     try {
       const resPerPage = 2;
