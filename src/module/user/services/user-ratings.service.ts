@@ -27,12 +27,23 @@ export class UserRatingsService {
   ): Promise<void> {
     const [result] = await this.userRatings.aggregate([
       { $match: { gameId } },
-      { $group: { _id: "$gameId", averageRating: { $avg: "$rating" } } },
+      {
+        $group: {
+          _id: "$gameId",
+          averageRating: { $avg: "$rating" },
+          ratingsCount: { $sum: 1 },
+        },
+      },
     ]);
 
     await this.games.updateOne(
       { _id: gameId },
-      { $set: { averageRating: result?.averageRating ?? null } }
+      {
+        $set: {
+          averageRating: result?.averageRating ?? null,
+          ratingsCount: result?.ratingsCount ?? 0,
+        },
+      }
     );
   }
 
@@ -114,20 +125,26 @@ export class UserRatingsService {
   async recalculateAllAverageRatings() {
     try {
       const averages = await this.userRatings.aggregate([
-        { $group: { _id: "$gameId", averageRating: { $avg: "$rating" } } },
+        {
+          $group: {
+            _id: "$gameId",
+            averageRating: { $avg: "$rating" },
+            ratingsCount: { $sum: 1 },
+          },
+        },
       ]);
 
       await this.games.updateMany(
         { averageRating: { $ne: null } },
-        { $set: { averageRating: null } }
+        { $set: { averageRating: null, ratingsCount: 0 } }
       );
 
       if (averages.length) {
         await this.games.bulkWrite(
-          averages.map(({ _id, averageRating }) => ({
+          averages.map(({ _id, averageRating, ratingsCount }) => ({
             updateOne: {
               filter: { _id },
-              update: { $set: { averageRating } },
+              update: { $set: { averageRating, ratingsCount } },
             },
           }))
         );

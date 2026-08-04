@@ -1,6 +1,29 @@
 import mongoose from "mongoose";
 import { IGetGamesRequest } from "./zod/schemas/games.schema";
 
+const avgIgnoringNulls = (input: unknown[]) => ({
+  $avg: {
+    $filter: {
+      input,
+      as: "value",
+      cond: { $ne: ["$$value", null] },
+    },
+  },
+});
+
+// averageRating is on a 1-10 scale, igdb.total_rating and hltb.reviewScore
+// are on a 0-100 scale; normalize before combining.
+export const combinedRatingExpr = avgIgnoringNulls([
+  "$igdb.total_rating",
+  "$hltb.reviewScore",
+  { $multiply: ["$averageRating", 10] },
+]);
+
+export const combinedRatingsCountExpr = avgIgnoringNulls([
+  "$igdb.total_rating_count",
+  "$ratingsCount",
+]);
+
 const startOfYear = (year: number) => new Date(year, 0, 1).getTime() / 1000;
 
 const buildYearsFilter = (years: IGetGamesRequest["years"]) => {
@@ -95,16 +118,10 @@ export const gamesFilters = (
             ]
           : []),
         ...(rating !== undefined
-          ? [
-              { "igdb.total_rating": { $exists: true } },
-              { "igdb.total_rating": { $gte: +rating } },
-            ]
+          ? [{ $expr: { $gte: [combinedRatingExpr, +rating] } }]
           : []),
         ...(votes !== undefined
-          ? [
-              { "igdb.total_rating": { $exists: true } },
-              { "igdb.total_rating_count": { $gte: +votes } },
-            ]
+          ? [{ $expr: { $gte: [combinedRatingsCountExpr, +votes] } }]
           : []),
         ...(!!selected?.keywords?.length
           ? [

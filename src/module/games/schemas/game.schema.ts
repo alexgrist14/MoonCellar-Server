@@ -54,11 +54,9 @@ export class Game {
   @Prop({ type: [Object] })
   retroachievements: IRetroachievementsField[];
   @Prop()
-  rating: number;
-  @Prop()
-  ratingCount: number;
-  @Prop()
   averageRating: number;
+  @Prop()
+  ratingsCount: number;
   @Prop({ default: false })
   isStopParsingPictures: boolean;
   @Prop({ default: false })
@@ -86,4 +84,3 @@ GameDatabaseSchema.index({ "igdb.total_rating_count": -1 });
 GameDatabaseSchema.index({ "igdb.total_rating": -1 });
 GameDatabaseSchema.index({ first_release: -1 });
 GameDatabaseSchema.index({ name: 1 });
-GameDatabaseSchema.index({ rating: -1 });

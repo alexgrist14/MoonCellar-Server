@@ -24,7 +24,7 @@ import {
   IPlaythroughDocument,
   Playthrough,
 } from "../schemas/playthroughs.schema";
-import { gamesFilters } from "src/shared/games";
+import { gamesFilters, combinedRatingExpr } from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
 import { User } from "src/module/user/schemas/user.schema";
 import { Rating } from "src/module/user/schemas/user-ratings.schema";
@@ -42,6 +42,7 @@ const SORT_FIELD_MAP: Record<string, string> = {
   total_rating_count: "igdb.total_rating_count",
   first_release: "first_release",
   name: "name",
+  ratingsCount: "ratingsCount",
   createdAt: "createdAt",
 };
 
@@ -49,15 +50,7 @@ const COMBINED_RATING_FIELD = "_combinedRating";
 
 const COMBINED_RATING_STAGE = {
   $addFields: {
-    [COMBINED_RATING_FIELD]: {
-      $avg: {
-        $filter: {
-          input: ["$igdb.total_rating", "$hltb.reviewScore", "$averageRating"],
-          as: "value",
-          cond: { $ne: ["$$value", null] },
-        },
-      },
-    },
+    [COMBINED_RATING_FIELD]: combinedRatingExpr,
   },
 };
 
@@ -73,7 +66,22 @@ const TRIM_IGDB_STAGE = {
   },
 };
 
-type SearchIndexEntry = { _id: mongoose.Types.ObjectId; name: string };
+type SearchIndexEntry = {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  ratingsCount: number | null;
+  igdb?: { total_rating_count?: number | null };
+};
+
+function getCombinedRatingsCount(entry: SearchIndexEntry): number | null {
+  const counts = [entry.ratingsCount, entry.igdb?.total_rating_count].filter(
+    (count): count is number => count != null
+  );
+
+  if (!counts.length) return null;
+
+  return counts.reduce((sum, count) => sum + count, 0) / counts.length;
+}
 
 @Injectable()
 export class GamesService implements OnModuleInit {
@@ -114,7 +122,7 @@ export class GamesService implements OnModuleInit {
       this.searchIndexRefreshPromise = this.Games.find({
         _id: { $exists: true },
       })
-        .select("_id name")
+        .select("_id name ratingsCount igdb.total_rating_count")
         .lean<SearchIndexEntry[]>()
         .then((docs) => {
           this.searchIndexCache = docs;
@@ -256,7 +264,16 @@ export class GamesService implements OnModuleInit {
           threshold: SEARCH_SCORE_THRESHOLD,
         });
 
-        searchedIds = matches.map((match) => match.obj._id);
+        const rankedMatches = [...matches].sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+
+          return (
+            (getCombinedRatingsCount(b.obj) ?? -1) -
+            (getCombinedRatingsCount(a.obj) ?? -1)
+          );
+        });
+
+        searchedIds = rankedMatches.map((match) => match.obj._id);
 
         if (!searchedIds.length) {
           return { results: [], total: 0 };
