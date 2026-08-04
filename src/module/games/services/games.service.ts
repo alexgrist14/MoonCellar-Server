@@ -13,6 +13,7 @@ import {
   IGetGameBySlugRequest,
   IGetGamesByIdsRequest,
   IGetGamesRequest,
+  IGetGameSlugsRequest,
   IUpdateGameRequest,
 } from "src/shared/zod/schemas/games.schema";
 import {
@@ -494,13 +495,13 @@ export class GamesService implements OnModuleInit {
     }
   }
 
-  async getAllSlugs() {
+  async getAllSlugs({ count = 10000 }: IGetGameSlugsRequest = {}) {
     try {
       return (
         await this.Games.find()
           .select("slug updatedAt cover")
           .sort({ ["igdb.total_rating_count"]: -1 })
-          .limit(49000)
+          .limit(count)
       ).map((game) => ({
         slug: game.slug,
         updatedAt: game.updatedAt,

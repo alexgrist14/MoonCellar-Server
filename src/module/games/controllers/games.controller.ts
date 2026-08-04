@@ -33,6 +33,7 @@ import {
   GetGamesByIdsDto,
   GetGamesDto,
   GetGamesResponseDto,
+  GetGameSlugsDto,
   GetGameSlugsResponseDto,
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
@@ -136,11 +137,11 @@ export class GamesController {
   @ApiOperation({
     summary: "Get slugs of all games",
     description:
-      "Returns up to 49000 game slugs, sorted by IGDB rating count. Used for sitemap generation.",
+      "Returns up to `count` game slugs (default 10000), sorted by IGDB rating count. Used for sitemap generation.",
   })
   @ApiCreatedResponse({ type: GetGameSlugsResponseDto })
-  async getAllSlugs() {
-    return this.games.getAllSlugs();
+  async getAllSlugs(@Query() dto: GetGameSlugsDto) {
+    return this.games.getAllSlugs(dto);
   }
 
   @Get("/recent")
