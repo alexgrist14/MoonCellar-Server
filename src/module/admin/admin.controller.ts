@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   UseGuards,
 } from "@nestjs/common";
 import { ApiCookieAuth, ApiTags } from "@nestjs/swagger";
@@ -56,5 +57,10 @@ export class AdminController {
   @Delete("users/:userId")
   async deleteUser(@Param("userId") userId: string) {
     return this.adminService.deleteUser(userId);
+  }
+
+  @Post("logs/merge-duplicates")
+  async mergeDuplicateGameLogs() {
+    return this.adminService.mergeDuplicateGameLogs();
   }
 }

@@ -24,21 +24,55 @@ export class PlaythroughsService {
     private readonly logsService: UserLogsService
   ) {}
 
-  private async getAdditionalInfo({
-    stringStart,
-    play,
-  }: {
-    stringStart: "Added to" | "Removed from";
-    play: IPlaythroughDocument;
-  }) {
+  private capitalize(value: string) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  private formatDate(date: string) {
+    const [year, month, day] = date.split("-");
+    return `${day}.${month}.${year}`;
+  }
+
+  private async getPlaythroughDetailsText(play: IPlaythroughDocument) {
     const platform = !!play.platformId
       ? await this.Platforms.findById(play.platformId).orFail()
       : undefined;
-    const text =
-      `${stringStart} ${play.isMastered ? "mastered" : play.category}` +
-      (!!platform ? `<br/><i>${platform.name}</i>` : "");
 
-    return { platform, text };
+    const status = play.isMastered
+      ? "Mastered"
+      : this.capitalize(play.category);
+
+    const details = [
+      `Status: ${status}`,
+      !!platform && `Console: ${platform.name}`,
+      !!play.date && `Date: ${this.formatDate(play.date)}`,
+      !!play.time && `Time: ${play.time}h`,
+      !!play.comment && `Comment: ${play.comment}`,
+    ].filter(Boolean);
+
+    return {
+      platform,
+      details: details.length
+        ? `<span style="font-size: 12px">${details.join("<br/>")}</span>`
+        : "",
+    };
+  }
+
+  private buildLogText(header: string, details: string) {
+    const boldHeader = `<b>${header}</b>`;
+
+    return details ? `${boldHeader}<br/>${details}` : boldHeader;
+  }
+
+  private async getRemovalLogText(play: IPlaythroughDocument) {
+    const platform = !!play.platformId
+      ? await this.Platforms.findById(play.platformId).orFail()
+      : undefined;
+
+    return (
+      `Removed from ${play.isMastered ? "mastered" : play.category}` +
+      (!!platform ? `<br/><i>${platform.name}</i>` : "")
+    );
   }
 
   async getPlaythroughs(data: IGetPlaythroughsRequest) {
@@ -65,16 +99,15 @@ export class PlaythroughsService {
         updatedAt: new Date().toISOString(),
       } as Parameters<Model<IPlaythroughDocument>["create"]>[0]);
 
-      const { text } = await this.getAdditionalInfo({
-        play,
-        stringStart: "Added to",
-      });
+      const { details } = await this.getPlaythroughDetailsText(play);
+      const text = this.buildLogText("Added game to playthroughs", details);
 
       await this.logsService.createUserLog({
         userId: play.userId.toString(),
         type: "list",
         text,
         gameId: play.gameId.toString(),
+        segment: "added",
       });
 
       return play;
@@ -100,16 +133,15 @@ export class PlaythroughsService {
         }
       );
 
-      const { text } = await this.getAdditionalInfo({
-        play,
-        stringStart: "Added to",
-      });
+      const { details } = await this.getPlaythroughDetailsText(play);
+      const text = this.buildLogText("Updated playthrough", details);
 
       await this.logsService.createUserLog({
         userId: play.userId.toString(),
         type: "list",
         text,
         gameId: play.gameId.toString(),
+        segment: "updated",
       });
 
       return play;
@@ -128,16 +160,14 @@ export class PlaythroughsService {
         }
       );
 
-      const { text } = await this.getAdditionalInfo({
-        play,
-        stringStart: "Removed from",
-      });
+      const text = await this.getRemovalLogText(play);
 
       await this.logsService.createUserLog({
         userId: play.userId.toString(),
         type: "list",
         text,
         gameId: play.gameId.toString(),
+        segment: "removed",
       });
 
       return play;

@@ -11,6 +11,7 @@ export class UserLogsController {
   @Get("/logs/:userId")
   @ApiOperation({ summary: "Get user logs" })
   @ApiQuery({ name: "take", required: false })
+  @ApiQuery({ name: "page", required: false })
   @ApiResponse({
     status: 200,
     description: "Success",

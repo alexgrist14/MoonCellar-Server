@@ -120,4 +120,57 @@ export class AdminService {
 
     return game;
   }
+
+  async mergeDuplicateGameLogs() {
+    this.logger.log("Merging duplicate game logs");
+    try {
+      const duplicateGroups = await this.userLogsModel.aggregate<{
+        _id: { userId: string; gameId: string };
+        ids: string[];
+      }>([
+        {
+          $group: {
+            _id: { userId: "$userId", gameId: "$gameId" },
+            count: { $sum: 1 },
+            ids: { $push: "$_id" },
+          },
+        },
+        { $match: { count: { $gt: 1 } } },
+      ]);
+
+      let mergedGroups = 0;
+      let removedLogs = 0;
+
+      for (const group of duplicateGroups) {
+        const logs = await this.userLogsModel
+          .find({ _id: { $in: group.ids } })
+          .sort({ date: 1 })
+          .exec();
+
+        const [keep, ...duplicates] = logs;
+
+        if (!duplicates.length) continue;
+
+        keep.text = logs.map((log) => log.text).join("<br/>");
+        keep.date = logs[logs.length - 1].date;
+        await keep.save();
+
+        await this.userLogsModel
+          .deleteMany({ _id: { $in: duplicates.map((log) => log._id) } })
+          .exec();
+
+        mergedGroups += 1;
+        removedLogs += duplicates.length;
+      }
+
+      this.logger.log(
+        `Merged ${mergedGroups} duplicate game log groups, removed ${removedLogs} logs`
+      );
+
+      return { mergedGroups, removedLogs };
+    } catch (error) {
+      this.logger.error(error, "Error merging duplicate game logs");
+      throw error;
+    }
+  }
 }

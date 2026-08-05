@@ -55,11 +55,12 @@ export class UserRatingsService {
         gameId: new mongoose.Types.ObjectId(gameId),
       });
       if (userRating) {
-        this.logsService.createUserLog({
+        await this.logsService.createUserLog({
           userId,
           type: "rating",
           text: `Set rating ${rating}`,
           gameId,
+          segment: "rating",
         });
 
         await this.recalculateAverageRating(userRating.gameId);
@@ -80,11 +81,12 @@ export class UserRatingsService {
         { new: true }
       );
       if (userRating) {
-        this.logsService.createUserLog({
+        await this.logsService.createUserLog({
           userId,
           type: "rating",
           text: `Update rating to ${rating}`,
           gameId: userRating.gameId.toString(),
+          segment: "rating",
         });
 
         await this.recalculateAverageRating(userRating.gameId);
@@ -101,6 +103,14 @@ export class UserRatingsService {
       const userRating = await this.userRatings.findOneAndDelete({ _id });
 
       if (userRating) {
+        await this.logsService.removeUserLogSegment({
+          userId: userRating.userId.toString(),
+          gameId: userRating.gameId.toString(),
+          segment: "rating",
+          fallbackType: "rating",
+          fallbackText: "Removed rating",
+        });
+
         await this.recalculateAverageRating(userRating.gameId);
       }
 
