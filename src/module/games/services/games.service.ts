@@ -25,7 +25,11 @@ import {
   IPlaythroughDocument,
   Playthrough,
 } from "../schemas/playthroughs.schema";
-import { gamesFilters, combinedRatingExpr } from "src/shared/games";
+import {
+  gamesFilters,
+  combinedRatingExpr,
+  combinedRatingsCountExpr,
+} from "src/shared/games";
 import { FileService } from "src/module/user/services/file-upload.service";
 import { User } from "src/module/user/schemas/user.schema";
 import { Rating } from "src/module/user/schemas/user-ratings.schema";
@@ -35,7 +39,7 @@ import { FRONT_URL } from "src/shared/constants";
 import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
-const SEARCH_SCORE_THRESHOLD = 0.3;
+const SEARCH_SCORE_THRESHOLD = 0.5;
 const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
 
 const SORT_FIELD_MAP: Record<string, string> = {
@@ -43,15 +47,21 @@ const SORT_FIELD_MAP: Record<string, string> = {
   total_rating_count: "igdb.total_rating_count",
   first_release: "first_release",
   name: "name",
-  ratingsCount: "ratingsCount",
   createdAt: "createdAt",
 };
 
 const COMBINED_RATING_FIELD = "_combinedRating";
+const COMBINED_RATINGS_COUNT_FIELD = "_combinedRatingsCount";
 
 const COMBINED_RATING_STAGE = {
   $addFields: {
     [COMBINED_RATING_FIELD]: combinedRatingExpr,
+  },
+};
+
+const COMBINED_RATINGS_COUNT_STAGE = {
+  $addFields: {
+    [COMBINED_RATINGS_COUNT_FIELD]: combinedRatingsCountExpr,
   },
 };
 
@@ -70,19 +80,7 @@ const TRIM_IGDB_STAGE = {
 type SearchIndexEntry = {
   _id: mongoose.Types.ObjectId;
   name: string;
-  ratingsCount: number | null;
-  igdb?: { total_rating_count?: number | null };
 };
-
-function getCombinedRatingsCount(entry: SearchIndexEntry): number | null {
-  const counts = [entry.ratingsCount, entry.igdb?.total_rating_count].filter(
-    (count): count is number => count != null
-  );
-
-  if (!counts.length) return null;
-
-  return counts.reduce((sum, count) => sum + count, 0) / counts.length;
-}
 
 @Injectable()
 export class GamesService implements OnModuleInit {
@@ -123,7 +121,7 @@ export class GamesService implements OnModuleInit {
       this.searchIndexRefreshPromise = this.Games.find({
         _id: { $exists: true },
       })
-        .select("_id name ratingsCount igdb.total_rating_count")
+        .select("_id name")
         .lean<SearchIndexEntry[]>()
         .then((docs) => {
           this.searchIndexCache = docs;
@@ -265,16 +263,7 @@ export class GamesService implements OnModuleInit {
           threshold: SEARCH_SCORE_THRESHOLD,
         });
 
-        const rankedMatches = [...matches].sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score;
-
-          return (
-            (getCombinedRatingsCount(b.obj) ?? -1) -
-            (getCombinedRatingsCount(a.obj) ?? -1)
-          );
-        });
-
-        searchedIds = rankedMatches.map((match) => match.obj._id);
+        searchedIds = matches.map((match) => match.obj._id);
 
         if (!searchedIds.length) {
           return { results: [], total: 0 };
@@ -283,12 +272,13 @@ export class GamesService implements OnModuleInit {
 
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
-      const isCombinedRatingSort = sortBy === "rating";
-      const sortField = sortBy
-        ? SORT_FIELD_MAP[sortBy]
+      const effectiveSortBy = sortBy ?? (search ? "ratingsCount" : undefined);
+      const isCombinedRatingSort = effectiveSortBy === "rating";
+      const isCombinedVotesSort = effectiveSortBy === "ratingsCount";
+      const sortField = effectiveSortBy
+        ? SORT_FIELD_MAP[effectiveSortBy]
         : "igdb.total_rating_count";
       const sortDirection = sortOrder === "asc" ? 1 : -1;
-      const useSearchRank = Boolean(searchedIds) && !sortBy;
 
       const matchStage = gamesFilters(baseFilters, searchedIds);
       const matchFilter = matchStage.$match;
@@ -296,26 +286,21 @@ export class GamesService implements OnModuleInit {
       const results = await this.Games.aggregate([
         matchStage,
         ...(isCombinedRatingSort ? [COMBINED_RATING_STAGE] : []),
-        ...(useSearchRank
-          ? [
-              {
-                $addFields: {
-                  searchRank: { $indexOfArray: [searchedIds, "$_id"] },
-                },
-              },
-              { $sort: { searchRank: 1 as const } },
-            ]
-          : [
-              {
-                $sort: {
-                  [isCombinedRatingSort ? COMBINED_RATING_FIELD : sortField]:
-                    sortDirection as 1 | -1,
-                },
-              },
-            ]),
+        ...(isCombinedVotesSort ? [COMBINED_RATINGS_COUNT_STAGE] : []),
+        {
+          $sort: {
+            [isCombinedRatingSort
+              ? COMBINED_RATING_FIELD
+              : isCombinedVotesSort
+                ? COMBINED_RATINGS_COUNT_FIELD
+                : sortField]: sortDirection as 1 | -1,
+          },
+        },
         ...(isRandom ? [{ $sample: { size: +take } }] : pagination),
-        ...(useSearchRank ? [{ $unset: "searchRank" }] : []),
         ...(isCombinedRatingSort ? [{ $unset: COMBINED_RATING_FIELD }] : []),
+        ...(isCombinedVotesSort
+          ? [{ $unset: COMBINED_RATINGS_COUNT_FIELD }]
+          : []),
         TRIM_IGDB_STAGE,
       ]);
 
