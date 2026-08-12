@@ -84,7 +84,7 @@ export class UserRatingsService {
         await this.logsService.createUserLog({
           userId,
           type: "rating",
-          text: `Update rating to ${rating}`,
+          text: `Updated rating to ${rating}`,
           gameId: userRating.gameId.toString(),
           segment: "rating",
         });

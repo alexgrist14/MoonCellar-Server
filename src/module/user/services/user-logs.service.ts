@@ -5,6 +5,7 @@ import { setPagination } from "src/shared/pagination";
 import {
   IGetUserLogsRequest,
   ILog,
+  IRemoveUserLogRequest,
   IUserLog,
 } from "src/shared/zod/schemas/user-logs.schema";
 import { UserLogs } from "../schemas/user-logs.schema";
@@ -183,6 +184,19 @@ export class UserLogsService {
       return await lastLog.save();
     } catch (err) {
       this.logger.error(err, `Failed to remove user log segment: ${userId}`);
+      throw err;
+    }
+  }
+
+  async removeUserLog({ _id, userId }: IRemoveUserLogRequest) {
+    try {
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      return await this.userLogsModel.deleteOne({
+        _id,
+        userId: userObjectId,
+      });
+    } catch (err) {
+      this.logger.error(err, `Failed to remove user log: ${_id}`);
       throw err;
     }
   }
