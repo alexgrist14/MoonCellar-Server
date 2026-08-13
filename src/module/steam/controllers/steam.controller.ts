@@ -41,10 +41,14 @@ export class SteamController {
     description:
       "Also re-parse games that already have steam.gameId set (by default only games missing it are parsed)",
   })
-  async parseSteamLinks(@Query("forceParse") forceParseQuery?: string) {
-    return this.service.parseSteamLinksForGames({
-      forceParse: forceParseQuery === "true",
-    });
+  parseSteamLinks(@Query("forceParse") forceParseQuery?: string) {
+    void this.service
+      .parseSteamLinksForGames({
+        forceParse: forceParseQuery === "true",
+      })
+      .catch(() => undefined);
+
+    return { message: "Parsing started" };
   }
 
   @ApiCookieAuth()

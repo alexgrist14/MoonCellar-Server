@@ -22,6 +22,10 @@ export class SteamService {
 
   async parseSteamLinksForGames(options?: { forceParse?: boolean }) {
     try {
+      this.logger.log(
+        `Started parsing Steam links for games (forceParse=${!!options?.forceParse})`
+      );
+
       const filter = options?.forceParse
         ? { websites: { $exists: true, $ne: [] } }
         : {
@@ -53,7 +57,7 @@ export class SteamService {
       this.metrics.recordGames("steam", "updated", bulkOps.length);
 
       this.logger.log(
-        `Parsed Steam links for ${bulkOps.length}/${games.length} games`
+        `Finished parsing Steam links, updated ${bulkOps.length}/${games.length} games`
       );
 
       return { matched: games.length, updated: bulkOps.length };
