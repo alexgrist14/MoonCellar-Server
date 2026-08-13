@@ -61,6 +61,10 @@ const SINGLE_GAME_QUERY_FIELDS = [
   "artworks.url",
   "franchises.id",
   "franchises.name",
+  "franchise.id",
+  "franchise.name",
+  "collections.id",
+  "collections.name",
   "videos.id",
   "videos.video_id",
   "genres.id",
@@ -107,6 +111,8 @@ interface IGDBExpandedGame {
   screenshots?: { id: number; url: string }[];
   artworks?: { id: number; url: string }[];
   franchises?: { id: number; name: string }[];
+  franchise?: { id: number; name: string };
+  collections?: { id: number; name: string }[];
   videos?: { id: number; video_id: string }[];
   genres?: { id: number; name: string }[];
   keywords?: { id: number; name: string }[];
@@ -184,6 +190,23 @@ const ALL_UPDATABLE_GAME_FIELDS = [
   ...IMAGE_FIELDS,
   HYPES_FIELD,
 ] as const;
+
+const mergeFranchises = (
+  franchises?: { id: number; name: string }[],
+  franchise?: { id: number; name: string },
+  collections?: { id: number; name: string }[]
+) => {
+  const merged = [...(franchises || [])];
+  if (franchise && !merged.some((f) => f.id === franchise.id)) {
+    merged.push(franchise);
+  }
+  for (const collection of collections || []) {
+    if (!merged.some((f) => f.name === collection.name)) {
+      merged.push(collection);
+    }
+  }
+  return merged;
+};
 
 const isFieldValueEmpty = (value: unknown) => {
   if (value === undefined || value === null) return true;
@@ -951,7 +974,11 @@ export class IGDBService {
         supporting: comp.supporting,
       })),
       websites: (igdbGame.websites || []).map((site) => site.url),
-      franchises: (igdbGame.franchises || []).map((franchise) => franchise.name),
+      franchises: mergeFranchises(
+        igdbGame.franchises,
+        igdbGame.franchise,
+        igdbGame.collections
+      ).map((franchise) => franchise.name),
       videos: (igdbGame.videos || []).map(
         (video) => `https://www.youtube.com/watch?v=${video.video_id}`
       ),
@@ -987,7 +1014,11 @@ export class IGDBService {
         cover: igdbGame.cover ? [igdbGame.cover.id] : [],
         screenshots: (igdbGame.screenshots || []).map((s) => s.id),
         artworks: (igdbGame.artworks || []).map((a) => a.id),
-        franchises: (igdbGame.franchises || []).map((f) => f.id),
+        franchises: mergeFranchises(
+          igdbGame.franchises,
+          igdbGame.franchise,
+          igdbGame.collections
+        ).map((f) => f.id),
         videos: (igdbGame.videos || []).map((v) => v.id),
       },
       createdAt: existingGame?.createdAt || now,

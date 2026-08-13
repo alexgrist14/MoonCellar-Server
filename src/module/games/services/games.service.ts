@@ -39,8 +39,19 @@ import { FRONT_URL } from "src/shared/constants";
 import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
-const SEARCH_SCORE_THRESHOLD = 0.5;
+const SEARCH_SCORE_THRESHOLD = 0.3;
 const SEARCH_INDEX_TTL_MS = 10 * 60 * 1000;
+
+const SEARCH_RELEVANCE_TIER_THRESHOLDS = [0.9, 0.75, 0.6];
+const SEARCH_RELEVANCE_FALLBACK_TIER = SEARCH_RELEVANCE_TIER_THRESHOLDS.length;
+const SEARCH_RELEVANCE_FIELD = "_searchRelevanceTier";
+
+const getSearchRelevanceTier = (score: number) => {
+  for (let tier = 0; tier < SEARCH_RELEVANCE_TIER_THRESHOLDS.length; tier++) {
+    if (score >= SEARCH_RELEVANCE_TIER_THRESHOLDS[tier]) return tier;
+  }
+  return SEARCH_RELEVANCE_FALLBACK_TIER;
+};
 
 const SORT_FIELD_MAP: Record<string, string> = {
   total_rating: "igdb.total_rating",
@@ -253,6 +264,7 @@ export class GamesService implements OnModuleInit {
       };
 
       let searchedIds: mongoose.Types.ObjectId[] | undefined;
+      let searchRelevanceTiers: number[] | undefined;
 
       if (search) {
         const candidates = await this.getSearchIndex();
@@ -264,6 +276,9 @@ export class GamesService implements OnModuleInit {
         });
 
         searchedIds = matches.map((match) => match.obj._id);
+        searchRelevanceTiers = matches.map((match) =>
+          getSearchRelevanceTier(match.score)
+        );
 
         if (!searchedIds.length) {
           return { results: [], total: 0 };
@@ -272,6 +287,7 @@ export class GamesService implements OnModuleInit {
 
       const pagination = [{ $skip: (+page - 1) * +take }, { $limit: +take }];
 
+      const isDefaultSearchSort = !!search && !sortBy;
       const effectiveSortBy = sortBy ?? (search ? "ratingsCount" : undefined);
       const isCombinedRatingSort = effectiveSortBy === "rating";
       const isCombinedVotesSort = effectiveSortBy === "ratingsCount";
@@ -287,8 +303,31 @@ export class GamesService implements OnModuleInit {
         matchStage,
         ...(isCombinedRatingSort ? [COMBINED_RATING_STAGE] : []),
         ...(isCombinedVotesSort ? [COMBINED_RATINGS_COUNT_STAGE] : []),
+        ...(isDefaultSearchSort
+          ? [
+              {
+                $addFields: {
+                  [SEARCH_RELEVANCE_FIELD]: {
+                    $let: {
+                      vars: {
+                        idx: { $indexOfArray: [searchedIds, "$_id"] },
+                      },
+                      in: {
+                        $cond: [
+                          { $gte: ["$$idx", 0] },
+                          { $arrayElemAt: [searchRelevanceTiers, "$$idx"] },
+                          SEARCH_RELEVANCE_FALLBACK_TIER,
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ]
+          : []),
         {
           $sort: {
+            ...(isDefaultSearchSort ? { [SEARCH_RELEVANCE_FIELD]: 1 } : {}),
             [isCombinedRatingSort
               ? COMBINED_RATING_FIELD
               : isCombinedVotesSort
@@ -301,6 +340,7 @@ export class GamesService implements OnModuleInit {
         ...(isCombinedVotesSort
           ? [{ $unset: COMBINED_RATINGS_COUNT_FIELD }]
           : []),
+        ...(isDefaultSearchSort ? [{ $unset: SEARCH_RELEVANCE_FIELD }] : []),
         TRIM_IGDB_STAGE,
       ]);
 
