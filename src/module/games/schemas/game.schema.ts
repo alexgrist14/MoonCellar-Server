@@ -6,6 +6,7 @@ import {
   IHltbField,
   IReleaseDate,
   IRetroachievementsField,
+  ISteamField,
 } from "src/shared/zod/schemas/games.schema";
 import { Platform } from "./platform.schema";
 
@@ -69,6 +70,8 @@ export class Game {
   hltb: IHltbField;
   @Prop()
   hltbNotFoundAt: string;
+  @Prop({ type: Object })
+  steam: ISteamField;
   @Prop()
   createdAt: string;
   @Prop()
@@ -78,6 +81,7 @@ export class Game {
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
 GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });
+GameDatabaseSchema.index({ "steam.gameId": 1 });
 GameDatabaseSchema.index({ hltbNotFoundAt: 1 });
 GameDatabaseSchema.index({ createdAt: -1 });
 GameDatabaseSchema.index({ "igdb.total_rating_count": -1 });

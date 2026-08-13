@@ -8,6 +8,7 @@ import { UserModule } from "./module/user/user.module";
 import { IgdbModule } from "./module/igdb/igdb.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { RetroachievementsModule } from "./module/retroach/retroach.module";
+import { SteamModule } from "./module/steam/steam.module";
 import { GamesModule } from "./module/games/games.module";
 import { APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "nestjs-zod";
@@ -35,6 +36,7 @@ import { HttpMetricsInterceptor } from "./module/metrics/http-metrics.intercepto
     GamesModule,
     IgdbModule,
     RetroachievementsModule,
+    SteamModule,
     ServeStaticModule.forRoot({
       rootPath: `/var/www/uploads/photos`,
       serveRoot: "/photos",

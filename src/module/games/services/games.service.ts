@@ -538,6 +538,22 @@ export class GamesService implements OnModuleInit {
     }
   }
 
+  async getRandomSlug() {
+    try {
+      const [game] = await this.Games.aggregate([
+        { $sample: { size: 1 } },
+        { $project: { _id: 0, slug: 1 } },
+      ]);
+
+      if (!game) throw new NotFoundException("No games found");
+
+      return game;
+    } catch (err) {
+      this.logger.error(err, "Failed to get random game slug");
+      throw err;
+    }
+  }
+
   async getRecentReleases() {
     try {
       const nowSeconds = Math.floor(Date.now() / 1000);

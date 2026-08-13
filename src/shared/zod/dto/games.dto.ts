@@ -8,6 +8,7 @@ import {
   GetGamesRequestSchema,
   GetGameSlugsRequestSchema,
   GetGameSlugsResponseSchema,
+  GetRandomGameSlugResponseSchema,
   UpdateGameRequestSchema,
 } from "../schemas/games.schema";
 
@@ -24,4 +25,7 @@ export class GetGameResponseDto extends createZodDto(GameSchema) {}
 export class GetGamesResponseDto extends createZodDto(GameSchema.array()) {}
 export class GetGameSlugsResponseDto extends createZodDto(
   GetGameSlugsResponseSchema
+) {}
+export class GetRandomGameSlugResponseDto extends createZodDto(
+  GetRandomGameSlugResponseSchema
 ) {}

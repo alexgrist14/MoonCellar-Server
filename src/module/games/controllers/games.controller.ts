@@ -35,6 +35,7 @@ import {
   GetGamesResponseDto,
   GetGameSlugsDto,
   GetGameSlugsResponseDto,
+  GetRandomGameSlugResponseDto,
   UpdateGameDto,
 } from "src/shared/zod/dto/games.dto";
 import {
@@ -142,6 +143,13 @@ export class GamesController {
   @ApiCreatedResponse({ type: GetGameSlugsResponseDto })
   async getAllSlugs(@Query() dto: GetGameSlugsDto) {
     return this.games.getAllSlugs(dto);
+  }
+
+  @Get("/random-slug")
+  @ApiOperation({ summary: "Get a random game slug" })
+  @ApiCreatedResponse({ type: GetRandomGameSlugResponseDto })
+  async getRandomSlug() {
+    return this.games.getRandomSlug();
   }
 
   @Get("/recent")
