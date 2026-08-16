@@ -42,6 +42,8 @@ export class Game {
   franchises: string[];
   @Prop()
   videos: string[];
+  @Prop()
+  alternative_names: string[];
   @Prop({ type: [Object] })
   companies: ICompanyField[];
   @Prop()

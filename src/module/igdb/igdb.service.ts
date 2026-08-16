@@ -37,150 +37,17 @@ import {
   IGDB_GAMES_SYNC_UPDATED_LIMIT,
 } from "./constants/sync";
 import { categoryTypeNames } from "./constants/common";
+import {
+  DEFAULT_GAMES_SYNC_CONCURRENCY,
+  DEFAULT_IGDB_SYNC_DELAY_MS,
+  DEFAULT_IGDB_SYNC_LIMIT,
+  IMAGE_FIELDS,
+  PLATFORM_QUERY_FIELDS,
+  SINGLE_GAME_QUERY_FIELDS,
+  UPDATABLE_GAME_FIELDS,
+  UPDATABLE_PLATFORM_FIELDS,
+} from "./constants/igdb";
 
-const DEFAULT_IGDB_SYNC_LIMIT = 100;
-const DEFAULT_IGDB_SYNC_DELAY_MS = 1000;
-const DEFAULT_GAMES_SYNC_CONCURRENCY = 5;
-
-const SINGLE_GAME_QUERY_FIELDS = [
-  "name",
-  "slug",
-  "category",
-  "storyline",
-  "summary",
-  "first_release_date",
-  "total_rating",
-  "total_rating_count",
-  "hypes",
-  "updated_at",
-  "cover.id",
-  "cover.url",
-  "screenshots.id",
-  "screenshots.url",
-  "artworks.id",
-  "artworks.url",
-  "franchises.id",
-  "franchises.name",
-  "franchise.id",
-  "franchise.name",
-  "collections.id",
-  "collections.name",
-  "videos.id",
-  "videos.video_id",
-  "genres.id",
-  "genres.name",
-  "keywords.id",
-  "keywords.name",
-  "themes.id",
-  "themes.name",
-  "game_modes.id",
-  "game_modes.name",
-  "websites.id",
-  "websites.url",
-  "platforms",
-  "game_type.id",
-  "game_type.type",
-  "involved_companies.id",
-  "involved_companies.company.name",
-  "involved_companies.developer",
-  "involved_companies.publisher",
-  "involved_companies.porting",
-  "involved_companies.supporting",
-  "release_dates.id",
-  "release_dates.date",
-  "release_dates.human",
-  "release_dates.m",
-  "release_dates.y",
-  "release_dates.platform",
-  "release_dates.release_region",
-].join(", ");
-
-interface IGDBExpandedGame {
-  id: number;
-  name: string;
-  slug: string;
-  category?: number;
-  storyline?: string;
-  summary?: string;
-  first_release_date?: number;
-  total_rating?: number;
-  total_rating_count?: number;
-  hypes?: number;
-  updated_at?: number;
-  cover?: { id: number; url: string };
-  screenshots?: { id: number; url: string }[];
-  artworks?: { id: number; url: string }[];
-  franchises?: { id: number; name: string }[];
-  franchise?: { id: number; name: string };
-  collections?: { id: number; name: string }[];
-  videos?: { id: number; video_id: string }[];
-  genres?: { id: number; name: string }[];
-  keywords?: { id: number; name: string }[];
-  themes?: { id: number; name: string }[];
-  game_modes?: { id: number; name: string }[];
-  websites?: { id: number; url: string }[];
-  platforms?: number[];
-  game_type?: { id: number; type: string };
-  involved_companies?: {
-    id: number;
-    company?: { name: string };
-    developer: boolean;
-    publisher: boolean;
-    porting: boolean;
-    supporting: boolean;
-  }[];
-  release_dates?: {
-    id: number;
-    date: number;
-    human: string;
-    m: number;
-    y: number;
-    platform: number;
-    release_region: number;
-  }[];
-}
-
-const PLATFORM_QUERY_FIELDS = [
-  "name",
-  "slug",
-  "generation",
-  "created_at",
-  "platform_family.name",
-  "platform_family.slug",
-  "platform_logo.url",
-].join(", ");
-
-interface IGDBExpandedPlatform {
-  id: number;
-  name: string;
-  slug: string;
-  generation?: number;
-  created_at?: number;
-  platform_family?: { name: string; slug: string };
-  platform_logo?: { url: string };
-}
-
-const UPDATABLE_GAME_FIELDS = [
-  "slug",
-  "name",
-  "type",
-  "storyline",
-  "summary",
-  "modes",
-  "genres",
-  "keywords",
-  "themes",
-  "companies",
-  "websites",
-  "franchises",
-  "videos",
-  "first_release",
-  "release_dates",
-  "platformIds",
-  "igdb",
-] as const;
-
-const IMAGE_FIELDS = ["cover", "screenshots", "artworks"] as const;
 type ImageField = (typeof IMAGE_FIELDS)[number];
 
 const HYPES_FIELD = "hypes" as const;
@@ -215,14 +82,6 @@ const isFieldValueEmpty = (value: unknown) => {
   return false;
 };
 
-const UPDATABLE_PLATFORM_FIELDS = [
-  "name",
-  "slug",
-  "generation",
-  "family",
-  "logo",
-  "raId",
-] as const;
 type UpdatablePlatformField = (typeof UPDATABLE_PLATFORM_FIELDS)[number];
 
 @Injectable()
@@ -241,94 +100,6 @@ export class IGDBService {
     private readonly pino: PinoLogger,
     private readonly metrics: BusinessMetricsService
   ) {}
-
-  private async getSyncCheckpoint(type: ParserType) {
-    const state = await this.SyncStateModel.findOne({
-      parserType: type,
-    }).lean();
-
-    return state?.lastUpdatedAt || 0;
-  }
-
-  private async getGamesSyncState() {
-    return this.SyncStateModel.findOne({
-      parserType: "games",
-    }).lean();
-  }
-
-  private async markGamesBackfillStarted() {
-    const now = new Date().toISOString();
-
-    return this.SyncStateModel.findOneAndUpdate(
-      { parserType: "games" },
-      {
-        $set: {
-          backfillCompleted: false,
-          lastRunAt: now,
-          updatedAt: now,
-        },
-        $setOnInsert: {
-          createdAt: now,
-          backfillUpdatedAt: 0,
-          lastUpdatedAt: 0,
-        },
-      },
-      { new: true, upsert: true }
-    );
-  }
-
-  private async setGamesBackfillProgress(backfillUpdatedAt: number) {
-    const now = new Date().toISOString();
-
-    return this.SyncStateModel.findOneAndUpdate(
-      { parserType: "games" },
-      {
-        $set: {
-          backfillUpdatedAt,
-          lastRunAt: now,
-          updatedAt: now,
-        },
-      },
-      { new: true, upsert: true }
-    );
-  }
-
-  private async markGamesBackfillCompleted(lastUpdatedAt: number) {
-    const now = new Date().toISOString();
-
-    return this.SyncStateModel.findOneAndUpdate(
-      { parserType: "games" },
-      {
-        $set: {
-          backfillCompleted: true,
-          backfillUpdatedAt: lastUpdatedAt,
-          lastUpdatedAt,
-          lastRunAt: now,
-          updatedAt: now,
-        },
-      },
-      { new: true, upsert: true }
-    );
-  }
-
-  private async setSyncCheckpoint(type: ParserType, lastUpdatedAt: number) {
-    const now = new Date().toISOString();
-
-    return this.SyncStateModel.findOneAndUpdate(
-      { parserType: type },
-      {
-        $set: {
-          lastUpdatedAt,
-          lastRunAt: now,
-          updatedAt: now,
-        },
-        $setOnInsert: {
-          createdAt: now,
-        },
-      },
-      { new: true, upsert: true }
-    );
-  }
 
   async getToken() {
     const { data: authData } = await igdbAuth();
@@ -396,10 +167,13 @@ export class IGDBService {
             options?.field && !options?.forceParse
               ? items.filter((igdbGame) => {
                   const existingGame = existingGamesByIgdbId.get(igdbGame.id);
-                  return !existingGame || isFieldValueEmpty(
-                    (existingGame as unknown as Record<string, unknown>)[
-                      options.field
-                    ]
+                  return (
+                    !existingGame ||
+                    isFieldValueEmpty(
+                      (existingGame as unknown as Record<string, unknown>)[
+                        options.field
+                      ]
+                    )
                   );
                 })
               : items;
@@ -548,6 +322,63 @@ export class IGDBService {
     );
   }
 
+  async parsePlatformsFromIgdb(options?: { field?: string }) {
+    try {
+      const token = await this.getIgdbToken();
+      let count = 0;
+
+      await igdbParser<IGDBExpandedPlatform>({
+        token,
+        action: "platforms",
+        options: {
+          fields: PLATFORM_QUERY_FIELDS,
+          isCollectItems: false,
+        },
+        parsingCallback: async (items) => {
+          for (const platform of items) {
+            try {
+              await this.upsertPlatformFromIgdb(platform, options?.field);
+              count++;
+            } catch (e) {
+              this.logger.error(
+                e,
+                `Failed to upsert platform from IGDB: ${platform.id}`
+              );
+            }
+          }
+        },
+      });
+
+      this.logger.log(`Parsed ${count} platforms from IGDB`);
+
+      return "Completed";
+    } catch (err) {
+      this.logger.error(err, `Failed to parse platforms from IGDB`);
+      throw err;
+    }
+  }
+
+  async parseGameFromIgdb(
+    identifier: { igdbId?: number; slug?: string },
+    options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
+  ) {
+    try {
+      if (!identifier.igdbId && !identifier.slug) {
+        throw new BadRequestException("Either igdbId or slug must be provided");
+      }
+
+      const token = await this.getIgdbToken();
+
+      return await this.parseSingleGameFromIgdb(identifier, token, options);
+    } catch (err) {
+      this.logger.error(
+        err,
+        `Failed to parse game from IGDB: ${identifier.igdbId ?? identifier.slug}`
+      );
+      throw err;
+    }
+  }
+
   private async runSyncUpdatedGamesCron() {
     if (this.isSyncUpdatedGamesCronRunning) {
       this.logger.warn("IGDB games sync cron is already running");
@@ -622,7 +453,7 @@ export class IGDBService {
         links.push(
           process.env.S3_HOST_CDN.replace("%backet", bucketName) + key + ".jpg"
         );
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(
           "Image error: " +
             (e?.response?.status || e?.err?.message || "unknown")
@@ -696,42 +527,6 @@ export class IGDBService {
       },
       { upsert: !field }
     );
-  }
-
-  async parsePlatformsFromIgdb(options?: { field?: string }) {
-    try {
-      const token = await this.getIgdbToken();
-      let count = 0;
-
-      await igdbParser<IGDBExpandedPlatform>({
-        token,
-        action: "platforms",
-        options: {
-          fields: PLATFORM_QUERY_FIELDS,
-          isCollectItems: false,
-        },
-        parsingCallback: async (items) => {
-          for (const platform of items) {
-            try {
-              await this.upsertPlatformFromIgdb(platform, options?.field);
-              count++;
-            } catch (e) {
-              this.logger.error(
-                e,
-                `Failed to upsert platform from IGDB: ${platform.id}`
-              );
-            }
-          }
-        },
-      });
-
-      this.logger.log(`Parsed ${count} platforms from IGDB`);
-
-      return "Completed";
-    } catch (err) {
-      this.logger.error(err, `Failed to parse platforms from IGDB`);
-      throw err;
-    }
   }
 
   private async getIgdbToken() {
@@ -982,6 +777,9 @@ export class IGDBService {
       videos: (igdbGame.videos || []).map(
         (video) => `https://www.youtube.com/watch?v=${video.video_id}`
       ),
+      alternative_names: (igdbGame.alternative_names || []).map(
+        (alt) => alt.name
+      ),
       first_release: igdbGame.first_release_date,
       release_dates: (igdbGame.release_dates || []).map((date) => ({
         date: date.date,
@@ -1020,6 +818,7 @@ export class IGDBService {
           igdbGame.collections
         ).map((f) => f.id),
         videos: (igdbGame.videos || []).map((v) => v.id),
+        alternative_names: (igdbGame.alternative_names || []).map((a) => a.id),
       },
       createdAt: existingGame?.createdAt || now,
       updatedAt: now,
@@ -1053,24 +852,147 @@ export class IGDBService {
     return update.slug + " parsed";
   }
 
-  async parseGameFromIgdb(
-    identifier: { igdbId?: number; slug?: string },
-    options?: { parseImages?: boolean; field?: string; forceParse?: boolean }
-  ) {
-    try {
-      if (!identifier.igdbId && !identifier.slug) {
-        throw new BadRequestException("Either igdbId or slug must be provided");
-      }
+  private async getSyncCheckpoint(type: ParserType) {
+    const state = await this.SyncStateModel.findOne({
+      parserType: type,
+    }).lean();
 
-      const token = await this.getIgdbToken();
-
-      return await this.parseSingleGameFromIgdb(identifier, token, options);
-    } catch (err) {
-      this.logger.error(
-        err,
-        `Failed to parse game from IGDB: ${identifier.igdbId ?? identifier.slug}`
-      );
-      throw err;
-    }
+    return state?.lastUpdatedAt || 0;
   }
+
+  private async getGamesSyncState() {
+    return this.SyncStateModel.findOne({
+      parserType: "games",
+    }).lean();
+  }
+
+  private async markGamesBackfillStarted() {
+    const now = new Date().toISOString();
+
+    return this.SyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillCompleted: false,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+          backfillUpdatedAt: 0,
+          lastUpdatedAt: 0,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async setGamesBackfillProgress(backfillUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.SyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async markGamesBackfillCompleted(lastUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.SyncStateModel.findOneAndUpdate(
+      { parserType: "games" },
+      {
+        $set: {
+          backfillCompleted: true,
+          backfillUpdatedAt: lastUpdatedAt,
+          lastUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  private async setSyncCheckpoint(type: ParserType, lastUpdatedAt: number) {
+    const now = new Date().toISOString();
+
+    return this.SyncStateModel.findOneAndUpdate(
+      { parserType: type },
+      {
+        $set: {
+          lastUpdatedAt,
+          lastRunAt: now,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { new: true, upsert: true }
+    );
+  }
+}
+
+interface IGDBExpandedPlatform {
+  id: number;
+  name: string;
+  slug: string;
+  generation?: number;
+  created_at?: number;
+  platform_family?: { name: string; slug: string };
+  platform_logo?: { url: string };
+}
+
+interface IGDBExpandedGame {
+  id: number;
+  name: string;
+  slug: string;
+  category?: number;
+  storyline?: string;
+  summary?: string;
+  first_release_date?: number;
+  total_rating?: number;
+  total_rating_count?: number;
+  hypes?: number;
+  updated_at?: number;
+  cover?: { id: number; url: string };
+  screenshots?: { id: number; url: string }[];
+  artworks?: { id: number; url: string }[];
+  franchises?: { id: number; name: string }[];
+  franchise?: { id: number; name: string };
+  collections?: { id: number; name: string }[];
+  videos?: { id: number; video_id: string }[];
+  alternative_names?: { id: number; name: string }[];
+  genres?: { id: number; name: string }[];
+  keywords?: { id: number; name: string }[];
+  themes?: { id: number; name: string }[];
+  game_modes?: { id: number; name: string }[];
+  websites?: { id: number; url: string }[];
+  platforms?: number[];
+  game_type?: { id: number; type: string };
+  involved_companies?: {
+    id: number;
+    company?: { name: string };
+    developer: boolean;
+    publisher: boolean;
+    porting: boolean;
+    supporting: boolean;
+  }[];
+  release_dates?: {
+    id: number;
+    date: number;
+    human: string;
+    m: number;
+    y: number;
+    platform: number;
+    release_region: number;
+  }[];
 }
