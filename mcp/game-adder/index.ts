@@ -109,10 +109,10 @@ const checkRemoteImageAspectRatio = async (
 };
 
 const cropToAspectRatio = (
-  bytes: Buffer,
+  bytes: Buffer<ArrayBuffer>,
   targetRatio: number,
   position: CropPosition
-): Buffer => {
+): Buffer<ArrayBuffer> => {
   const tmpIn = join(tmpdir(), `crop-in-${randomBytes(6).toString("hex")}.img`);
   const tmpOut = join(tmpdir(), `crop-out-${randomBytes(6).toString("hex")}.jpg`);
   writeFileSync(tmpIn, bytes);
