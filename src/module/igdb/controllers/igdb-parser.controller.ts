@@ -291,6 +291,20 @@ export class IgdbParserController {
   @UseGuards(RolesGuard)
   @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
+  @Post("/games/dedupe-slugs")
+  @ApiOperation({
+    summary:
+      "Resolve duplicate game slugs by keeping the oldest game's slug and appending its IGDB id (or _id) to every other game sharing it. Run once before the unique slug index can build; safe to re-run any time",
+  })
+  @ApiResponse({ status: 200, description: "Successfully deduplicated" })
+  async dedupeSlugs() {
+    return this.service.deduplicateGameSlugs();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @UseGuards(AuthGuard("jwt"))
   @Get("/token")
   @ApiOperation({ summary: "Get IGDB token" })
   @ApiResponse({ status: 200, description: "Successfully started" })

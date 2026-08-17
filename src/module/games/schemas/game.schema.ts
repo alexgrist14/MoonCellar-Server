@@ -22,6 +22,8 @@ export class Game {
   @Prop()
   name: string;
   @Prop()
+  nameNormalized: string;
+  @Prop()
   type: string;
   @Prop()
   cover: string;
@@ -100,12 +102,14 @@ export class Game {
 }
 
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
+GameDatabaseSchema.index({ slug: 1 }, { unique: true });
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
 GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });
-GameDatabaseSchema.index({ "externalStores.store": 1, "externalStores.uid": 1 });
+GameDatabaseSchema.index({ "externalStores.name": 1, "externalStores.uid": 1 });
 GameDatabaseSchema.index({ hltbNotFoundAt: 1 });
 GameDatabaseSchema.index({ createdAt: -1 });
 GameDatabaseSchema.index({ "igdb.total_rating_count": -1 });
 GameDatabaseSchema.index({ "igdb.total_rating": -1 });
 GameDatabaseSchema.index({ first_release: -1 });
 GameDatabaseSchema.index({ name: 1 });
+GameDatabaseSchema.index({ nameNormalized: 1 });

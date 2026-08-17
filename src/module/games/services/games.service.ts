@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -36,6 +37,7 @@ import { Rating } from "src/module/user/schemas/user-ratings.schema";
 import { UserLogs } from "src/module/user/schemas/user-logs.schema";
 import { IndexNowService } from "src/module/indexnow/indexnow.service";
 import { FRONT_URL } from "src/shared/constants";
+import { normalizeGameName } from "src/shared/utils";
 import { pickFollowingsStatus } from "../utils/followings-status.utils";
 
 const SEARCH_CANDIDATES_LIMIT = 1000;
@@ -91,6 +93,7 @@ const TRIM_IGDB_STAGE = {
 type SearchIndexEntry = {
   _id: mongoose.Types.ObjectId;
   name: string;
+  nameNormalized: string;
 };
 
 @Injectable()
@@ -132,13 +135,17 @@ export class GamesService implements OnModuleInit {
       this.searchIndexRefreshPromise = this.Games.find({
         _id: { $exists: true },
       })
-        .select("_id name")
+        .select("_id name nameNormalized")
         .lean<SearchIndexEntry[]>()
         .then((docs) => {
-          this.searchIndexCache = docs;
+          const entries = docs.map((doc) => ({
+            ...doc,
+            nameNormalized: doc.nameNormalized || normalizeGameName(doc.name),
+          }));
+          this.searchIndexCache = entries;
           this.searchIndexCachedAt = Date.now();
           this.searchIndexRefreshPromise = null;
-          return docs;
+          return entries;
         })
         .catch((err) => {
           this.searchIndexRefreshPromise = null;
@@ -269,8 +276,8 @@ export class GamesService implements OnModuleInit {
       if (search) {
         const candidates = await this.getSearchIndex();
 
-        const matches = fuzzysort.go(search, candidates, {
-          key: "name",
+        const matches = fuzzysort.go(normalizeGameName(search), candidates, {
+          key: "nameNormalized",
           limit: SEARCH_CANDIDATES_LIMIT,
           threshold: SEARCH_SCORE_THRESHOLD,
         });
@@ -359,10 +366,16 @@ export class GamesService implements OnModuleInit {
 
   async addGame(data: IAddGameRequest) {
     try {
+      const slugTaken = await this.Games.exists({ slug: data.slug });
+      if (slugTaken) {
+        throw new ConflictException(`Slug already exists: ${data.slug}`);
+      }
+
       const now = new Date().toISOString();
 
       const game = await this.Games.create({
         ...data,
+        nameNormalized: normalizeGameName(data.name),
         isCustom: true,
         createdAt: now,
         updatedAt: now,
@@ -379,9 +392,23 @@ export class GamesService implements OnModuleInit {
 
   async updateGame(_id: mongoose.Types.ObjectId, data: IUpdateGameRequest) {
     try {
+      if (data.slug) {
+        const slugTaken = await this.Games.exists({
+          slug: data.slug,
+          _id: { $ne: _id },
+        });
+        if (slugTaken) {
+          throw new ConflictException(`Slug already exists: ${data.slug}`);
+        }
+      }
+
       const game = await this.Games.findOneAndUpdate(
         { _id },
-        { ...data, updatedAt: new Date().toISOString() },
+        {
+          ...data,
+          ...(data.name && { nameNormalized: normalizeGameName(data.name) }),
+          updatedAt: new Date().toISOString(),
+        },
         { new: true }
       );
 

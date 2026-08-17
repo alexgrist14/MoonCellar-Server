@@ -114,6 +114,7 @@ const PLATFORM_QUERY_FIELDS = [
 const UPDATABLE_GAME_FIELDS = [
   "slug",
   "name",
+  "nameNormalized",
   "type",
   "storyline",
   "summary",

@@ -21,6 +21,16 @@ export const getRandomArray = (array: unknown[], count: number) => {
   return randomIndices.map((index) => array[index]);
 };
 
+export const normalizeGameName = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/['\u2019]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
 export const getFormattedTitle = (title: string) => {
   return title
     .replaceAll("The ", "")

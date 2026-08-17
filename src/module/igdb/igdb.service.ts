@@ -17,7 +17,7 @@ import {
   runWithConcurrency,
 } from "./utils/igdb";
 import { ParserType } from "./interface/common.interface";
-import { getImageLink } from "src/shared/utils";
+import { getImageLink, normalizeGameName } from "src/shared/utils";
 import { findSteamAppInfo, mergeSteamStore } from "../steam/utils/steam.utils";
 import { Game, GameDocument } from "../games/schemas/game.schema";
 import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
@@ -477,6 +477,65 @@ export class IGDBService {
     }
   }
 
+  async deduplicateGameSlugs() {
+    try {
+      const duplicateGroups = await this.Games.aggregate<{
+        _id: string;
+        docs: {
+          _id: mongoose.Types.ObjectId;
+          createdAt: string;
+        }[];
+      }>([
+        {
+          $group: {
+            _id: "$slug",
+            docs: {
+              $push: {
+                _id: "$_id",
+                createdAt: "$createdAt",
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $match: { count: { $gt: 1 } } },
+      ]);
+
+      const now = new Date().toISOString();
+      const bulkOps = [];
+
+      for (const group of duplicateGroups) {
+        const [, ...rest] = [...group.docs].sort((a, b) =>
+          a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0
+        );
+
+        rest.forEach((doc, index) => {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: doc._id },
+              update: {
+                $set: { slug: `${group._id}-${index + 2}`, updatedAt: now },
+              },
+            },
+          });
+        });
+      }
+
+      if (bulkOps.length) {
+        await this.Games.bulkWrite(bulkOps);
+      }
+
+      this.logger.log(
+        `Deduplicated ${bulkOps.length} game slug(s) across ${duplicateGroups.length} collision group(s)`
+      );
+
+      return { collisions: duplicateGroups.length, renamed: bulkOps.length };
+    } catch (err) {
+      this.logger.error(err, "Failed to deduplicate game slugs");
+      throw err;
+    }
+  }
+
   private async runSyncUpdatedGamesCron() {
     if (this.isSyncUpdatedGamesCronRunning) {
       this.logger.warn("IGDB games sync cron is already running");
@@ -865,9 +924,15 @@ export class IGDBService {
       ? mergeSteamStore(externalStoresFromIgdb, steamFromWebsites)
       : externalStoresFromIgdb;
 
+    const resolvedSlug =
+      !options?.field || options.field === "slug"
+        ? await this.resolveUniqueSlug(igdbGame.slug, existingGame?._id)
+        : igdbGame.slug;
+
     const update = {
-      slug: igdbGame.slug,
+      slug: resolvedSlug,
       name: igdbGame.name,
+      nameNormalized: normalizeGameName(igdbGame.name),
       type:
         igdbGame.game_type?.type ||
         (igdbGame.category !== undefined
@@ -1028,6 +1093,32 @@ export class IGDBService {
     );
 
     return update.slug + " parsed";
+  }
+
+  private async resolveUniqueSlug(
+    candidateSlug: string,
+    excludeId?: mongoose.Types.ObjectId
+  ): Promise<string> {
+    let slug = candidateSlug;
+    let suffix = 2;
+
+    while (
+      await this.Games.exists({
+        slug,
+        ...(excludeId && { _id: { $ne: excludeId } }),
+      })
+    ) {
+      slug = `${candidateSlug}-${suffix}`;
+      suffix++;
+    }
+
+    if (slug !== candidateSlug) {
+      this.logger.warn(
+        `Slug collision for "${candidateSlug}", using "${slug}" instead`
+      );
+    }
+
+    return slug;
   }
 
   private async getSyncCheckpoint(type: ParserType) {
