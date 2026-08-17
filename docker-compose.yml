@@ -64,6 +64,14 @@ services:
     networks:
       - mongodb_network
 
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    ports:
+      - "8891:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:latest
     profiles: [monitoring]

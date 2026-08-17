@@ -16,6 +16,14 @@
         "mongodb-mcp-server@latest",
         "--readOnly"
       ]
+    },
+    "game-adder": {
+      "type": "stdio",
+      "command": "bun",
+      "args": [
+        "run",
+        "mcp/game-adder/index.ts"
+      ]
     }
   }
 }
