@@ -30,12 +30,12 @@ export class SteamService {
         ? { websites: { $exists: true, $ne: [] } }
         : {
             websites: { $exists: true, $ne: [] },
-            externalStores: { $not: { $elemMatch: { name: "Steam" } } },
+            externalPages: { $not: { $elemMatch: { name: "Steam" } } },
           };
 
       const games = await this.games
         .find(filter)
-        .select("_id websites externalStores");
+        .select("_id websites externalPages");
 
       const now = new Date().toISOString();
       const bulkOps = [];
@@ -49,8 +49,8 @@ export class SteamService {
             filter: { _id: game._id },
             update: {
               $set: {
-                externalStores: mergeSteamStore(
-                  game.externalStores,
+                externalPages: mergeSteamStore(
+                  game.externalPages,
                   steamInfo
                 ),
                 updatedAt: now,
@@ -87,7 +87,7 @@ export class SteamService {
         .findOne(
           identifier.id ? { _id: identifier.id } : { slug: identifier.slug }
         )
-        .select("_id slug websites externalStores");
+        .select("_id slug websites externalPages");
 
       if (!game) {
         throw new NotFoundException(
@@ -103,13 +103,13 @@ export class SteamService {
         );
       }
 
-      const externalStores = mergeSteamStore(game.externalStores, steamInfo);
+      const externalPages = mergeSteamStore(game.externalPages, steamInfo);
 
       await this.games.updateOne(
         { _id: game._id },
         {
           $set: {
-            externalStores,
+            externalPages,
             updatedAt: new Date().toISOString(),
           },
         }
@@ -123,7 +123,7 @@ export class SteamService {
 
       return {
         slug: game.slug,
-        steam: externalStores.find((store) => store.name === "Steam"),
+        steam: externalPages.find((store) => store.name === "Steam"),
       };
     } catch (err) {
       this.logger.error(

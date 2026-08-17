@@ -137,7 +137,7 @@ const UPDATABLE_GAME_FIELDS = [
   "multiplayer_modes",
   "ageRatings",
   "languages",
-  "externalStores",
+  "externalPages",
   "igdb",
 ] as const;
 

@@ -3,7 +3,7 @@ import mongoose, { HydratedDocument } from "mongoose";
 import {
   IAgeRatingField,
   ICompanyField,
-  IExternalStoreField,
+  IExternalPageField,
   IGDBField,
   IHltbField,
   IMultiplayerModeField,
@@ -74,7 +74,7 @@ export class Game {
   @Prop()
   languages: string[];
   @Prop({ type: [Object] })
-  externalStores: IExternalStoreField[];
+  externalPages: IExternalPageField[];
   @Prop({ type: Object })
   relatedGames: IRelatedGamesField;
   @Prop({ type: [Object] })
@@ -105,7 +105,7 @@ export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ slug: 1 }, { unique: true });
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
 GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });
-GameDatabaseSchema.index({ "externalStores.name": 1, "externalStores.uid": 1 });
+GameDatabaseSchema.index({ "externalPages.name": 1, "externalPages.uid": 1 });
 GameDatabaseSchema.index({ hltbNotFoundAt: 1 });
 GameDatabaseSchema.index({ createdAt: -1 });
 GameDatabaseSchema.index({ "igdb.total_rating_count": -1 });

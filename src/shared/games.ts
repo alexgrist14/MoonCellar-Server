@@ -38,6 +38,55 @@ const buildYearsFilter = (years: IGetGamesRequest["years"]) => {
   return Object.keys(range).length ? [{ first_release: range }] : [];
 };
 
+const toValuesArray = (values: string[] | string | null | undefined) =>
+  Array.isArray(values) ? values : values ? [values] : [];
+
+const buildMultiSelectConditions = (
+  field: string,
+  selectedValues: string[] | string | null | undefined,
+  excludedValues: string[] | string | null | undefined,
+  matchMode: "any" | "all"
+) => [
+  ...(toValuesArray(selectedValues).length
+    ? [
+        {
+          [field]:
+            matchMode === "any"
+              ? { $in: toValuesArray(selectedValues) }
+              : { $all: toValuesArray(selectedValues) },
+        },
+      ]
+    : []),
+  ...(toValuesArray(excludedValues).length
+    ? [{ [field]: { $nin: toValuesArray(excludedValues) } }]
+    : []),
+];
+
+const buildAgeRatingElemMatch = (combo: string) => {
+  const [organization, rating] = combo.split(" | ");
+  return { ageRatings: { $elemMatch: { organization, rating } } };
+};
+
+const buildAgeRatingConditions = (
+  selectedValues: string[] | string | null | undefined,
+  excludedValues: string[] | string | null | undefined,
+  matchMode: "any" | "all"
+) => {
+  const selectedCombos = toValuesArray(selectedValues);
+  const excludedCombos = toValuesArray(excludedValues);
+
+  return [
+    ...(selectedCombos.length
+      ? matchMode === "any"
+        ? [{ $or: selectedCombos.map(buildAgeRatingElemMatch) }]
+        : selectedCombos.map(buildAgeRatingElemMatch)
+      : []),
+    ...(excludedCombos.length
+      ? [{ $nor: excludedCombos.map(buildAgeRatingElemMatch) }]
+      : []),
+  ];
+};
+
 export const gamesFilters = (
   filters: IGetGamesRequest,
   searchedIds?: mongoose.Types.ObjectId[]
@@ -46,7 +95,6 @@ export const gamesFilters = (
     isOnlyWithAchievements,
     mode,
     years,
-    company,
     excluded,
     selected,
     excludeGames,
@@ -97,7 +145,7 @@ export const gamesFilters = (
         ...(!!excluded?.types?.length
           ? [
               {
-                game_type: {
+                type: {
                   $nin: Array.isArray(excluded.types)
                     ? excluded.types
                     : [excluded.types],
@@ -106,13 +154,31 @@ export const gamesFilters = (
             ]
           : []),
         ...buildYearsFilter(years),
-        ...(!!company
+        ...(!!selected?.companies?.length
+          ? [
+              {
+                "companies.name":
+                  modeFor("companies") === "any"
+                    ? {
+                        $in: Array.isArray(selected.companies)
+                          ? selected.companies
+                          : [selected.companies],
+                      }
+                    : {
+                        $all: Array.isArray(selected.companies)
+                          ? selected.companies
+                          : [selected.companies],
+                      },
+              },
+            ]
+          : []),
+        ...(!!excluded?.companies?.length
           ? [
               {
                 "companies.name": {
-                  $regex: company.replaceAll(" ", "\\s*"),
-
-                  $options: "i",
+                  $nin: Array.isArray(excluded.companies)
+                    ? excluded.companies
+                    : [excluded.companies],
                 },
               },
             ]
@@ -255,7 +321,7 @@ export const gamesFilters = (
         ...(!!excluded?.platforms?.length
           ? [
               {
-                platforms: {
+                platformIds: {
                   $nin: Array.isArray(excluded.platforms)
                     ? excluded.platforms.map(
                         (platform) => new mongoose.Types.ObjectId(platform)
@@ -286,7 +352,7 @@ export const gamesFilters = (
         ...(!!excluded?.modes?.length
           ? [
               {
-                game_modes: {
+                modes: {
                   $nin: Array.isArray(excluded.modes)
                     ? excluded.modes
                     : [excluded.modes],
@@ -294,6 +360,35 @@ export const gamesFilters = (
               },
             ]
           : []),
+        ...buildMultiSelectConditions(
+          "game_engines",
+          selected?.game_engines,
+          excluded?.game_engines,
+          modeFor("game_engines")
+        ),
+        ...buildMultiSelectConditions(
+          "player_perspectives",
+          selected?.player_perspectives,
+          excluded?.player_perspectives,
+          modeFor("player_perspectives")
+        ),
+        ...buildMultiSelectConditions(
+          "languages",
+          selected?.languages,
+          excluded?.languages,
+          modeFor("languages")
+        ),
+        ...buildMultiSelectConditions(
+          "status",
+          selected?.status,
+          excluded?.status,
+          modeFor("status")
+        ),
+        ...buildAgeRatingConditions(
+          selected?.ageRatings,
+          excluded?.ageRatings,
+          modeFor("ageRatings")
+        ),
         ...(!!excludeGames?.length
           ? [
               {

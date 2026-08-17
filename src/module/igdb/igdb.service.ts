@@ -902,7 +902,7 @@ export class IGDBService {
 
     const now = new Date().toISOString();
 
-    const externalStoresFromIgdb = (igdbGame.external_games || []).map(
+    const externalPagesFromIgdb = (igdbGame.external_games || []).map(
       (externalGame) => ({
         name:
           externalGameSourceNames[externalGame.external_game_source] ??
@@ -912,7 +912,7 @@ export class IGDBService {
       })
     );
 
-    const hasSteamStore = externalStoresFromIgdb.some(
+    const hasSteamStore = externalPagesFromIgdb.some(
       (store) => store.name === "Steam"
     );
 
@@ -920,9 +920,9 @@ export class IGDBService {
       ? null
       : findSteamAppInfo((igdbGame.websites || []).map((site) => site.url));
 
-    const externalStores = steamFromWebsites
-      ? mergeSteamStore(externalStoresFromIgdb, steamFromWebsites)
-      : externalStoresFromIgdb;
+    const externalPages = steamFromWebsites
+      ? mergeSteamStore(externalPagesFromIgdb, steamFromWebsites)
+      : externalPagesFromIgdb;
 
     const resolvedSlug =
       !options?.field || options.field === "slug"
@@ -1011,7 +1011,7 @@ export class IGDBService {
             .filter((name): name is string => !!name)
         )
       ),
-      externalStores,
+      externalPages,
       igdb: {
         gameId: igdbGame.id,
         total_rating: igdbGame.total_rating,

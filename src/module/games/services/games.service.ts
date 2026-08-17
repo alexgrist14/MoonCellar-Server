@@ -249,7 +249,6 @@ export class GamesService implements OnModuleInit {
     excluded,
     search,
     mode,
-    company,
     years,
     rating,
     votes,
@@ -263,7 +262,6 @@ export class GamesService implements OnModuleInit {
         selected,
         excluded,
         mode,
-        company,
         years,
         excludeGames,
         rating,
@@ -617,6 +615,10 @@ export class GamesService implements OnModuleInit {
         franchises: "franchises",
         type: "type",
         companies: "companies.name",
+        game_engines: "game_engines",
+        player_perspectives: "player_perspectives",
+        languages: "languages",
+        status: "status",
       };
 
       const entries = await Promise.all(
@@ -626,7 +628,32 @@ export class GamesService implements OnModuleInit {
         })
       );
 
-      const result = Object.fromEntries(entries);
+      const ageRatingGroups = (await this.Games.aggregate([
+        { $unwind: "$ageRatings" },
+        {
+          $group: {
+            _id: {
+              organization: "$ageRatings.organization",
+              rating: "$ageRatings.rating",
+            },
+          },
+        },
+      ])) as { _id: { organization: string; rating: string } }[];
+
+      const ageRatings = ageRatingGroups
+        .map((group) => group._id)
+        .filter((combo) => combo.organization && combo.rating)
+        .sort((a, b) =>
+          a.organization === b.organization
+            ? a.rating.localeCompare(b.rating)
+            : a.organization.localeCompare(b.organization)
+        )
+        .map((combo) => `${combo.organization} | ${combo.rating}`);
+
+      const result = {
+        ...Object.fromEntries(entries),
+        ageRatings,
+      };
 
       const uploaded = await this.fileService.uploadObject(
         JSON.stringify(result),
