@@ -108,6 +108,22 @@ export const runWithConcurrency = async <T, R>(
 export const wait = (delayMs: number) =>
   new Promise((resolve) => setTimeout(resolve, delayMs));
 
+export const parseStoreNameFromUrl = (
+  url?: string | null
+): string | undefined => {
+  if (!url) return undefined;
+
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "");
+    const labels = hostname.split(".");
+    const name = labels.length > 1 ? labels[labels.length - 2] : labels[0];
+
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return undefined;
+  }
+};
+
 const parser = async <T>({
   token,
   type,

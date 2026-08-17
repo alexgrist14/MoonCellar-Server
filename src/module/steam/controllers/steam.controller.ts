@@ -30,7 +30,7 @@ export class SteamController {
   @Post("/games/parse-links")
   @ApiOperation({
     summary:
-      "Parse Steam store links from games' websites and store the Steam app id in steam.gameId",
+      "Parse Steam store links from games' websites and store them as a Steam entry in externalStores",
   })
   @ApiResponse({ status: 200, description: "Successfully started" })
   @ApiQuery({
@@ -39,7 +39,7 @@ export class SteamController {
     required: false,
     type: Boolean,
     description:
-      "Also re-parse games that already have steam.gameId set (by default only games missing it are parsed)",
+      "Also re-parse games that already have a Steam entry in externalStores (by default only games missing it are parsed)",
   })
   parseSteamLinks(@Query("forceParse") forceParseQuery?: string) {
     void this.service
@@ -58,7 +58,7 @@ export class SteamController {
   @Post("/games/parse")
   @ApiOperation({
     summary:
-      "Parse the Steam store link for a single game by id or slug and store the Steam app id in steam.gameId",
+      "Parse the Steam store link for a single game by id or slug and store it as a Steam entry in externalStores",
   })
   @ApiResponse({ status: 200, description: "Successfully parsed" })
   @ApiQuery({

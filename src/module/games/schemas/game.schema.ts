@@ -1,12 +1,15 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import {
+  IAgeRatingField,
   ICompanyField,
+  IExternalStoreField,
   IGDBField,
   IHltbField,
+  IMultiplayerModeField,
   IReleaseDate,
+  IRelatedGamesField,
   IRetroachievementsField,
-  ISteamField,
 } from "src/shared/zod/schemas/games.schema";
 import { Platform } from "./platform.schema";
 
@@ -54,6 +57,24 @@ export class Game {
   release_dates: IReleaseDate[];
   @Prop({ ref: Platform.name })
   platformIds: mongoose.Types.ObjectId[];
+  @Prop()
+  status: string;
+  @Prop()
+  versionTitle: string;
+  @Prop()
+  game_engines: string[];
+  @Prop()
+  player_perspectives: string[];
+  @Prop({ type: [Object] })
+  multiplayer_modes: IMultiplayerModeField[];
+  @Prop({ type: [Object] })
+  ageRatings: IAgeRatingField[];
+  @Prop()
+  languages: string[];
+  @Prop({ type: [Object] })
+  externalStores: IExternalStoreField[];
+  @Prop({ type: Object })
+  relatedGames: IRelatedGamesField;
   @Prop({ type: [Object] })
   retroachievements: IRetroachievementsField[];
   @Prop()
@@ -72,8 +93,6 @@ export class Game {
   hltb: IHltbField;
   @Prop()
   hltbNotFoundAt: string;
-  @Prop({ type: Object })
-  steam: ISteamField;
   @Prop()
   createdAt: string;
   @Prop()
@@ -83,7 +102,7 @@ export class Game {
 export const GameDatabaseSchema = SchemaFactory.createForClass(Game);
 GameDatabaseSchema.index({ "igdb.gameId": 1 });
 GameDatabaseSchema.index({ "hltb.updatedAt": 1, _id: 1 });
-GameDatabaseSchema.index({ "steam.gameId": 1 });
+GameDatabaseSchema.index({ "externalStores.store": 1, "externalStores.uid": 1 });
 GameDatabaseSchema.index({ hltbNotFoundAt: 1 });
 GameDatabaseSchema.index({ createdAt: -1 });
 GameDatabaseSchema.index({ "igdb.total_rating_count": -1 });

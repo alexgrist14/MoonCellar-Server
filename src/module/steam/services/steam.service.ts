@@ -8,7 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Game, GameDocument } from "../../games/schemas/game.schema";
 import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
-import { findSteamAppInfo } from "../utils/steam.utils";
+import { findSteamAppInfo, mergeSteamStore } from "../utils/steam.utils";
 
 @Injectable()
 export class SteamService {
@@ -30,10 +30,12 @@ export class SteamService {
         ? { websites: { $exists: true, $ne: [] } }
         : {
             websites: { $exists: true, $ne: [] },
-            "steam.gameId": { $exists: false },
+            externalStores: { $not: { $elemMatch: { name: "Steam" } } },
           };
 
-      const games = await this.games.find(filter).select("_id websites");
+      const games = await this.games
+        .find(filter)
+        .select("_id websites externalStores");
 
       const now = new Date().toISOString();
       const bulkOps = [];
@@ -45,7 +47,15 @@ export class SteamService {
         bulkOps.push({
           updateOne: {
             filter: { _id: game._id },
-            update: { $set: { steam: steamInfo, updatedAt: now } },
+            update: {
+              $set: {
+                externalStores: mergeSteamStore(
+                  game.externalStores,
+                  steamInfo
+                ),
+                updatedAt: now,
+              },
+            },
           },
         });
       }
@@ -77,7 +87,7 @@ export class SteamService {
         .findOne(
           identifier.id ? { _id: identifier.id } : { slug: identifier.slug }
         )
-        .select("_id slug websites");
+        .select("_id slug websites externalStores");
 
       if (!game) {
         throw new NotFoundException(
@@ -93,11 +103,13 @@ export class SteamService {
         );
       }
 
+      const externalStores = mergeSteamStore(game.externalStores, steamInfo);
+
       await this.games.updateOne(
         { _id: game._id },
         {
           $set: {
-            steam: steamInfo,
+            externalStores,
             updatedAt: new Date().toISOString(),
           },
         }
@@ -109,7 +121,10 @@ export class SteamService {
         `Parsed Steam link for game: ${game.slug} (gameId=${steamInfo.gameId})`
       );
 
-      return { slug: game.slug, steam: steamInfo };
+      return {
+        slug: game.slug,
+        steam: externalStores.find((store) => store.name === "Steam"),
+      };
     } catch (err) {
       this.logger.error(
         err,

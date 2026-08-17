@@ -13,10 +13,12 @@ import {
   igdbAgent,
   igdbAuth,
   igdbParser,
+  parseStoreNameFromUrl,
   runWithConcurrency,
 } from "./utils/igdb";
 import { ParserType } from "./interface/common.interface";
 import { getImageLink } from "src/shared/utils";
+import { findSteamAppInfo, mergeSteamStore } from "../steam/utils/steam.utils";
 import { Game, GameDocument } from "../games/schemas/game.schema";
 import { Platform, PlatformDocument } from "../games/schemas/platform.schema";
 import { FileService } from "../user/services/file-upload.service";
@@ -36,7 +38,11 @@ import {
   IGDB_GAMES_SYNC_UPDATED_DELAY_MS,
   IGDB_GAMES_SYNC_UPDATED_LIMIT,
 } from "./constants/sync";
-import { categoryTypeNames } from "./constants/common";
+import {
+  categoryTypeNames,
+  externalGameSourceNames,
+  gameStatusNames,
+} from "./constants/common";
 import {
   DEFAULT_GAMES_SYNC_CONCURRENCY,
   DEFAULT_IGDB_SYNC_DELAY_MS,
@@ -56,6 +62,19 @@ const ALL_UPDATABLE_GAME_FIELDS = [
   ...UPDATABLE_GAME_FIELDS,
   ...IMAGE_FIELDS,
   HYPES_FIELD,
+] as const;
+
+const RELATED_GAME_ARRAY_FIELDS = [
+  "dlcs",
+  "expansions",
+  "standalone_expansions",
+  "bundles",
+  "expanded_games",
+  "forks",
+  "ports",
+  "remakes",
+  "remasters",
+  "similar_games",
 ] as const;
 
 const mergeFranchises = (
@@ -218,6 +237,12 @@ export class IGDBService {
         await this.markGamesBackfillCompleted(checkpoint);
       }
 
+      if (processedCount > 0) {
+        await this.linkRelatedGames().catch((e) =>
+          this.logger.error(e, "Failed to link related games after backfill")
+        );
+      }
+
       this.logger.log(
         `IGDB games backfill finished, processed ${processedCount} games`
       );
@@ -306,6 +331,12 @@ export class IGDBService {
         },
       });
 
+      if (changedCount > 0) {
+        await this.linkRelatedGames().catch((e) =>
+          this.logger.error(e, "Failed to link related games after sync")
+        );
+      }
+
       return { changedCount, lastUpdatedAt: checkpoint };
     } catch (err) {
       this.logger.error(err, "Failed to sync games from IGDB");
@@ -375,6 +406,73 @@ export class IGDBService {
         err,
         `Failed to parse game from IGDB: ${identifier.igdbId ?? identifier.slug}`
       );
+      throw err;
+    }
+  }
+
+  async linkRelatedGames() {
+    try {
+      const games = await this.Games.find({
+        "igdb.gameId": { $exists: true },
+      }).select(
+        "_id igdb.gameId igdb.parent_game " +
+          RELATED_GAME_ARRAY_FIELDS.map((field) => `igdb.${field}`).join(" ")
+      );
+
+      const idByIgdbId = new Map(
+        games.map((game) => [game.igdb.gameId, game._id])
+      );
+
+      const now = new Date().toISOString();
+      const bulkOps = [];
+
+      for (const game of games) {
+        const relatedGames: Record<string, unknown> = {};
+        let hasAny = false;
+
+        for (const field of RELATED_GAME_ARRAY_FIELDS) {
+          const igdbIds = game.igdb[field] as number[] | undefined;
+          if (!igdbIds?.length) continue;
+
+          const resolved = igdbIds
+            .map((igdbId) => idByIgdbId.get(igdbId))
+            .filter((id): id is mongoose.Types.ObjectId => !!id);
+
+          if (resolved.length) {
+            relatedGames[field] = resolved;
+            hasAny = true;
+          }
+        }
+
+        if (game.igdb.parent_game) {
+          const parentId = idByIgdbId.get(game.igdb.parent_game);
+          if (parentId) {
+            relatedGames.parent_game = parentId;
+            hasAny = true;
+          }
+        }
+
+        if (hasAny) {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: game._id },
+              update: { $set: { relatedGames, updatedAt: now } },
+            },
+          });
+        }
+      }
+
+      if (bulkOps.length) {
+        await this.Games.bulkWrite(bulkOps);
+      }
+
+      this.logger.log(
+        `Linked related games for ${bulkOps.length}/${games.length} games`
+      );
+
+      return { matched: games.length, updated: bulkOps.length };
+    } catch (err) {
+      this.logger.error(err, "Failed to link related games");
       throw err;
     }
   }
@@ -745,6 +843,28 @@ export class IGDBService {
 
     const now = new Date().toISOString();
 
+    const externalStoresFromIgdb = (igdbGame.external_games || []).map(
+      (externalGame) => ({
+        name:
+          externalGameSourceNames[externalGame.external_game_source] ??
+          parseStoreNameFromUrl(externalGame.url),
+        uid: externalGame.uid,
+        url: externalGame.url ?? null,
+      })
+    );
+
+    const hasSteamStore = externalStoresFromIgdb.some(
+      (store) => store.name === "Steam"
+    );
+
+    const steamFromWebsites = hasSteamStore
+      ? null
+      : findSteamAppInfo((igdbGame.websites || []).map((site) => site.url));
+
+    const externalStores = steamFromWebsites
+      ? mergeSteamStore(externalStoresFromIgdb, steamFromWebsites)
+      : externalStoresFromIgdb;
+
     const update = {
       slug: igdbGame.slug,
       name: igdbGame.name,
@@ -791,13 +911,57 @@ export class IGDBService {
         region: date.release_region,
       })),
       platformIds: platformIds.map((plat) => plat._id),
+      status: gameStatusNames[igdbGame.status ?? 0] || null,
+      versionTitle: igdbGame.version_title || null,
+      game_engines: (igdbGame.game_engines || []).map((engine) => engine.name),
+      player_perspectives: (igdbGame.player_perspectives || []).map(
+        (perspective) => perspective.name
+      ),
+      multiplayer_modes: (igdbGame.multiplayer_modes || []).map((mode) => ({
+        platformId: platformIds.find((plat) => plat.igdbId === mode.platform)
+          ?._id,
+        campaignCoop: mode.campaigncoop,
+        dropIn: mode.dropin,
+        lanCoop: mode.lancoop,
+        offlineCoop: mode.offlinecoop,
+        offlineCoopMax: mode.offlinecoopmax,
+        offlineMax: mode.offlinemax,
+        onlineCoop: mode.onlinecoop,
+        onlineCoopMax: mode.onlinecoopmax,
+        onlineMax: mode.onlinemax,
+        splitscreen: mode.splitscreen,
+        splitscreenOnline: mode.splitscreenonline,
+      })),
+      ageRatings: (igdbGame.age_ratings || [])
+        .filter((rating) => rating.organization?.name && rating.rating_category?.rating)
+        .map((rating) => ({
+          organization: rating.organization.name,
+          rating: rating.rating_category.rating,
+          synopsis: rating.synopsis,
+        })),
+      languages: Array.from(
+        new Set(
+          (igdbGame.language_supports || [])
+            .map((support) => support.language?.name)
+            .filter((name): name is string => !!name)
+        )
+      ),
+      externalStores,
       igdb: {
         gameId: igdbGame.id,
         total_rating: igdbGame.total_rating,
         total_rating_count: igdbGame.total_rating_count,
+        aggregated_rating: igdbGame.aggregated_rating,
+        aggregated_rating_count: igdbGame.aggregated_rating_count,
+        rating: igdbGame.rating,
+        rating_count: igdbGame.rating_count,
         hypes: igdbGame.hypes,
         screenshotsCount: igdbGame.screenshots?.length || 0,
         artworksCount: igdbGame.artworks?.length || 0,
+        status: igdbGame.status ?? 0,
+        version_parent: igdbGame.version_parent ?? null,
+        parent_game: igdbGame.parent_game ?? null,
+        url: igdbGame.url,
         genres: (igdbGame.genres || []).map((genre) => genre.id),
         keywords: (igdbGame.keywords || []).map((keyword) => keyword.id),
         themes: (igdbGame.themes || []).map((theme) => theme.id),
@@ -819,6 +983,20 @@ export class IGDBService {
         ).map((f) => f.id),
         videos: (igdbGame.videos || []).map((v) => v.id),
         alternative_names: (igdbGame.alternative_names || []).map((a) => a.id),
+        game_engines: (igdbGame.game_engines || []).map((engine) => engine.id),
+        player_perspectives: (igdbGame.player_perspectives || []).map(
+          (perspective) => perspective.id
+        ),
+        dlcs: igdbGame.dlcs || [],
+        expansions: igdbGame.expansions || [],
+        standalone_expansions: igdbGame.standalone_expansions || [],
+        bundles: igdbGame.bundles || [],
+        expanded_games: igdbGame.expanded_games || [],
+        forks: igdbGame.forks || [],
+        ports: igdbGame.ports || [],
+        remakes: igdbGame.remakes || [],
+        remasters: igdbGame.remasters || [],
+        similar_games: igdbGame.similar_games || [],
       },
       createdAt: existingGame?.createdAt || now,
       updatedAt: now,
@@ -995,4 +1173,50 @@ interface IGDBExpandedGame {
     platform: number;
     release_region: number;
   }[];
+  status?: number;
+  version_parent?: number;
+  version_title?: string;
+  parent_game?: number;
+  aggregated_rating?: number;
+  aggregated_rating_count?: number;
+  rating?: number;
+  rating_count?: number;
+  url?: string;
+  game_engines?: { id: number; name: string }[];
+  player_perspectives?: { id: number; name: string }[];
+  multiplayer_modes?: {
+    platform?: number;
+    campaigncoop?: boolean;
+    dropin?: boolean;
+    lancoop?: boolean;
+    offlinecoop?: boolean;
+    offlinecoopmax?: number;
+    offlinemax?: number;
+    onlinecoop?: boolean;
+    onlinecoopmax?: number;
+    onlinemax?: number;
+    splitscreen?: boolean;
+    splitscreenonline?: boolean;
+  }[];
+  age_ratings?: {
+    organization?: { name: string };
+    rating_category?: { rating: string };
+    synopsis?: string;
+  }[];
+  language_supports?: { language?: { name: string } }[];
+  external_games?: {
+    uid: string;
+    url?: string;
+    external_game_source: number;
+  }[];
+  dlcs?: number[];
+  expansions?: number[];
+  standalone_expansions?: number[];
+  bundles?: number[];
+  expanded_games?: number[];
+  forks?: number[];
+  ports?: number[];
+  remakes?: number[];
+  remasters?: number[];
+  similar_games?: number[];
 }

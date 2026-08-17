@@ -277,6 +277,20 @@ export class IgdbParserController {
   @UseGuards(RolesGuard)
   @Roles(RolesEnum.ADMIN)
   @UseGuards(AuthGuard("jwt"))
+  @Post("/games/link-related")
+  @ApiOperation({
+    summary:
+      "Resolve IGDB related-game ids (dlcs, expansions, remakes, similar_games, etc.) into internal game references on every game. Runs automatically after backfill/sync; use this to re-run it manually",
+  })
+  @ApiResponse({ status: 200, description: "Successfully linked" })
+  async linkRelatedGames() {
+    return this.service.linkRelatedGames();
+  }
+
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @UseGuards(AuthGuard("jwt"))
   @Get("/token")
   @ApiOperation({ summary: "Get IGDB token" })
   @ApiResponse({ status: 200, description: "Successfully started" })

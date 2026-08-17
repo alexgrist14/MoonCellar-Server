@@ -33,3 +33,25 @@ export const categoryTypeNames: Record<number, string> = {
   13: "Pack / Addon",
   14: "Update",
 };
+
+export const gameStatusNames: Record<number, string> = {
+  0: "Released",
+  2: "Alpha",
+  3: "Beta",
+  4: "Early Access",
+  5: "Offline",
+  6: "Cancelled",
+  7: "Rumored",
+  8: "Delisted",
+};
+
+export const externalGameSourceNames: Record<number, string> = {
+  1: "Steam",
+  3: "GiantBomb",
+  5: "GOG",
+  10: "YouTube",
+  14: "Twitch",
+  20: "Amazon",
+  26: "Epic Games",
+  36: "PlayStation Store",
+};

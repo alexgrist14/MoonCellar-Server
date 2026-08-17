@@ -1,3 +1,5 @@
+import { IExternalStoreField } from "src/shared/zod/schemas/games.schema";
+
 const STEAM_APP_URL_REGEX =
   /(?:store\.steampowered\.com|steamcommunity\.com)\/app\/(\d+)(?:\/([^/?#]+))?/i;
 
@@ -24,3 +26,17 @@ export const findSteamAppInfo = (websites?: string[]): SteamAppInfo | null => {
 
   return null;
 };
+
+export const mergeSteamStore = (
+  externalStores: IExternalStoreField[] | undefined,
+  steamInfo: SteamAppInfo
+): IExternalStoreField[] => [
+  ...(externalStores || []).filter((store) => store.name !== "Steam"),
+  {
+    name: "Steam",
+    uid: String(steamInfo.gameId),
+    url: `https://store.steampowered.com/app/${steamInfo.gameId}${
+      steamInfo.slug ? `/${steamInfo.slug}` : ""
+    }`,
+  },
+];
