@@ -49,6 +49,7 @@ import {
   DEFAULT_IGDB_SYNC_LIMIT,
   IMAGE_FIELDS,
   PLATFORM_QUERY_FIELDS,
+  RELATED_GAMES_LINK_BATCH_SIZE,
   SINGLE_GAME_QUERY_FIELDS,
   UPDATABLE_GAME_FIELDS,
   UPDATABLE_PLATFORM_FIELDS,
@@ -462,15 +463,26 @@ export class IGDBService {
         }
       }
 
-      if (bulkOps.length) {
-        await this.Games.bulkWrite(bulkOps);
+      this.logger.log(
+        `Linking related games: ${bulkOps.length}/${games.length} games to update`
+      );
+
+      let updatedCount = 0;
+      for (let i = 0; i < bulkOps.length; i += RELATED_GAMES_LINK_BATCH_SIZE) {
+        const batch = bulkOps.slice(i, i + RELATED_GAMES_LINK_BATCH_SIZE);
+        await this.Games.bulkWrite(batch);
+        updatedCount += batch.length;
+
+        this.logger.log(
+          `Linked related games progress: ${updatedCount}/${bulkOps.length}`
+        );
       }
 
       this.logger.log(
-        `Linked related games for ${bulkOps.length}/${games.length} games`
+        `Linked related games for ${updatedCount}/${games.length} games`
       );
 
-      return { matched: games.length, updated: bulkOps.length };
+      return { matched: games.length, updated: updatedCount };
     } catch (err) {
       this.logger.error(err, "Failed to link related games");
       throw err;

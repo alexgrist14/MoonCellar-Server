@@ -282,9 +282,11 @@ export class IgdbParserController {
     summary:
       "Resolve IGDB related-game ids (dlcs, expansions, remakes, similar_games, etc.) into internal game references on every game. Runs automatically after backfill/sync; use this to re-run it manually",
   })
-  @ApiResponse({ status: 200, description: "Successfully linked" })
-  async linkRelatedGames() {
-    return this.service.linkRelatedGames();
+  @ApiResponse({ status: 200, description: "Successfully started" })
+  linkRelatedGames() {
+    void this.service.linkRelatedGames().catch(() => undefined);
+
+    return { message: "Linking started" };
   }
 
   @ApiCookieAuth()
