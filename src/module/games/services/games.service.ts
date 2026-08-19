@@ -437,6 +437,8 @@ export class GamesService implements OnModuleInit {
         ),
       ]);
 
+      this.indexNow.submitUrl(`${FRONT_URL}/games/${game.slug}`);
+
       return game;
     } catch (err) {
       this.logger.error(err, `Failed to delete game: ${_id}`);
