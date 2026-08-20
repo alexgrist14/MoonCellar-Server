@@ -254,7 +254,7 @@ export class IgdbParserController {
     description:
       "When field is set, also overwrite games where the field is already filled (by default only empty/missing values are synced). For image fields, also re-download images that are already present",
   })
-  async syncGames(
+  syncGames(
     @Query("limit") limitQuery?: string,
     @Query("delayMs") delayMsQuery?: string,
     @Query("concurrency") concurrencyQuery?: string,
@@ -262,15 +262,19 @@ export class IgdbParserController {
     @Query("field") field?: string,
     @Query("forceParse") forceParseQuery?: string
   ) {
-    return this.service.syncGamesFromIgdb({
-      limit: Number(limitQuery) || undefined,
-      delayMs: Number(delayMsQuery) || undefined,
-      concurrency: Number(concurrencyQuery) || undefined,
-      parseImages:
-        parseImagesQuery === undefined ? true : parseImagesQuery === "true",
-      field,
-      forceParse: forceParseQuery === "true",
-    });
+    void this.service
+      .syncGamesFromIgdb({
+        limit: Number(limitQuery) || undefined,
+        delayMs: Number(delayMsQuery) || undefined,
+        concurrency: Number(concurrencyQuery) || undefined,
+        parseImages:
+          parseImagesQuery === undefined ? true : parseImagesQuery === "true",
+        field,
+        forceParse: forceParseQuery === "true",
+      })
+      .catch(() => undefined);
+
+    return { message: "Sync started" };
   }
 
   @ApiCookieAuth()
@@ -280,7 +284,7 @@ export class IgdbParserController {
   @Post("/games/link-related")
   @ApiOperation({
     summary:
-      "Resolve IGDB related-game ids (dlcs, expansions, remakes, similar_games, etc.) into internal game references on every game. Runs automatically after backfill/sync; use this to re-run it manually",
+      "Resolve IGDB related-game ids (dlcs, expansions, remakes, similar_games, etc.) into internal game references on every game. Runs daily at 04:30 (Europe/Moscow), after the IGDB/RA sync crons; use this to re-run it manually",
   })
   @ApiResponse({ status: 200, description: "Successfully started" })
   linkRelatedGames() {

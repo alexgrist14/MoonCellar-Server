@@ -6,6 +6,7 @@ import { FilterQuery, Model } from "mongoose";
 import { PinoLogger } from "nestjs-pino";
 import { sleep } from "src/shared/utils";
 import { runInCronLogContext } from "src/shared/cron-logging";
+import { runCronExclusive } from "src/shared/cron-mutex";
 import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
 import { Game, GameDocument } from "../schemas/game.schema";
 import { Platform, PlatformDocument } from "../schemas/platform.schema";
@@ -68,20 +69,22 @@ export class HltbService {
 
   @Cron(HLTB_SYNC_CRON, HLTB_SYNC_CRON_OPTIONS)
   async syncHltbCron() {
-    return runInCronLogContext(this.logger, "hltb-sync", async () => {
-      try {
-        return await this.metrics.trackSync("hltb-sync", () =>
-          this.syncAllGames({
-            limit: HLTB_CRON_MAX_GAMES,
-            delayMs: HLTB_CRON_DELAY_MS,
-            staleDays: HLTB_STALE_DAYS,
-          })
-        );
-      } catch (err) {
-        this.logger.error(err, "Failed to run HLTB sync cron");
-        throw err;
-      }
-    });
+    return runCronExclusive(() =>
+      runInCronLogContext(this.logger, "hltb-sync", async () => {
+        try {
+          return await this.metrics.trackSync("hltb-sync", () =>
+            this.syncAllGames({
+              limit: HLTB_CRON_MAX_GAMES,
+              delayMs: HLTB_CRON_DELAY_MS,
+              staleDays: HLTB_STALE_DAYS,
+            })
+          );
+        } catch (err) {
+          this.logger.error(err, "Failed to run HLTB sync cron");
+          throw err;
+        }
+      })
+    );
   }
 
   async syncAllGames(options?: HltbSyncOptions): Promise<HltbSyncResult> {

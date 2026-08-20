@@ -15,6 +15,7 @@ import { PinoLogger } from "nestjs-pino";
 import { updateOrInsertValues } from "src/shared/db";
 import { sleep } from "src/shared/utils";
 import { runInCronLogContext } from "src/shared/cron-logging";
+import { runCronExclusive } from "src/shared/cron-mutex";
 import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
 
 import { Game, GameDocument } from "src/module/games/schemas/game.schema";
@@ -285,8 +286,10 @@ export class RetroachievementsService {
 
   @Cron(RA_SYNC_CRON, RA_SYNC_CRON_OPTIONS)
   async syncCron() {
-    return runInCronLogContext(this.logger, "ra-sync", () =>
-      this.metrics.trackSync("ra-sync", () => this.runSyncCron())
+    return runCronExclusive(() =>
+      runInCronLogContext(this.logger, "ra-sync", () =>
+        this.metrics.trackSync("ra-sync", () => this.runSyncCron())
+      )
     );
   }
 

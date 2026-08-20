@@ -30,8 +30,11 @@ import {
 import { Cron } from "@nestjs/schedule";
 import { PinoLogger } from "nestjs-pino";
 import { runInCronLogContext } from "src/shared/cron-logging";
+import { runCronExclusive } from "src/shared/cron-mutex";
 import { BusinessMetricsService } from "src/module/metrics/business-metrics.service";
 import {
+  IGDB_GAMES_LINK_RELATED_CRON,
+  IGDB_GAMES_LINK_RELATED_CRON_OPTIONS,
   IGDB_GAMES_SYNC_CRON,
   IGDB_GAMES_SYNC_CRON_OPTIONS,
   IGDB_GAMES_SYNC_TO_GAMES_CONCURRENCY,
@@ -174,10 +177,12 @@ export class IGDBService {
         parsingCallback: async (items, page) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select(
-            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing" +
-              (options?.field ? ` ${options.field}` : "")
-          );
+          })
+            .select(
+              "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing" +
+                (options?.field ? ` ${options.field}` : "")
+            )
+            .lean();
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -238,12 +243,6 @@ export class IGDBService {
         await this.markGamesBackfillCompleted(checkpoint);
       }
 
-      if (processedCount > 0) {
-        await this.linkRelatedGames().catch((e) =>
-          this.logger.error(e, "Failed to link related games after backfill")
-        );
-      }
-
       this.logger.log(
         `IGDB games backfill finished, processed ${processedCount} games`
       );
@@ -293,9 +292,11 @@ export class IGDBService {
         parsingCallback: async (items) => {
           const existingGames = await this.Games.find({
             "igdb.gameId": { $in: items.map((item) => item.id) },
-          }).select(
-            "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing"
-          );
+          })
+            .select(
+              "_id slug type createdAt igdb cover screenshots artworks isStopParsingPictures isStopParsing"
+            )
+            .lean();
 
           const existingGamesByIgdbId = new Map(
             existingGames.map((game) => [game.igdb.gameId, game])
@@ -332,12 +333,6 @@ export class IGDBService {
         },
       });
 
-      if (changedCount > 0) {
-        await this.linkRelatedGames().catch((e) =>
-          this.logger.error(e, "Failed to link related games after sync")
-        );
-      }
-
       return { changedCount, lastUpdatedAt: checkpoint };
     } catch (err) {
       this.logger.error(err, "Failed to sync games from IGDB");
@@ -347,9 +342,22 @@ export class IGDBService {
 
   @Cron(IGDB_GAMES_SYNC_CRON, IGDB_GAMES_SYNC_CRON_OPTIONS)
   async syncUpdatedGamesCron() {
-    return runInCronLogContext(this.pino, "igdb-games-sync", () =>
-      this.metrics.trackSync("igdb-games-sync", () =>
-        this.runSyncUpdatedGamesCron()
+    return runCronExclusive(() =>
+      runInCronLogContext(this.pino, "igdb-games-sync", () =>
+        this.metrics.trackSync("igdb-games-sync", () =>
+          this.runSyncUpdatedGamesCron()
+        )
+      )
+    );
+  }
+
+  @Cron(IGDB_GAMES_LINK_RELATED_CRON, IGDB_GAMES_LINK_RELATED_CRON_OPTIONS)
+  async linkRelatedGamesCron() {
+    return runCronExclusive(() =>
+      runInCronLogContext(this.pino, "igdb-games-link-related", () =>
+        this.metrics.trackSync("igdb-games-link-related", () =>
+          this.linkRelatedGames()
+        )
       )
     );
   }
@@ -415,10 +423,12 @@ export class IGDBService {
     try {
       const games = await this.Games.find({
         "igdb.gameId": { $exists: true },
-      }).select(
-        "_id igdb.gameId igdb.parent_game " +
-          RELATED_GAME_ARRAY_FIELDS.map((field) => `igdb.${field}`).join(" ")
-      );
+      })
+        .select(
+          "_id igdb.gameId igdb.parent_game " +
+            RELATED_GAME_ARRAY_FIELDS.map((field) => `igdb.${field}`).join(" ")
+        )
+        .lean();
 
       const idByIgdbId = new Map(
         games.map((game) => [game.igdb.gameId, game._id])
@@ -735,9 +745,11 @@ export class IGDBService {
 
     const existingGame = await this.Games.findOne({
       "igdb.gameId": igdbGame.id,
-    }).select(
-      "_id slug type createdAt cover screenshots artworks isStopParsingPictures isStopParsing"
-    );
+    })
+      .select(
+        "_id slug type createdAt cover screenshots artworks isStopParsingPictures isStopParsing"
+      )
+      .lean();
 
     return this.upsertGameFromIgdb(igdbGame, existingGame, {
       parseImages: options?.parseImages ?? true,
